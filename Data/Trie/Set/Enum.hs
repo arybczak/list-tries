@@ -12,50 +12,48 @@ import Data.IntMap (IntMap)
 import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 
-data ListSet a = Tr !Bool !(IntMap (ListSet a)) deriving Show
+data TrieSet a = Tr !Bool !(IntMap (TrieSet a)) deriving Show
 
 -- instances: Eq, Monoid, Foldable, Ord, Show, Read
-
--- TODO: ponder whether it's clever or not to have b instead of a in the types
 
 -- * Querying
 
 -- O(1)
-null :: ListSet a -> Bool
+null :: TrieSet a -> Bool
 null (Tr False m) | Map.null m = True
 null _                         = False
 
 -- O(n). The number of elements in the set.
-size :: ListSet a -> Int
+size :: TrieSet a -> Int
 size (Tr b m) = Map.fold ((+) . size) (fromEnum b) m
 
 -- O(m).
-member :: Enum a => [a] -> ListSet b -> Bool
+member :: Enum a => [a] -> TrieSet b -> Bool
 member []     (Tr b _) = b
 member (x:xs) (Tr _ m) =
    case Map.lookup (fromEnum x) m of
         Nothing -> False
         Just t  -> member xs t
 
-isSubsetOf :: Enum a => ListSet a -> ListSet a -> Bool
+isSubsetOf :: Enum a => TrieSet a -> TrieSet a -> Bool
 isSubsetOf = undefined
 
-isProperSubsetOf :: Enum a => ListSet a -> ListSet a -> Bool
+isProperSubsetOf :: Enum a => TrieSet a -> TrieSet a -> Bool
 isProperSubsetOf = undefined
 
 -- * Construction
 
 -- O(1)
-empty :: ListSet a
+empty :: TrieSet a
 empty = Tr False Map.empty
 
 -- O(m)
-singleton :: Enum a => [a] -> ListSet b
+singleton :: Enum a => [a] -> TrieSet b
 singleton []     = Tr True Map.empty
 singleton (x:xs) = Tr False (Map.singleton (fromEnum x) (singleton xs))
 
 -- O(m)
-insert :: Enum a => [a] -> ListSet b -> ListSet b
+insert :: Enum a => [a] -> TrieSet b -> TrieSet b
 insert []     (Tr _ m) = Tr True m
 insert (x:xs) (Tr b m) = Tr b $
    Map.insertWith (\_ old -> insert xs old)
@@ -63,7 +61,7 @@ insert (x:xs) (Tr b m) = Tr b $
                   (singleton xs) m
 
 -- O(m)
-delete :: Enum a => [a] -> ListSet b -> ListSet b
+delete :: Enum a => [a] -> TrieSet b -> TrieSet b
 delete []     (Tr _ m) = Tr False m
 delete (x:xs) (Tr b m) = Tr b $
    Map.update (\old -> let new = delete xs old
@@ -75,67 +73,67 @@ delete (x:xs) (Tr b m) = Tr b $
 -- * Combination
 
 -- O(n1+n2)
-union :: ListSet a -> ListSet a -> ListSet a
+union :: TrieSet a -> TrieSet a -> TrieSet a
 union (Tr b1 m1) (Tr b2 m2) = Tr (b1 || b2) $ Map.unionWith union m1 m2
 
-unions :: [ListSet a] -> ListSet a
+unions :: [TrieSet a] -> TrieSet a
 unions = foldl' union empty
 
 -- O(n1+n2)
-difference :: ListSet a -> ListSet a -> ListSet a
+difference :: TrieSet a -> TrieSet b -> TrieSet a
 difference (Tr b1 m1) (Tr b2 m2) = Tr (b1 && not b2)$Map.differenceWith f m1 m2
  where
    f t1 t2 = let t' = difference t1 t2 in if null t' then Nothing else Just t'
 
 -- O(n1+n2)
-intersection :: ListSet a -> ListSet a -> ListSet a
+intersection :: TrieSet a -> TrieSet b -> TrieSet a
 intersection (Tr b1 m1) (Tr b2 m2) =
    Tr (b1 && b2) (Map.intersectionWith intersection m1 m2)
 
 -- * Filtering
 
 -- O(n)
-filter :: Enum a => ([a] -> Bool) -> ListSet a -> ListSet a
+filter :: Enum a => ([a] -> Bool) -> TrieSet a -> TrieSet a
 filter = undefined
 
 -- O(n)
-partition :: Enum a => (a -> Bool) -> ListSet a -> (ListSet a, ListSet a)
+partition :: Enum a => (a -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
 partition = undefined
 
 -- * Mapping
 
 -- O(n)
-map :: (Enum a, Enum b) => ([a] -> [b]) -> ListSet a -> ListSet b
+map :: (Enum a, Enum b) => ([a] -> [b]) -> TrieSet a -> TrieSet b
 map = undefined
 
 -- O(n)
 -- needs a name!
-map' :: (Enum a, Enum b) => (a -> b) -> ListSet a -> ListSet b
+map' :: (Enum a, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
 map' = undefined
 
 -- * Folding
 
-fold :: ([a] -> b -> b) -> b -> ListSet a -> b
+fold :: ([a] -> b -> b) -> b -> TrieSet a -> b
 fold = undefined
 
-foldAsc :: ([a] -> b -> b) -> b -> ListSet a -> b
+foldAsc :: ([a] -> b -> b) -> b -> TrieSet a -> b
 foldAsc = undefined
 
-foldDesc :: ([a] -> b -> b) -> b -> ListSet a -> b
+foldDesc :: ([a] -> b -> b) -> b -> TrieSet a -> b
 foldDesc = undefined
 
 -- * Conversion between lists
 
 -- O(n)
-toList :: Enum a => ListSet a -> [[a]]
+toList :: Enum a => TrieSet a -> [[a]]
 toList = genericToList Map.toList
 
 -- O(n)
-toAscList :: Enum a => ListSet a -> [[a]]
+toAscList :: Enum a => TrieSet a -> [[a]]
 toAscList = genericToList Map.toAscList
 
-genericToList :: Enum a => (IntMap (ListSet a) -> [(Int, ListSet a)])
-                        -> ListSet a
+genericToList :: Enum a => (IntMap (TrieSet a) -> [(Int, TrieSet a)])
+                        -> TrieSet a
                         -> [[a]]
 genericToList = go []
  where
@@ -145,5 +143,5 @@ genericToList = go []
              then reverse l : xs
              else             xs
 -- O(n)
-fromList :: Enum a => [[a]] -> ListSet a
+fromList :: Enum a => [[a]] -> TrieSet a
 fromList = foldl' (flip insert) empty
