@@ -11,25 +11,26 @@ import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
-import qualified Prelude as Pre
 
 data ListSet a = Tr !Bool !(IntMap (ListSet a)) deriving Show
 
 -- instances: Eq, Monoid, Foldable, Ord, Show, Read
+
+-- TODO: ponder whether it's clever or not to have b instead of a in the types
 
 -- * Querying
 
 -- O(1)
 null :: ListSet a -> Bool
 null (Tr False m) | Map.null m = True
-null _                           = False
+null _                         = False
 
 -- O(n). The number of elements in the set.
 size :: ListSet a -> Int
 size (Tr b m) = Map.fold ((+) . size) (fromEnum b) m
 
 -- O(m).
-member :: Enum a => [a] -> ListSet a -> Bool
+member :: Enum a => [a] -> ListSet b -> Bool
 member []     (Tr b _) = b
 member (x:xs) (Tr _ m) =
    case Map.lookup (fromEnum x) m of
@@ -49,12 +50,12 @@ empty :: ListSet a
 empty = Tr False Map.empty
 
 -- O(m)
-singleton :: Enum a => [a] -> ListSet a
+singleton :: Enum a => [a] -> ListSet b
 singleton []     = Tr True Map.empty
 singleton (x:xs) = Tr False (Map.singleton (fromEnum x) (singleton xs))
 
 -- O(m)
-insert :: Enum a => [a] -> ListSet a -> ListSet a
+insert :: Enum a => [a] -> ListSet b -> ListSet b
 insert []     (Tr _ m) = Tr True m
 insert (x:xs) (Tr b m) = Tr b $
    Map.insertWith (\_ old -> insert xs old)
@@ -62,7 +63,7 @@ insert (x:xs) (Tr b m) = Tr b $
                   (singleton xs) m
 
 -- O(m)
-delete :: Enum a => [a] -> ListSet a -> ListSet a
+delete :: Enum a => [a] -> ListSet b -> ListSet b
 delete []     (Tr _ m) = Tr False m
 delete (x:xs) (Tr b m) = Tr b $
    Map.update (\old -> let new = delete xs old
@@ -74,20 +75,20 @@ delete (x:xs) (Tr b m) = Tr b $
 -- * Combination
 
 -- O(n1+n2)
-union :: Enum a => ListSet a -> ListSet a -> ListSet a
+union :: ListSet a -> ListSet a -> ListSet a
 union (Tr b1 m1) (Tr b2 m2) = Tr (b1 || b2) $ Map.unionWith union m1 m2
 
-unions :: Enum a => [ListSet a] -> ListSet a
-unions = Pre.foldl union empty
+unions :: [ListSet a] -> ListSet a
+unions = foldl' union empty
 
 -- O(n1+n2)
-difference :: Enum a => ListSet a -> ListSet a -> ListSet a
+difference :: ListSet a -> ListSet a -> ListSet a
 difference (Tr b1 m1) (Tr b2 m2) = Tr (b1 && not b2)$Map.differenceWith f m1 m2
  where
    f t1 t2 = let t' = difference t1 t2 in if null t' then Nothing else Just t'
 
 -- O(n1+n2)
-intersection :: Enum a => ListSet a -> ListSet a -> ListSet a
+intersection :: ListSet a -> ListSet a -> ListSet a
 intersection (Tr b1 m1) (Tr b2 m2) =
    Tr (b1 && b2) (Map.intersectionWith intersection m1 m2)
 
