@@ -28,7 +28,7 @@ size :: TrieSet a -> Int
 size (Tr b m) = Map.fold ((+) . size) (fromEnum b) m
 
 -- O(m).
-member :: Enum a => [a] -> TrieSet b -> Bool
+member :: Enum a => [a] -> TrieSet a -> Bool
 member []     (Tr b _) = b
 member (x:xs) (Tr _ m) =
    case Map.lookup (fromEnum x) m of
@@ -48,12 +48,12 @@ empty :: TrieSet a
 empty = Tr False Map.empty
 
 -- O(m)
-singleton :: Enum a => [a] -> TrieSet b
+singleton :: Enum a => [a] -> TrieSet a
 singleton []     = Tr True Map.empty
 singleton (x:xs) = Tr False (Map.singleton (fromEnum x) (singleton xs))
 
 -- O(m)
-insert :: Enum a => [a] -> TrieSet b -> TrieSet b
+insert :: Enum a => [a] -> TrieSet a -> TrieSet a
 insert []     (Tr _ m) = Tr True m
 insert (x:xs) (Tr b m) = Tr b $
    Map.insertWith (\_ old -> insert xs old)
@@ -61,7 +61,7 @@ insert (x:xs) (Tr b m) = Tr b $
                   (singleton xs) m
 
 -- O(m)
-delete :: Enum a => [a] -> TrieSet b -> TrieSet b
+delete :: Enum a => [a] -> TrieSet a -> TrieSet a
 delete []     (Tr _ m) = Tr False m
 delete (x:xs) (Tr b m) = Tr b $
    Map.update (\old -> let new = delete xs old
@@ -80,13 +80,13 @@ unions :: [TrieSet a] -> TrieSet a
 unions = foldl' union empty
 
 -- O(n1+n2)
-difference :: TrieSet a -> TrieSet b -> TrieSet a
+difference :: TrieSet a -> TrieSet a -> TrieSet a
 difference (Tr b1 m1) (Tr b2 m2) = Tr (b1 && not b2)$Map.differenceWith f m1 m2
  where
    f t1 t2 = let t' = difference t1 t2 in if null t' then Nothing else Just t'
 
 -- O(n1+n2)
-intersection :: TrieSet a -> TrieSet b -> TrieSet a
+intersection :: TrieSet a -> TrieSet a -> TrieSet a
 intersection (Tr b1 m1) (Tr b2 m2) =
    Tr (b1 && b2) (Map.intersectionWith intersection m1 m2)
 
