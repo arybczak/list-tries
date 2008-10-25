@@ -7,6 +7,7 @@
 
 module Data.Trie.Patricia.Set.Enum where
 
+import Control.Exception (assert)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import Data.List (foldl')
@@ -21,8 +22,8 @@ data TrieSet a = Tr !Bool [a] !(IntMap (TrieSet a)) deriving Show
 
 -- O(1)
 null :: TrieSet a -> Bool
-null (Tr False [] m) | Map.null m = True
-null _                            = False
+null (Tr False p m) | Map.null m = assert (Prelude.null p) True
+null _                           = False
 
 -- O(n). The number of elements in the set.
 size :: TrieSet a -> Int
