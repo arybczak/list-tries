@@ -14,9 +14,9 @@ import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
-data TrieSet a = Tr !Bool [a] !(IntMap (TrieSet a)) deriving Show
+data TrieSet a = Tr !Bool [a] !(IntMap (TrieSet a)) deriving (Show,Eq)
 
--- instances: Eq, Monoid, Foldable, Ord, Show, Read
+-- instances: Monoid, Foldable, Ord, Show, Read
 
 -- * Querying
 
