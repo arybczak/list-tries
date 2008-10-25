@@ -199,7 +199,7 @@ genericToList :: Enum a => (IntMap (TrieSet a) -> [(Int, TrieSet a)])
 genericToList = go []
  where
    go l f (Tr b p m) =
-      let xs = concatMap (\(x,t) -> go (toEnum x:p ++ l) f t) (f m)
+      let xs = concatMap (\(x,t) -> go (toEnum x:reverse p ++ l) f t) (f m)
        in if b
              then (reverse l ++ p) : xs
              else                    xs
