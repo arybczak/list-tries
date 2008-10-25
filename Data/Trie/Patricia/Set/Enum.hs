@@ -94,24 +94,6 @@ delete k tr@(Tr b prefix m) =
                          (fromEnum x) m
         _ -> tr
 
-
--- After deletion, compress a trie node into the prefix if possible
-tryCompress :: Enum a => TrieSet a -> TrieSet a
-tryCompress tr@(Tr b pre m) =
-   case Map.minViewWithKey m of
-
-        -- We can compress the trie if both of the following hold:
-        --   Either node is empty    --- not b || not b'
-        --   There is only one child --- Map.null m'
-
-        Just ((x, Tr b' pre' subM), otherChildren)
-           | (not b || not b') && Map.null otherChildren ->
-              Tr (b || b') (pre ++ toEnum x:pre') subM
-
-        -- Otherwise we leave it unchanged.
-        _ -> tr
-
-
 -- * Combination
 
 -- TODO: improve these
@@ -284,3 +266,39 @@ comparePrefixes = go []
       if a == b
          then go (a:samePart) as bs
          else DifferedAt (reverse samePart) xs ys
+
+-- After modifying the trie, compress a trie node into the prefix if possible.
+--
+-- Doesn't recurse into children, only checks if this node and its child can be
+-- joined into one. Does it repeatedly, though, until it can't compress any
+-- more.
+--
+-- Note that this is a sledgehammer: for optimization, instead of using this in
+-- every function, we could write a separate tryCompress for each function,
+-- checking only for those cases that we know can arise. This has been done in
+-- 'insert' but not elsewhere.
+tryCompress :: Enum a => TrieSet a -> TrieSet a
+tryCompress tr@(Tr b pre m) =
+   case Map.minViewWithKey m of
+
+        -- We can compress the trie if there is only one child
+
+        Just ((x, Tr b' pre' subM), otherChildren)
+
+           -- If the parent is false, we can collapse it into the child
+           | Map.null otherChildren && not b ->
+              tryCompress $ Tr b' (pre ++ toEnum x:pre') subM
+
+           -- If the parent is true and the child is false and has no children,
+           -- the child is irrelevant
+           | Map.null otherChildren && not b' && Map.null subM ->
+              Tr b pre subM
+
+        -- If the trie is empty, make sure the prefix is as well.
+        --
+        -- This case can arise in 'intersection', at least.
+
+        Nothing | not b -> Tr b [] m
+
+        -- Otherwise, leave it unchanged.
+        _ -> tr
