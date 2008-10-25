@@ -31,13 +31,14 @@ size (Tr b _ m) = Map.fold ((+) . size) (fromEnum b) m
 -- O(m).
 member :: (Eq a, Enum a) => [a] -> TrieSet a -> Bool
 member k (Tr b prefix m) =
-   case isPrefix prefix k of
-        Nothing     -> False -- didn't match prefix
-        Just []     -> b     -- k == prefix
-        Just (x:xs) ->       -- prefix was a prefix of k
+   case comparePrefixes prefix k of
+        Same                   -> b
+        PostFix (Right (x:xs)) ->
            case Map.lookup (fromEnum x) m of
                 Nothing -> False
                 Just t  -> member xs t
+
+        _ -> False
 
 isSubsetOf :: TrieSet a -> TrieSet a -> Bool
 isSubsetOf = undefined
@@ -58,34 +59,21 @@ singleton s = Tr True s Map.empty
 -- O(m)
 insert :: (Eq a, Enum a) => [a] -> TrieSet a -> TrieSet a
 insert k (Tr b prefix m) =
-   case prefixCheck [] prefix k of
-        -- k == prefix
-        Right (Right [])       -> Tr True prefix m
-
-        -- k was a prefix of prefix
-        Right (Left  (p:pr))   ->
-           Tr True k (mapSingleton p pr b m)
-
-        -- prefix was a prefix of k
-        Right (Right (x:xs))   ->
+   case comparePrefixes prefix k of
+        Same                   -> Tr True prefix m
+        PostFix (Left  (p:pr)) -> Tr True k (mapSingleton p pr b m)
+        PostFix (Right (x:xs)) ->
+           -- Minor optimization: instead of tryCompress we just check for the
+           -- case of an empty trie
            if not b && Map.null m
               then Tr True k m
               else Tr b prefix (mapInsert x xs m)
 
-        -- none of the above
-        Left (pr', p:pr, x:xs) ->
-           Tr False pr' (mapInsert x xs $ mapSingleton p pr b m)
+        DifferedAt pr' (p:pr) (x:xs) ->
+           Tr False pr' $ mapInsert x xs (mapSingleton p pr b m)
 
         _ -> error "Data.Trie.Patricia.Set.Enum.insert :: internal error"
  where
-   prefixCheck _  []       []       = Right (Right [])
-   prefixCheck _  []       cs       = Right (Right cs)
-   prefixCheck _  pr       []       = Right (Left pr)
-   prefixCheck pr x@(p:ps) y@(c:cs) =
-      if p == c
-         then prefixCheck (p:pr) ps cs
-         else Left (reverse pr, x, y)
-
    mapInsert c cs = Map.insertWith (\_ old -> insert cs old)
                                    (fromEnum c)
                                    (singleton cs)
@@ -95,21 +83,17 @@ insert k (Tr b prefix m) =
 -- O(m)
 delete :: (Eq a, Enum a) => [a] -> TrieSet a -> TrieSet a
 delete k tr@(Tr b prefix m) =
-   case isPrefix prefix k of
-        -- k == prefix
-        Just [] -> tryCompress (Tr False prefix m)
-
-        -- prefix was a prefix of k
-        Just (x:xs) ->
+   case comparePrefixes prefix k of
+        Same                   -> tryCompress (Tr False prefix m)
+        PostFix (Right (x:xs)) ->
            tryCompress . Tr b prefix $
               Map.update (\old -> let new = delete xs old
                                    in if null new
                                          then Nothing
                                          else Just new)
                          (fromEnum x) m
+        _ -> tr
 
-        -- none of the above: k is not in the Trie
-        Nothing -> tr
 
 -- After deletion, compress a trie node into the prefix if possible
 tryCompress :: Enum a => TrieSet a -> TrieSet a
@@ -275,14 +259,6 @@ fromList = foldl' (flip insert) empty
 
 -- our private helpers
 -- TODO: move into a Util module if common among multiple modules
-
-isPrefix :: Eq a => [a] -> [a] -> Maybe [a]
-isPrefix []     xs     = Just xs
-isPrefix _      []     = Nothing
-isPrefix (p:ps) (x:xs) =
-   if p == x
-      then isPrefix ps xs
-      else Nothing
 
 data PrefixOrdering a
    = Same
