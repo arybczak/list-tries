@@ -143,13 +143,77 @@ unions = foldl' union empty
 difference :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
 difference tr1 = foldl' (flip delete) tr1 . toList
 
--- O((n1+n2)*(m1+m2))... I think...
+-- Something like O(min(n1,n2))?
 intersection :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
-intersection tr1 tr2 =
-   foldl' (\t x -> if member x tr1 && member x tr2
-                      then insert x t
-                      else t)
-          empty (toList tr1 ++ toList tr2)
+intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
+   case comparePrefixes pre1 pre2 of
+        DifferedAt _ _ _ -> empty
+        Same             -> tr (b1 && b2) pre1 (mapIntersect m1 m2)
+
+        -- use the one with a longer prefix as the base for the intersection,
+        -- and descend into the map of the one with a shorter prefix
+        PostFix remainder ->
+           either (go m2 b1 m1 pre1) (go m1 b2 m2 pre2) remainder
+
+ where
+   mapIntersect = Map.intersectionWith intersection
+   tr b p m = tryCompress (Tr b p m)
+
+   -- Traverse the map given as the 1st argument, looking for anything that
+   -- begins with the given key (x:xs).
+   --
+   -- If it's found, great: make an intersected trie out of the trie found in
+   -- the map and the boolean, map, and prefix given.
+   --
+   -- If it's not found but might still be, there are two cases.
+   --
+   -- 1. Say we've got the following two tries:
+   --
+   -- fromList ["car","cat"]
+   -- fromList ["car","cot"]
+   --
+   -- i.e. (where <> is stuff we don't care about here)
+   --
+   -- Tr False "ca" (fromList [('r', Tr True ""  <>),<>])
+   -- Tr False "c"  (fromList [('a', Tr True "r" <>),<>])
+   --
+   -- We came in here with (x:xs) = "a", the remainder of comparing "ca" and
+   -- "c". We're looking for anything that begins with "ca" from the children
+   -- of the "c".
+   --
+   -- We find the prefix pre' = "r", and comparePrefixes gives PostFix (Right
+   -- "r"). So now we want anything beginning with "car" in the other trie. We
+   -- switch to traversing the other trie, i.e. the other given map: the
+   -- children of "ca".
+   --
+   -- 2. Say we have the following:
+   --
+   -- fromList ["cat"]
+   -- fromList ["cat","cot","cap"]
+   --
+   -- i.e.
+   --
+   -- Tr True "cat" <>
+   -- Tr False "c" (fromList [('a',Tr False "" (fromList [('t',<>)])),<>])
+   --
+   -- (x:xs) = "at" now, and we find pre' = "". We get PostFix (Left "t"). This
+   -- means that we're staying in the same trie, just looking for "t" now
+   -- instead of "at". So we jump into the m' map.
+   --
+   -- Note that the prefix and boolean don't change: we've already got "ca",
+   -- and we'd still like "cat" so we keep the True from there.
+   go ma b mb pre (x:xs) =
+      case Map.lookup (fromEnum x) ma of
+           Nothing              -> empty
+           Just (Tr b' pre' m') ->
+			     case comparePrefixes xs pre' of
+			          DifferedAt _ _ _   -> empty
+			          Same               -> tr (b && b') pre (mapIntersect mb m')
+			          PostFix (Right ys) -> go mb b' m' (pre ++ ys) ys
+			          PostFix (Left  ys) -> go m' b mb pre ys
+
+   go _ _ _ _ [] =
+      error "Data.Trie.Patricia.Set.Enum.intersect :: internal error"
 
 -- * Filtering
 
@@ -219,3 +283,28 @@ isPrefix (p:ps) (x:xs) =
    if p == x
       then isPrefix ps xs
       else Nothing
+
+data PrefixOrdering a
+   = Same
+   | PostFix (Either [a] [a])
+   | DifferedAt [a] [a] [a]
+
+-- Same                  If they're equal.
+-- PostFix (Left  xs)    If the first argument was longer: xs is the remainder.
+-- PostFix (Right xs)    Likewise, but for the second argument.
+-- DifferedAt pre xs ys  Otherwise. pre is the part that was the same and
+--                       xs and ys are the remainders for the first and second
+--                       arguments respectively.
+--
+--                       all (pre `isPrefixOf`) [xs,ys] --> True.
+comparePrefixes :: Eq a => [a] -> [a] -> PrefixOrdering a
+comparePrefixes = go []
+ where
+   go _ [] [] = Same
+   go _ [] xs = PostFix (Right xs)
+   go _ xs [] = PostFix (Left  xs)
+
+   go samePart xs@(a:as) ys@(b:bs) =
+      if a == b
+         then go (a:samePart) as bs
+         else DifferedAt (reverse samePart) xs ys
