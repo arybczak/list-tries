@@ -99,9 +99,28 @@ delete k tr@(Tr b prefix m) =
 
 -- TODO: improve these
 
--- O(m2*n2)... I think...
+-- I think all the properly-written ones here are O(min(n1,n2)).
+
 union :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
-union tr1 = foldl' (flip insert) tr1 . toList
+union (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
+   case comparePrefixes pre1 pre2 of
+        Same              -> tryCompress $ Tr (b1 || b2) pre1 (mapUnion m1 m2)
+        PostFix remainder ->
+           tryCompress $ either (Tr b2 pre2 . mapUnion m2 . decompress m1 b1)
+                                (Tr b1 pre1 . mapUnion m1 . decompress m2 b2)
+                                remainder
+
+        DifferedAt pr (x:xs) (y:ys) ->
+           Tr False pr $ mapDoubleton x (Tr b1 xs m1) y (Tr b2 ys m2)
+
+        _ -> can'tHappen
+ where
+   mapUnion = Map.unionWith union
+
+   decompress m b (x:xs) = Map.singleton (fromEnum x) (Tr b xs m)
+   decompress _ _ []     = can'tHappen
+
+   can'tHappen = error "Data.Trie.Patricia.Set.Enum.union :: internal error"
 
 unions :: (Eq a, Enum a) => [TrieSet a] -> TrieSet a
 unions = foldl' union empty
@@ -110,7 +129,6 @@ unions = foldl' union empty
 difference :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
 difference tr1 = foldl' (flip delete) tr1 . toList
 
--- Something like O(min(n1,n2))?
 intersection :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
 intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
    case comparePrefixes pre1 pre2 of
@@ -303,3 +321,7 @@ tryCompress tr@(Tr b pre m) =
 
         -- Otherwise, leave it unchanged.
         _ -> tr
+
+mapDoubleton :: Enum a => a -> b -> a -> b -> IntMap b
+mapDoubleton k1 v1 k2 v2 =
+   Map.insert (fromEnum k1) v1 (Map.singleton (fromEnum k2) v2)
