@@ -71,7 +71,7 @@ insert k (Tr b prefix m) =
               else Tr b prefix (mapInsert x xs m)
 
         DifferedAt pr' (p:pr) (x:xs) ->
-           Tr False pr' $ mapInsert x xs (mapSingleton p pr b m)
+           Tr False pr' $ mapDoubleton x (singleton xs) p (Tr b pr m)
 
         _ -> error "Data.Trie.Patricia.Set.Enum.insert :: internal error"
  where
