@@ -128,8 +128,8 @@ unions = foldl' union empty
 difference :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
 difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
    case comparePrefixes pre1 pre2 of
-        Same               -> tr b1 b2 pre1 (mapDifference m1 m2)
         DifferedAt _ _ _   -> tr1
+        Same               -> tr b1 b2 pre1 (mapDifference m1 m2)
         PostFix (Left  xs) -> goRight tr1 m2  xs
         PostFix (Right xs) -> goLeft  tr1 tr2 xs
 
@@ -229,13 +229,13 @@ intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
       case Map.lookup (fromEnum x) ma of
            Nothing              -> empty
            Just (Tr b' pre' m') ->
-			     case comparePrefixes xs pre' of
-			          DifferedAt _ _ _   -> empty
-			          Same               -> tr (b && b') pre (mapIntersect mb m')
-			          PostFix (Right ys) -> go mb b' m' (pre ++ ys) ys
-			          PostFix (Left  ys) -> go m' b mb pre ys
+              case comparePrefixes xs pre' of
+                   DifferedAt _ _ _   -> empty
+                   Same               -> tr (b && b') pre (mapIntersect mb m')
+                   PostFix (Right ys) -> go mb b' m' (pre ++ ys) ys
+                   PostFix (Left  ys) -> go m' b mb pre ys
 
-   go _ _ _ _ [] =
+   go _ _ _ _ _ =
       error "Data.Trie.Patricia.Set.Enum.intersect :: internal error"
 
 -- * Filtering
