@@ -125,9 +125,47 @@ union (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
 unions :: (Eq a, Enum a) => [TrieSet a] -> TrieSet a
 unions = foldl' union empty
 
--- O(m2*n2)... I think...
 difference :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
-difference tr1 = foldl' (flip delete) tr1 . toList
+difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
+   case comparePrefixes pre1 pre2 of
+        Same               -> tr b1 b2 pre1 (mapDifference m1 m2)
+        DifferedAt _ _ _   -> tr1
+        PostFix (Left  xs) -> goRight tr1 m2  xs
+        PostFix (Right xs) -> goLeft  tr1 tr2 xs
+
+ where
+   mapDifference = Map.differenceWith difference'
+   difference' a b =
+      let c = difference a b
+       in if null c then Nothing else Just c
+
+   tr b b' p m = tryCompress $ Tr (b && not b') p m
+
+   goRight left@(Tr b pre m) rightMap (x:xs) =
+      case Map.lookup (fromEnum x) rightMap of
+           Nothing                     -> left
+           Just right'@(Tr b' pre' m') ->
+              case comparePrefixes xs pre' of
+                   DifferedAt _ _ _   -> left
+                   Same               -> tr b b' pre (mapDifference m m')
+                   PostFix (Left  ys) -> goRight left m'     ys
+                   PostFix (Right ys) -> goLeft  left right' ys
+
+   goRight _ _ _ =
+      error "Data.Trie.Patricia.Set.Enum.difference :: internal error"
+
+   goLeft (Tr bl prel ml) right@(Tr br _ mr) (x:xs) =
+      tryCompress . Tr bl prel $ Map.adjust f (fromEnum x) ml
+    where
+      f left@(Tr b pre m) =
+         case comparePrefixes pre xs of
+              DifferedAt _ _ _   -> left
+              Same               -> tr b br pre (mapDifference m mr)
+              PostFix (Left  ys) -> goRight left mr    ys
+              PostFix (Right ys) -> goLeft  left right ys
+
+   goLeft _ _ _ =
+      error "Data.Trie.Patricia.Set.Enum.difference :: internal error"
 
 intersection :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
 intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
