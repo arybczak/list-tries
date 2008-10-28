@@ -97,8 +97,6 @@ delete k tr@(Tr b prefix m) =
 
 -- * Combination
 
--- TODO: improve these
-
 -- I think all the properly-written ones here are O(min(n1,n2)).
 
 union :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
@@ -141,6 +139,14 @@ difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
 
    tr b b' p m = tryCompress $ Tr (b && not b') p m
 
+   -- See the comment in 'intersection' for a longish example of the idea
+   -- behind this, which is basically that if we see two prefixes like "foo"
+   -- and "foobar", we traverse the "foo" trie looking for "bar". Then if we
+   -- find "barbaz", we traverse the "foobar" trie looking for "baz", and so
+   -- on.
+   --
+   -- We have two functions for the two tries because set difference is a
+   -- noncommutative operation.
    goRight left@(Tr b pre m) rightMap (x:xs) =
       case Map.lookup (fromEnum x) rightMap of
            Nothing                     -> left
@@ -171,7 +177,7 @@ intersection :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
 intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
    case comparePrefixes pre1 pre2 of
         DifferedAt _ _ _ -> empty
-        Same             -> tr (b1 && b2) pre1 (mapIntersect m1 m2)
+        Same             -> tr b1 b2 pre1 (mapIntersect m1 m2)
 
         -- use the one with a longer prefix as the base for the intersection,
         -- and descend into the map of the one with a shorter prefix
@@ -180,8 +186,11 @@ intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
 
  where
    mapIntersect = Map.intersectionWith intersection
-   tr b p m = tryCompress (Tr b p m)
+   tr b b' p m = tryCompress $ Tr (b && b') p m
 
+   -- Like goLeft and goRight in 'difference', but handles both cases (since
+   -- this is a commutative operation).
+   --
    -- Traverse the map given as the 1st argument, looking for anything that
    -- begins with the given key (x:xs).
    --
@@ -231,7 +240,7 @@ intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
            Just (Tr b' pre' m') ->
               case comparePrefixes xs pre' of
                    DifferedAt _ _ _   -> empty
-                   Same               -> tr (b && b') pre (mapIntersect mb m')
+                   Same               -> tr b b' pre (mapIntersect mb m')
                    PostFix (Right ys) -> go mb b' m' (pre ++ ys) ys
                    PostFix (Left  ys) -> go m' b mb pre ys
 
