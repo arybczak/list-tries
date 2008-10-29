@@ -35,11 +35,25 @@ member (x:xs) (Tr _ m) =
         Nothing -> False
         Just t  -> member xs t
 
-isSubsetOf :: Enum a => TrieSet a -> TrieSet a -> Bool
-isSubsetOf = undefined
+-- O(?)
+isSubsetOf :: TrieSet a -> TrieSet a -> Bool
+isSubsetOf (Tr True _) (Tr False _) = False
+isSubsetOf (Tr _   m1) (Tr _    m2) = Map.isSubmapOfBy isSubsetOf m1 m2
 
-isProperSubsetOf :: Enum a => TrieSet a -> TrieSet a -> Bool
-isProperSubsetOf = undefined
+-- O(?)
+isProperSubsetOf :: TrieSet a -> TrieSet a -> Bool
+isProperSubsetOf = go False
+ where
+   go _      (Tr True _) (Tr False _) = False
+   go proper (Tr b1  m1) (Tr b2   m2) =
+      -- This seems suboptimal but I can't think of anything better
+      let proper' = or [ proper
+                       , not b1 && b2
+                       , not (Map.null $ Map.difference m2 m1)
+                       ]
+       in if Map.null m1
+             then proper'
+             else Map.isSubmapOfBy (go proper') m1 m2
 
 -- * Construction
 
