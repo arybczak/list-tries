@@ -341,14 +341,14 @@ map' f (Tr b p m) =
 
 -- * Folding
 
-fold :: ([a] -> b -> b) -> b -> TrieSet a -> b
-fold = undefined
+fold :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
+fold f x = Prelude.foldr f x . toList
 
-foldAsc :: ([a] -> b -> b) -> b -> TrieSet a -> b
-foldAsc = undefined
+foldAsc :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
+foldAsc f x = Prelude.foldr f x . toAscList
 
-foldDesc :: ([a] -> b -> b) -> b -> TrieSet a -> b
-foldDesc = undefined
+foldDesc :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
+foldDesc f x = Prelude.foldr f x . toDescList
 
 -- * Conversion between lists
 
