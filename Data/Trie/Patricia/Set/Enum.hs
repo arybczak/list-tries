@@ -14,6 +14,8 @@ import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
+-- Invariant: any (Tr False _ _) has at least two children, all of which are
+-- True or have a True descendant.
 data TrieSet a = Tr !Bool [a] !(IntMap (TrieSet a)) deriving (Show,Eq)
 
 -- instances: Monoid, Foldable, Ord, Show, Read

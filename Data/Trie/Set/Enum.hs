@@ -12,6 +12,7 @@ import Data.IntMap (IntMap)
 import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 
+-- Invariant: any (Tr False _) has a True descendant.
 data TrieSet a = Tr !Bool !(IntMap (TrieSet a)) deriving Show
 
 -- instances: Eq, Monoid, Foldable, Ord, Show, Read
