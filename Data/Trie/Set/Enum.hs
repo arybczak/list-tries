@@ -12,6 +12,7 @@ import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
+import qualified Data.List as List
 import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
@@ -113,11 +114,11 @@ intersection (Tr b1 m1) (Tr b2 m2) =
 
 -- O(n)
 filter :: Enum a => ([a] -> Bool) -> TrieSet a -> TrieSet a
-filter = undefined
+filter p = fromList . Prelude.filter p . toList
 
 -- O(n)
-partition :: Enum a => (a -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
-partition = undefined
+partition :: Enum a => ([a] -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
+partition p = (fromList *** fromList) . List.partition p . toList
 
 -- * Mapping
 

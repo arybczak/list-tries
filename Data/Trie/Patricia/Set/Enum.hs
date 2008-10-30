@@ -13,6 +13,7 @@ import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
+import qualified Data.List as List
 import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
@@ -318,11 +319,13 @@ intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
 
 -- O(n)
 filter :: (Eq a, Enum a) => ([a] -> Bool) -> TrieSet a -> TrieSet a
-filter = undefined
+filter p = fromList . Prelude.filter p . toList
 
 -- O(n)
-partition :: (Eq a, Enum a) => (a -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
-partition = undefined
+partition :: (Eq a, Enum a) => ([a] -> Bool)
+                            -> TrieSet a
+                            -> (TrieSet a, TrieSet a)
+partition p = (fromList *** fromList) . List.partition p . toList
 
 -- * Mapping
 
@@ -341,12 +344,15 @@ map' f (Tr b p m) =
 
 -- * Folding
 
+-- O(n)
 fold :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
 fold f x = Prelude.foldr f x . toList
 
+-- O(n)
 foldAsc :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
 foldAsc f x = Prelude.foldr f x . toAscList
 
+-- O(n)
 foldDesc :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
 foldDesc f x = Prelude.foldr f x . toDescList
 
