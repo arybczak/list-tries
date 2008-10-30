@@ -7,10 +7,12 @@
 
 module Data.Trie.Set.Enum where
 
+import Control.Arrow ((***))
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import Data.List (foldl')
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
+import qualified Prelude
 
 -- Invariant: any (Tr False _) has a True descendant.
 data TrieSet a = Tr !Bool !(IntMap (TrieSet a)) deriving Show
@@ -119,12 +121,16 @@ partition = undefined
 
 -- O(n)
 map :: (Enum a, Enum b) => ([a] -> [b]) -> TrieSet a -> TrieSet b
-map = undefined
+map f = fromList . Prelude.map f . toList
 
 -- O(n)
 -- needs a name!
 map' :: (Enum a, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
-map' = undefined
+map' f (Tr b m) =
+   Tr b $
+      Map.fromDistinctAscList .
+         Prelude.map (fromEnum.f.toEnum *** map' f) .
+      Map.toAscList $ m
 
 -- * Folding
 

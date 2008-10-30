@@ -7,6 +7,7 @@
 
 module Data.Trie.Patricia.Set.Enum where
 
+import Control.Arrow ((***))
 import Control.Exception (assert)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
@@ -324,13 +325,17 @@ partition = undefined
 -- * Mapping
 
 -- O(n)
-map :: (Eq a, Enum a, Eq b, Enum b) => ([a] -> [b]) -> TrieSet a -> TrieSet b
-map = undefined
+map :: (Enum a, Eq b, Enum b) => ([a] -> [b]) -> TrieSet a -> TrieSet b
+map f = fromList . Prelude.map f . toList
 
 -- O(n)
 -- needs a name!
-map' :: (Eq a, Enum a, Eq b, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
-map' = undefined
+map' :: (Enum a, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
+map' f (Tr b p m) =
+   Tr b (Prelude.map f p) $
+      Map.fromDistinctAscList .
+         Prelude.map (fromEnum.f.toEnum *** map' f) .
+      Map.toAscList $ m
 
 -- * Folding
 
