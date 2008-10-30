@@ -43,6 +43,7 @@ member k (Tr b prefix m) =
 
         _ -> False
 
+-- O(?)
 isSubsetOf :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> Bool
 isSubsetOf (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
    case comparePrefixes pre1 pre2 of
@@ -69,8 +70,46 @@ isSubsetOf (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
    go _ _ _ _ =
       error "Data.Trie.Patricia.Set.Enum.isSubsetOf :: internal error"
 
-isProperSubsetOf :: TrieSet a -> TrieSet a -> Bool
-isProperSubsetOf = undefined
+-- O(?)
+isProperSubsetOf :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> Bool
+isProperSubsetOf = f False
+ where
+   f proper (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
+      case comparePrefixes pre1 pre2 of
+           DifferedAt _ _ _  -> False
+
+           -- Special case, as in isSubsetOf.
+           --
+           -- Note that properness does not affect this: if we hit this case,
+           -- we already know that the right trie is nonempty.
+           PostFix (Right _) -> not b1 && Map.null m1
+
+           PostFix (Left xs) -> go proper m2 b1 m1 xs
+           Same              -> same proper b1 b2 m1 m2
+
+   go proper mr bl ml (x:xs) =
+      case Map.lookup (fromEnum x) mr of
+           Nothing              -> False
+           Just (Tr br pre mr') ->
+              case comparePrefixes xs pre of
+                   DifferedAt _ _ _  -> False
+                   PostFix (Right _) -> False
+                   PostFix (Left ys) -> go proper mr' bl ml ys
+                   Same              -> same proper bl br ml mr'
+
+   go _ _ _ _ _ =
+      error "Data.Trie.Patricia.Set.Enum.isProperSubsetOf :: internal error"
+
+   same _      True False _  _  = False
+   same proper bl   br    ml mr =
+      -- As the non-Patricia version, so does this seem suboptimal
+      let proper' = or [ proper
+                       , not bl && br
+                       , not (Map.null $ Map.difference mr ml)
+                       ]
+       in if Map.null ml
+             then proper'
+             else Map.isSubmapOfBy (f proper') ml mr
 
 -- * Construction
 
