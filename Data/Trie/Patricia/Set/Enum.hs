@@ -43,8 +43,31 @@ member k (Tr b prefix m) =
 
         _ -> False
 
-isSubsetOf :: TrieSet a -> TrieSet a -> Bool
-isSubsetOf = undefined
+isSubsetOf :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> Bool
+isSubsetOf (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
+   case comparePrefixes pre1 pre2 of
+        DifferedAt _ _ _  -> False
+
+        -- Special case here: if the left trie is empty we return True.
+        PostFix (Right _) -> not b1 && Map.null m1
+
+        PostFix (Left xs) -> go m2 b1 m1 xs
+        Same              -> not (b1 && not b2)
+                          && Map.isSubmapOfBy isSubsetOf m1 m2
+ where
+   go mr bl ml (x:xs) =
+      case Map.lookup (fromEnum x) mr of
+           Nothing              -> False
+           Just (Tr br pre mr') ->
+              case comparePrefixes xs pre of
+                   DifferedAt _ _ _  -> False
+                   PostFix (Right _) -> False
+                   PostFix (Left ys) -> go mr' bl ml ys
+                   Same              -> not (bl && not br)
+                                     && Map.isSubmapOfBy isSubsetOf ml mr'
+
+   go _ _ _ _ =
+      error "Data.Trie.Patricia.Set.Enum.isSubsetOf :: internal error"
 
 isProperSubsetOf :: TrieSet a -> TrieSet a -> Bool
 isProperSubsetOf = undefined
