@@ -9,6 +9,8 @@ module Data.Trie.Patricia.Set.Enum where
 
 import Control.Arrow ((***))
 import Control.Exception (assert)
+import qualified Data.DList as DL
+import Data.DList (DList)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import Data.List (foldl')
@@ -352,22 +354,32 @@ foldDesc = undefined
 
 -- O(n)
 toList :: Enum a => TrieSet a -> [[a]]
-toList = genericToList Map.toList
+toList = genericToList Map.toList DL.cons
 
 -- O(n)
 toAscList :: Enum a => TrieSet a -> [[a]]
-toAscList = genericToList Map.toAscList
+toAscList = genericToList Map.toAscList DL.cons
+
+-- O(n)
+toDescList :: Enum a => TrieSet a -> [[a]]
+toDescList = genericToList (reverse . Map.toAscList) (flip DL.snoc)
 
 genericToList :: Enum a => (IntMap (TrieSet a) -> [(Int, TrieSet a)])
+                        -> ([a] -> DList [a] -> DList [a])
                         -> TrieSet a
                         -> [[a]]
-genericToList = go []
+genericToList f_ g_ = DL.toList . go DL.empty f_ g_
  where
-   go l f (Tr b p m) =
-      let xs = concatMap (\(x,t) -> go (toEnum x:reverse p ++ l) f t) (f m)
+   go l f g (Tr b p m) =
+      let
+         l' = l `DL.append` DL.fromList p
+         xs =
+            DL.concat .
+            Prelude.map (\(x,t) -> go (l' `DL.snoc` toEnum x) f g t) .
+            f $ m
        in if b
-             then (reverse l ++ p) : xs
-             else                    xs
+             then g (DL.toList l') xs
+             else                  xs
 
 -- O(n)
 fromList :: (Eq a, Enum a) => [[a]] -> TrieSet a
