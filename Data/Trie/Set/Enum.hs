@@ -216,6 +216,14 @@ findMinMax f g h tr_ = Just (go f g h tr_)
                in toEnum k : go cond base mapView t
 
 -- O(m log b)
+deleteMin :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMin = maybe empty snd . minView
+
+-- O(m log b)
+deleteMax :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMax = maybe empty snd . maxView
+
+-- O(m log b)
 minView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
 minView = minMaxView (\(Tr b _) -> b)
                      (flip const)
