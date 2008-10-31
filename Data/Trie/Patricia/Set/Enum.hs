@@ -423,6 +423,40 @@ findMinMax f g h tr_ = Just (go f g h tr_)
          else let (k,t) = mapView m
                in prepend pre k (go cond base mapView t)
 
+-- O(m log b)
+minView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+minView = minMaxView (\(Tr b _ _) -> b)
+                     (flip const)
+                     (fst . fromJust . Map.minViewWithKey)
+
+-- O(m log b)
+maxView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+maxView = minMaxView (\(Tr _ _ m) -> Map.null m)
+                     (\(Tr b _ _) -> assert b)
+                     (fst . fromJust . Map.maxViewWithKey)
+
+minMaxView :: Enum a
+           => (TrieSet a -> Bool)
+           -> (TrieSet a -> ([a], TrieSet a) -> ([a], TrieSet a))
+           -> (IntMap (TrieSet a) -> (Int, TrieSet a))
+           -> TrieSet a
+           -> Maybe ([a], TrieSet a)
+minMaxView _ _ _ tr_ | null tr_ = Nothing
+minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
+ where
+   go cond base mapView xs tr@(Tr b pre m) =
+      let xs' = xs `DL.append` DL.fromList pre
+       in if cond tr
+             then base tr (DL.toList xs', Tr False pre m)
+             else let (k,   t)  = mapView m
+                      xs''      = xs' `DL.snoc` toEnum k
+                      (res, t') = go cond base mapView xs'' t
+               in ( res
+                  , Tr b pre $ if null t'
+                                  then Map.delete            (fromEnum k) m
+                                  else Map.adjust (const t') (fromEnum k) m
+                  )
+
 -- * Trie-specific operations
 
 -- O(m b)
