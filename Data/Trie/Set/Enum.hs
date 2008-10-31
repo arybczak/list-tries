@@ -9,13 +9,15 @@ module Data.Trie.Set.Enum where
 
 import Control.Arrow ((***))
 import Control.Exception (assert)
+import Control.Monad (mplus)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import qualified Data.List as List
-import Data.List (foldl')
+import Data.List (foldl', maximumBy, minimumBy)
 import Data.Maybe (fromJust)
+import Data.Ord (comparing)
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
@@ -207,3 +209,49 @@ findMax tr = go tr
          then assert b $ Just []
          else let (k,t) = fst . fromJust . Map.maxViewWithKey $ m
                in fmap (toEnum k:) (go t)
+
+-- * Trie-specific operations
+
+-- O(m b)
+findPredecessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findPredecessor tr  _ | null tr = Nothing
+findPredecessor tr_ xs_         = go tr_ xs_
+ where
+   go _ [] = Nothing
+
+   -- We need to try the trie at x and then the trie at the predecessor of x:
+   -- e.g. if looking for "foo", we need to try any 'f' branch to see if it has
+   -- "fob" first, before grabbing the next-best option of the maximum of the
+   -- 'b' branch, say "bar".
+   --
+   -- If there's no branch less than 'f' we try the current position as a last
+   -- resort.
+   go (Tr b m) (x:xs) =
+      let x'         = fromEnum x
+          candidates = Prelude.filter ((< x').fst) $ Map.toList m
+          (best,btr) = maximumBy (comparing fst) candidates
+
+       in fmap (x:) (Map.lookup x' m >>= flip go xs)
+          `mplus`
+          if Prelude.null candidates
+             then if b then Just [] else Nothing
+             else fmap (toEnum best:) (findMax btr)
+
+-- O(m b)
+findSuccessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findSuccessor tr  _ | null tr = Nothing
+findSuccessor tr_ xs_         = go tr_ xs_
+ where
+   go (Tr _ m) [] = do ((k,t),_) <- Map.minViewWithKey m
+                       fmap (toEnum k:) (findMin t)
+
+   go (Tr _ m) (x:xs) =
+      let x'         = fromEnum x
+          candidates = Prelude.filter ((> x').fst) $ Map.toList m
+          (best,btr) = minimumBy (comparing fst) candidates
+
+       in fmap (x:) (Map.lookup x' m >>= flip go xs)
+          `mplus`
+          if Prelude.null candidates
+             then Nothing
+             else fmap (toEnum best:) (findMin btr)
