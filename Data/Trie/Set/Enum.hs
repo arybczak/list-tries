@@ -3,17 +3,19 @@
 -- An efficient implementation of sets of lists of enumerable elements, based
 -- on tries.
 -- Complexities are given; @n@ refers to the number of elements in the set, @m@
--- to their maximum length.
+-- to their maximum length, @b@ to the trie's branching factor.
 
 module Data.Trie.Set.Enum where
 
 import Control.Arrow ((***))
+import Control.Exception (assert)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import qualified Data.List as List
 import Data.List (foldl')
+import Data.Maybe (fromJust)
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
@@ -181,3 +183,27 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
 -- O(n)
 fromList :: Enum a => [[a]] -> TrieSet a
 fromList = foldl' (flip insert) empty
+
+-- * Min/max
+
+-- O(m log b)
+findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMin tr | null tr = Nothing
+findMin tr = go tr
+ where
+   go (Tr b m) =
+      if b
+         then Just []
+         else let (k,t) = fst . fromJust . Map.minViewWithKey $ m
+               in fmap (toEnum k:) (go t)
+
+-- O(m log b)
+findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMax tr | null tr = Nothing
+findMax tr = go tr
+ where
+   go (Tr b m) =
+      if Map.null m
+         then assert b $ Just []
+         else let (k,t) = fst . fromJust . Map.maxViewWithKey $ m
+               in fmap (toEnum k:) (go t)
