@@ -191,18 +191,18 @@ fromList = foldl' (flip insert) empty
 -- O(m log b)
 findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
 findMin = findMinMax (\(Tr b _) -> b)
-                     (const [])
+                     (flip const)
                      (fst . fromJust . Map.minViewWithKey)
 
 -- O(m log b)
 findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
 findMax = findMinMax (\(Tr _ m) -> Map.null m)
-                     (\(Tr b _) -> assert b [])
+                     (\(Tr b _) -> assert b)
                      (fst . fromJust . Map.maxViewWithKey)
 
 findMinMax :: Enum a
            => (TrieSet a -> Bool)
-           -> (TrieSet a -> [a])
+           -> (TrieSet a -> [a] -> [a])
            -> (IntMap (TrieSet a) -> (Int, TrieSet a))
            -> TrieSet a
            -> Maybe [a]
@@ -211,7 +211,7 @@ findMinMax f g h tr_ = Just (go f g h tr_)
  where
    go cond base mapView tr@(Tr _ m) =
       if cond tr
-         then base tr
+         then base tr []
          else let (k,t) = mapView m
                in toEnum k : go cond base mapView t
 
