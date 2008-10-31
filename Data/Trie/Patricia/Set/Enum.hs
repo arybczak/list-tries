@@ -3,7 +3,7 @@
 -- An efficient implementation of sets of lists of enumerable elements, based
 -- on Patricia tries.
 -- Complexities are given; @n@ refers to the number of elements in the set, @m@
--- to their maximum length.
+-- to their maximum length, @b@ to the trie's branching factor.
 
 module Data.Trie.Patricia.Set.Enum where
 
@@ -15,6 +15,7 @@ import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import qualified Data.List as List
 import Data.List (foldl')
+import Data.Maybe (fromJust)
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
@@ -391,9 +392,35 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
 fromList :: (Eq a, Enum a) => [[a]] -> TrieSet a
 fromList = foldl' (flip insert) empty
 
+-- * Min/max
+
+-- O(m log b)
+findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMin tr | null tr = Nothing
+findMin tr = go tr
+ where
+   go (Tr b pre m) =
+      if b
+         then Just pre
+         else let (k,t) = fst . fromJust . Map.minViewWithKey $ m
+               in fmap (prepend pre k) (go t)
+
+-- O(m log b)
+findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMax tr | null tr = Nothing
+findMax tr = go tr
+ where
+   go (Tr b pre m) =
+      if Map.null m
+         then assert b $ Just pre
+         else let (k,t) = fst . fromJust . Map.maxViewWithKey $ m
+               in fmap (prepend pre k) (go t)
 
 -- our private helpers
 -- TODO: move into a Util module if common among multiple modules
+
+prepend :: Enum a => [a] -> Int -> [a] -> [a]
+prepend prefix key = (prefix++) . (toEnum key:)
 
 data PrefixOrdering a
    = Same
@@ -440,7 +467,7 @@ tryCompress tr@(Tr b pre m) =
 
            -- If the parent is false, we can collapse it into the child
            | Map.null otherChildren && not b ->
-              tryCompress $ Tr b' (pre ++ toEnum x:pre') subM
+              tryCompress $ Tr b' (prepend pre x pre') subM
 
            -- If the parent is true and the child is false and has no children,
            -- the child is irrelevant
