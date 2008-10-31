@@ -9,13 +9,15 @@ module Data.Trie.Patricia.Set.Enum where
 
 import Control.Arrow ((***))
 import Control.Exception (assert)
+import Control.Monad (mplus)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.IntMap as Map
 import Data.IntMap (IntMap)
 import qualified Data.List as List
-import Data.List (foldl')
+import Data.List (foldl', maximumBy, minimumBy)
 import Data.Maybe (fromJust)
+import Data.Ord (comparing)
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
@@ -415,6 +417,74 @@ findMax tr = go tr
          then assert b $ Just pre
          else let (k,t) = fst . fromJust . Map.maxViewWithKey $ m
                in fmap (prepend pre k) (go t)
+
+-- * Trie-specific operations
+
+-- O(m b)
+findPredecessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findPredecessor tr  _ | null tr = Nothing
+findPredecessor tr_ xs_         = go tr_ xs_
+ where
+   go tr@(Tr b pre m) xs =
+      case comparePrefixes pre xs of
+           Same             -> Nothing
+           PostFix (Left _) -> Nothing
+
+           DifferedAt _ (p:_) (x:_) ->
+              case compare p x of
+                   LT -> findMax tr
+                   GT -> Nothing
+                   EQ -> can'tHappen
+
+           -- See comment in non-Patricia version for explanation of algorithm
+           PostFix (Right (y:ys)) ->
+              let y'         = fromEnum y
+                  candidates = Prelude.filter ((< y').fst) $ Map.toList m
+                  (best,btr) = maximumBy (comparing fst) candidates
+
+               in fmap (prepend pre y') (Map.lookup y' m >>= flip go ys)
+                  `mplus`
+                  if Prelude.null candidates
+                     then if b then Just pre else Nothing
+                     else fmap (prepend pre best) (findMax btr)
+
+           _ -> can'tHappen
+
+   can'tHappen =
+      error "Data.Trie.Patricia.Set.Enum.findPredecessor :: internal error"
+
+-- O(m b)
+findSuccessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findSuccessor tr  _ | null tr = Nothing
+findSuccessor tr_ xs_         = go tr_ xs_
+ where
+   go tr@(Tr _ pre m) xs =
+      case comparePrefixes pre xs of
+           Same -> do ((k,t),_) <- Map.minViewWithKey m
+                      fmap (prepend pre k) (findMin t)
+
+           DifferedAt _ (p:_) (x:_) ->
+              case compare p x of
+                   LT -> Nothing
+                   GT -> findMin tr
+                   EQ -> can'tHappen
+
+           PostFix (Left  _)      -> findMin tr
+           PostFix (Right (y:ys)) ->
+              let y'         = fromEnum y
+                  candidates = Prelude.filter ((> y').fst) $ Map.toList m
+                  (best,btr) = minimumBy (comparing fst) candidates
+
+               in fmap (prepend pre y') (Map.lookup y' m >>= flip go ys)
+                  `mplus`
+                  if Prelude.null candidates
+                     then Nothing
+                     else fmap (prepend pre best) (findMin btr)
+
+           _ -> can'tHappen
+
+   can'tHappen =
+      error "Data.Trie.Patricia.Set.Enum.findSuccessor :: internal error"
 
 -- our private helpers
 -- TODO: move into a Util module if common among multiple modules
