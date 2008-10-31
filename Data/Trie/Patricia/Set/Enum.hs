@@ -399,24 +399,24 @@ fromList = foldl' (flip insert) empty
 -- O(m log b)
 findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
 findMin tr | null tr = Nothing
-findMin tr = go tr
+findMin tr = Just (go tr)
  where
    go (Tr b pre m) =
       if b
-         then Just pre
+         then pre
          else let (k,t) = fst . fromJust . Map.minViewWithKey $ m
-               in fmap (prepend pre k) (go t)
+               in prepend pre k (go t)
 
 -- O(m log b)
 findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
 findMax tr | null tr = Nothing
-findMax tr = go tr
+findMax tr = Just (go tr)
  where
    go (Tr b pre m) =
       if Map.null m
-         then assert b $ Just pre
+         then assert b pre
          else let (k,t) = fst . fromJust . Map.maxViewWithKey $ m
-               in fmap (prepend pre k) (go t)
+               in prepend pre k (go t)
 
 -- * Trie-specific operations
 
