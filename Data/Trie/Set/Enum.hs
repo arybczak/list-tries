@@ -189,13 +189,13 @@ fromList = foldl' (flip insert) empty
 -- * Min/max
 
 -- O(m log b)
-findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMin :: Enum a => TrieSet a -> Maybe [a]
 findMin = findMinMax (\(Tr b _) -> b)
                      (flip const)
                      (fst . fromJust . Map.minViewWithKey)
 
 -- O(m log b)
-findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMax :: Enum a => TrieSet a -> Maybe [a]
 findMax = findMinMax (\(Tr _ m) -> Map.null m)
                      (\(Tr b _) -> assert b)
                      (fst . fromJust . Map.maxViewWithKey)
@@ -216,21 +216,21 @@ findMinMax f g h tr_ = Just (go f g h tr_)
                in toEnum k : go cond base mapView t
 
 -- O(m log b)
-deleteMin :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMin :: Enum a => TrieSet a -> TrieSet a
 deleteMin = maybe empty snd . minView
 
 -- O(m log b)
-deleteMax :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMax :: Enum a => TrieSet a -> TrieSet a
 deleteMax = maybe empty snd . maxView
 
 -- O(m log b)
-minView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+minView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 minView = minMaxView (\(Tr b _) -> b)
                      (flip const)
                      (fst . fromJust . Map.minViewWithKey)
 
 -- O(m log b)
-maxView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+maxView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 maxView = minMaxView (\(Tr _ m) -> Map.null m)
                      (\(Tr b _) -> assert b)
                      (fst . fromJust . Map.maxViewWithKey)
@@ -258,7 +258,7 @@ minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
 -- * Trie-specific operations
 
 -- O(m b)
-findPredecessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findPredecessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findPredecessor tr  _ | null tr = Nothing
 findPredecessor tr_ xs_         = go tr_ xs_
  where
@@ -283,7 +283,7 @@ findPredecessor tr_ xs_         = go tr_ xs_
              else fmap (toEnum best:) (findMax btr)
 
 -- O(m b)
-findSuccessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findSuccessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findSuccessor tr  _ | null tr = Nothing
 findSuccessor tr_ xs_         = go tr_ xs_
  where

@@ -397,13 +397,13 @@ fromList = foldl' (flip insert) empty
 -- * Min/max
 
 -- O(m log b)
-findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMin :: Enum a => TrieSet a -> Maybe [a]
 findMin = findMinMax (\(Tr b _ _) -> b)
                      (flip const)
                      (fst . fromJust . Map.minViewWithKey)
 
 -- O(m log b)
-findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMax :: Enum a => TrieSet a -> Maybe [a]
 findMax = findMinMax (\(Tr _ _ m) -> Map.null m)
                      (\(Tr b _ _) -> assert b)
                      (fst . fromJust . Map.maxViewWithKey)
@@ -424,21 +424,21 @@ findMinMax f g h tr_ = Just (go f g h tr_)
                in prepend pre k (go cond base mapView t)
 
 -- O(m log b)
-deleteMin :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMin :: Enum a => TrieSet a -> TrieSet a
 deleteMin = maybe empty snd . minView
 
 -- O(m log b)
-deleteMax :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMax :: Enum a => TrieSet a -> TrieSet a
 deleteMax = maybe empty snd . maxView
 
 -- O(m log b)
-minView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+minView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 minView = minMaxView (\(Tr b _ _) -> b)
                      (flip const)
                      (fst . fromJust . Map.minViewWithKey)
 
 -- O(m log b)
-maxView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+maxView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 maxView = minMaxView (\(Tr _ _ m) -> Map.null m)
                      (\(Tr b _ _) -> assert b)
                      (fst . fromJust . Map.maxViewWithKey)
