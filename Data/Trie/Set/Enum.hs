@@ -124,6 +124,21 @@ filter p = fromList . Prelude.filter p . toList
 partition :: Enum a => ([a] -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
 partition p = (fromList *** fromList) . List.partition p . toList
 
+split :: Enum a => [a] -> TrieSet a -> (TrieSet a, TrieSet a)
+split xs tr = let (l,_,g) = splitMember xs tr in (l,g)
+
+splitMember :: Enum a => [a] -> TrieSet a -> (TrieSet a, Bool, TrieSet a)
+splitMember []     (Tr b m) = (empty, b, Tr False m)
+splitMember (x:xs) (Tr b m) =
+   let (ml, tr, mg) = Map.splitLookup (fromEnum x) m
+    in case tr of
+            Nothing  -> (Tr b ml, False, Tr False mg)
+            Just tr' ->
+               let (tl, b', tg) = splitMember xs tr'
+                   ml' = if null tl then ml else Map.insert (fromEnum x) tl ml
+                   mg' = if null tg then mg else Map.insert (fromEnum x) tg mg
+                in (Tr b ml', b', Tr False mg')
+
 -- * Mapping
 
 -- O(n)
