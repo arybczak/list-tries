@@ -330,6 +330,41 @@ partition :: (Eq a, Enum a) => ([a] -> Bool)
                             -> (TrieSet a, TrieSet a)
 partition p = (fromList *** fromList) . List.partition p . toList
 
+split :: (Ord a, Enum a) => [a] -> TrieSet a -> (TrieSet a, TrieSet a)
+split x tr = let (l,_,g) = splitMember x tr in (l,g)
+
+splitMember :: (Ord a, Enum a)
+            => [a] -> TrieSet a -> (TrieSet a, Bool, TrieSet a)
+splitMember xs orig@(Tr b pre m) =
+   case comparePrefixes pre xs of
+        Same                     -> (empty, b, tr False pre m)
+        DifferedAt _ (p:_) (x:_) ->
+           case compare p x of
+                LT -> (orig, False, empty)
+                GT -> (empty, False, orig)
+                EQ -> can'tHappen
+
+        PostFix (Left       _) -> (empty, False, orig)
+        PostFix (Right (y:ys)) ->
+           let (ml, maybeTr, mg) = Map.splitLookup (fromEnum y) m
+            in case maybeTr of
+                    Nothing  -> (tr b pre ml, False, tr False pre mg)
+                    Just tr' ->
+                       let (tl, b', tg) = splitMember ys tr'
+                           ml' = if null tl
+                                    then ml
+                                    else Map.insert (fromEnum y) tl ml
+                           mg' = if null tg
+                                    then mg
+                                    else Map.insert (fromEnum y) tg mg
+                        in (tr b pre ml', b', tr False pre mg')
+
+        _ -> can'tHappen
+ where
+   tr p q r = tryCompress (Tr p q r)
+   can'tHappen =
+      error "Data.Trie.Patricia.Set.Enum.splitMember :: internal error"
+
 -- * Mapping
 
 -- O(n)
