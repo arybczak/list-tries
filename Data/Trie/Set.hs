@@ -16,9 +16,8 @@ import Control.Monad (join, mplus)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.List as List
-import Data.List (foldl', maximumBy, minimumBy)
+import Data.List (foldl')
 import Data.Maybe (fromJust)
-import Data.Ord (comparing)
 import Prelude hiding (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
@@ -295,8 +294,8 @@ findPredecessor tr_ xs_         = go tr_ xs_
    -- If there's no branch less than 'f' we try the current position as a last
    -- resort.
    go (Tr b m) (x:xs) =
-      let candidates = Prelude.filter ((< x).fst) $ Map.toList m
-          (best,btr) = maximumBy (comparing fst) candidates
+      let candidates = Map.toDescList . fst . Map.split m $ x
+          (best,btr) = head candidates
 
        in fmap (x:) (Map.lookup m x >>= flip go xs)
           `mplus`
@@ -313,8 +312,8 @@ findSuccessor tr_ xs_         = go tr_ xs_
                        fmap (k:) (findMin t)
 
    go (Tr _ m) (x:xs) =
-      let candidates = Prelude.filter ((> x).fst) $ Map.toList m
-          (best,btr) = minimumBy (comparing fst) candidates
+      let candidates = Map.toAscList . snd . Map.split m $ x
+          (best,btr) = head candidates
 
        in fmap (x:) (Map.lookup m x >>= flip go xs)
           `mplus`

@@ -1,6 +1,10 @@
 -- File created: 2008-10-18 21:33:40
 
--- The trie-based set for lists of enumerable elements.
+-- A set of lists of enumerable elements, based on a trie.
+--
+-- Note that those operations which require an ordering, such as 'toAscList',
+-- do not compare the elements themselves, but rather their Int representation
+-- after 'fromEnum'.
 --
 -- Complexities are given; @n@ refers to the number of elements in the set, @m@
 -- to their maximum length, @b@ to the trie's branching factor.
@@ -79,11 +83,10 @@ filter = Base.filter
 partition :: Enum a => ([a] -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
 partition = Base.partition
 
-split :: (Ord a, Enum a) => [a] -> TrieSet a -> (TrieSet a, TrieSet a)
+split :: Enum a => [a] -> TrieSet a -> (TrieSet a, TrieSet a)
 split = Base.split
 
-splitMember :: (Ord a, Enum a)
-            => [a] -> TrieSet a -> (TrieSet a, Bool, TrieSet a)
+splitMember :: Enum a => [a] -> TrieSet a -> (TrieSet a, Bool, TrieSet a)
 splitMember = Base.splitMember
 
 -- * Mapping
@@ -104,11 +107,11 @@ fold :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
 fold = Base.fold
 
 -- O(n)
-foldAsc :: (Ord a, Enum a) => ([a] -> b -> b) -> b -> TrieSet a -> b
+foldAsc :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
 foldAsc = Base.foldAsc
 
 -- O(n)
-foldDesc :: (Ord a, Enum a) => ([a] -> b -> b) -> b -> TrieSet a -> b
+foldDesc :: Enum a => ([a] -> b -> b) -> b -> TrieSet a -> b
 foldDesc = Base.foldDesc
 
 -- * Conversion between lists
@@ -118,11 +121,11 @@ toList :: Enum a => TrieSet a -> [[a]]
 toList = Base.toList
 
 -- O(n)
-toAscList :: (Ord a, Enum a) => TrieSet a -> [[a]]
+toAscList :: Enum a => TrieSet a -> [[a]]
 toAscList = Base.toAscList
 
 -- O(n)
-toDescList :: (Ord a, Enum a) => TrieSet a -> [[a]]
+toDescList :: Enum a => TrieSet a -> [[a]]
 toDescList = Base.toDescList
 
 -- O(n)
@@ -132,35 +135,35 @@ fromList = Base.fromList
 -- * Min/max
 
 -- O(m log b)
-findMin :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMin :: Enum a => TrieSet a -> Maybe [a]
 findMin = Base.findMin
 
 -- O(m log b)
-findMax :: (Ord a, Enum a) => TrieSet a -> Maybe [a]
+findMax :: Enum a => TrieSet a -> Maybe [a]
 findMax = Base.findMax
 
 -- O(m log b)
-deleteMin :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMin :: Enum a => TrieSet a -> TrieSet a
 deleteMin = Base.deleteMin
 
 -- O(m log b)
-deleteMax :: (Ord a, Enum a) => TrieSet a -> TrieSet a
+deleteMax :: Enum a => TrieSet a -> TrieSet a
 deleteMax = Base.deleteMax
 
 -- O(m log b)
-minView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+minView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 minView = Base.minView
 
 -- O(m log b)
-maxView :: (Ord a, Enum a) => TrieSet a -> Maybe ([a], TrieSet a)
+maxView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 maxView = Base.maxView
 
 -- * Trie-specific operations
 
 -- O(m b)
-findPredecessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findPredecessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findPredecessor = Base.findPredecessor
 
 -- O(m b)
-findSuccessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findSuccessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findSuccessor = Base.findSuccessor

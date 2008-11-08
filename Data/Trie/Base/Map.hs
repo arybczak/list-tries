@@ -5,7 +5,8 @@
 module Data.Trie.Base.Map where
 
 import Control.Arrow ((***), first)
-import Data.List     (foldl', sortBy)
+import Control.Monad (join)
+import Data.List     (foldl', partition, sortBy)
 import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
@@ -42,38 +43,29 @@ class Map m k where
    delete     = update (const Nothing)
    difference = differenceWith (\_ _ -> Nothing)
 
--- Minimal complete definition: toAscList or toDescList
+-- Minimal complete definition: toAscList or toDescList, and splitLookup
 --
 -- fromDistinctAscList and fromDistinctAscList are only used in the default
 -- definitions of splitLookup, minViewWithKey and maxViewWithKey, and default
 -- to fromList
-class (Ord k, Map m k) => OrdMap m k where
+class Map m k => OrdMap m k where
    toAscList            :: m k a -> [(k,a)]
    toDescList           :: m k a -> [(k,a)]
    fromDistinctAscList  :: [(k,a)] -> m k a
    fromDistinctDescList :: [(k,a)] -> m k a
 
    splitLookup :: m k a -> k -> (m k a, Maybe a, m k a)
+   split       :: m k a -> k -> (m k a,          m k a)
 
    minViewWithKey :: m k a -> (Maybe (k,a), m k a)
    maxViewWithKey :: m k a -> (Maybe (k,a), m k a)
 
    toAscList  = reverse . toDescList
    toDescList = reverse . toAscList
-
    fromDistinctAscList  = fromList
    fromDistinctDescList = fromList
-   
-   splitLookup m k =
-      let xs      = toAscList m
-          (as,bs) = span ((< k) . fst) xs
-          ml      = fromDistinctAscList as
-       in if Prelude.null bs
-             then (ml, Nothing, empty)
-             else let (k',v) = head bs
-                   in if k' == k
-                         then (ml,  Just v, fromDistinctAscList $ tail bs)
-                         else (ml, Nothing, fromDistinctAscList bs)
+
+   split m k = let (a,_,b) = splitLookup m k in (a,b)
 
    minViewWithKey m =
       case toAscList m of
@@ -147,6 +139,12 @@ instance Eq k => Map AList k where
 instance Ord k => OrdMap AList k where
    toAscList  = sortBy (       comparing fst) . toList
    toDescList = sortBy (flip $ comparing fst) . toList
+   
+   splitLookup (AL xs) k =
+      let (ls,gs) = partition ((< k).fst) xs
+       in case gs of
+               (k',x):gs' | k' == k -> (AL ls, Just x, AL gs')
+               _                    -> (AL ls, Nothing, AL gs)
 
 deleteAndGetBy :: (a -> Bool) -> [a] -> (Maybe a, [a])
 deleteAndGetBy = go []
@@ -206,6 +204,7 @@ instance Ord k => OrdMap M.Map k where
    fromDistinctDescList = fromDistinctAscList . reverse
 
    splitLookup = flip M.splitLookup
+   split       = flip M.split
 
    minViewWithKey m = maybe (Nothing, m) (first Just) (M.minViewWithKey m)
    maxViewWithKey m = maybe (Nothing, m) (first Just) (M.maxViewWithKey m)
@@ -239,13 +238,15 @@ instance Enum k => Map IMap k where
 
    isSubmapOfBy f (IMap x) (IMap y) = IM.isSubmapOfBy f x y
 
-instance (Ord k, Enum k) => OrdMap IMap k where
+instance Enum k => OrdMap IMap k where
    toAscList (IMap m)   = map (first toEnum) . IM.toAscList $ m
    fromDistinctAscList  = IMap . IM.fromDistinctAscList . map (first fromEnum)
    fromDistinctDescList = fromDistinctAscList . reverse
 
    splitLookup (IMap m) =
       (\(a,b,c) -> (IMap a, b, IMap c)) . flip IM.splitLookup m . fromEnum
+
+   split (IMap m) = join (***) IMap . flip IM.split m . fromEnum
 
    minViewWithKey o@(IMap m) =
       maybe (Nothing, o) (Just . first toEnum *** IMap) (IM.minViewWithKey m)
