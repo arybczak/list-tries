@@ -150,9 +150,9 @@ map f = fromList . Prelude.map f . toList
 map' :: (Enum a, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
 map' f (Tr b m) =
    Tr b $
-      Map.fromDistinctAscList .
+      Map.fromList .
          Prelude.map (fromEnum.f.toEnum *** map' f) .
-      Map.toAscList $ m
+      Map.toList $ m
 
 -- * Folding
 
