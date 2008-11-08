@@ -323,8 +323,8 @@ filter p = fromList . Prelude.filter p . toList
 
 -- O(n)
 partition :: (Eq a, Map map a) => ([a] -> Bool)
-                            -> TrieSet map a
-                            -> (TrieSet map a, TrieSet map a)
+                               -> TrieSet map a
+                               -> (TrieSet map a, TrieSet map a)
 partition p = (fromList *** fromList) . List.partition p . toList
 
 split :: (Ord a, OrdMap map a)
@@ -407,9 +407,9 @@ toDescList :: OrdMap map a => TrieSet map a -> [[a]]
 toDescList = genericToList (reverse . Map.toAscList) (flip DL.snoc)
 
 genericToList :: Map map a => (CMap map a -> [(a, TrieSet map a)])
-                        -> ([a] -> DList [a] -> DList [a])
-                        -> TrieSet map a
-                        -> [[a]]
+                           -> ([a] -> DList [a] -> DList [a])
+                           -> TrieSet map a
+                           -> [[a]]
 genericToList f_ g_ = DL.toList . go DL.empty f_ g_
  where
    go l f g (Tr b p m) =
@@ -441,12 +441,11 @@ findMax = findMinMax (\(Tr _ _ m) -> Map.null m)
                      (\(Tr b _ _) -> assert b)
                      (fst . Map.maxViewWithKey)
 
-findMinMax :: Map map a
-           => (TrieSet map a -> Bool)
-           -> (TrieSet map a -> [a] -> [a])
-           -> (CMap map a -> Maybe (a, TrieSet map a))
-           -> TrieSet map a
-           -> Maybe [a]
+findMinMax :: Map map a => (TrieSet map a -> Bool)
+                        -> (TrieSet map a -> [a] -> [a])
+                        -> (CMap map a -> Maybe (a, TrieSet map a))
+                        -> TrieSet map a
+                        -> Maybe [a]
 findMinMax _ _ _ tr_ | null tr_ = Nothing
 findMinMax f g h tr_ = Just (go f g h tr_)
  where
