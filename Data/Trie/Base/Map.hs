@@ -7,13 +7,15 @@ module Data.Trie.Base.Map where
 import Control.Arrow ((***), first)
 import Control.Monad (join)
 import Data.List     (foldl', partition, sortBy)
+import Data.Maybe    (listToMaybe)
 import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
 class Map m k where
-   empty     :: m k a
-   singleton :: k -> a -> m k a
+   empty     ::                     m k a
+   singleton ::           k -> a -> m k a
+   doubleton :: k -> a -> k -> a -> m k a
 
    null   :: m k a -> Bool
    lookup :: m k a -> k -> Maybe a
@@ -37,11 +39,15 @@ class Map m k where
 
    isSubmapOfBy :: (a -> b -> Bool) -> m k a -> m k b -> Bool
 
-   singleton  = insert empty
-   insert     = insertWith const
-   adjust f   = update (Just . f)
-   delete     = update (const Nothing)
-   difference = differenceWith (\_ _ -> Nothing)
+   singletonView :: m k a -> Maybe (k,a)
+
+   singleton     = insert empty
+   doubleton     = (insert .) . singleton
+   insert        = insertWith const
+   adjust f      = update (Just . f)
+   delete        = update (const Nothing)
+   difference    = differenceWith (\_ _ -> Nothing)
+   singletonView = listToMaybe . toList
 
 -- Minimal complete definition: toAscList or toDescList, and splitLookup
 --
@@ -82,6 +88,7 @@ newtype AList k v = AL [(k,v)]
 instance Eq k => Map AList k where
    empty              = AL []
    singleton k v      = AL [(k,v)]
+   doubleton a b p q  = AL [(a,b),(p,q)]
 
    null (AL xs)       = Prelude.null xs
    lookup (AL xs) x   = Prelude.lookup x xs
@@ -198,6 +205,11 @@ instance Ord k => Map M.Map k where
 
    isSubmapOfBy = M.isSubmapOfBy
 
+   singletonView m =
+      case M.minViewWithKey m of
+           Just (a,others) | M.null others -> Just a
+           _                               -> Nothing
+
 instance Ord k => OrdMap M.Map k where
    toAscList            = M.toAscList
    fromDistinctAscList  = M.fromDistinctAscList
@@ -237,6 +249,11 @@ instance Enum k => Map IMap k where
    fromList        = IMap . IM.fromList . map (first fromEnum)
 
    isSubmapOfBy f (IMap x) (IMap y) = IM.isSubmapOfBy f x y
+
+   singletonView (IMap m) =
+      case IM.minViewWithKey m of
+           Just (a,others) | IM.null others -> Just (first toEnum a)
+           _                                -> Nothing
 
 instance Enum k => OrdMap IMap k where
    toAscList (IMap m)   = map (first toEnum) . IM.toAscList $ m
