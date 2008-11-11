@@ -127,21 +127,26 @@ delete (x:xs) (Tr b m) = Tr b $
 
 -- O(n1+n2)
 union :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
-union (Tr b1 m1) (Tr b2 m2) = Tr (b1 || b2) $ Map.unionWith union m1 m2
+union (Tr b1 m1) (Tr b2 m2) = Tr (b1 || b2) (Map.unionWith union m1 m2)
 
 unions :: Map map a => [TrieSet map a] -> TrieSet map a
 unions = foldl' union empty
 
 -- O(n1+n2)
 difference :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
-difference (Tr b1 m1) (Tr b2 m2) = Tr (b1 && not b2)$Map.differenceWith f m1 m2
+difference (Tr b1 m1) (Tr b2 m2) =
+   Tr (b1 && not b2) (Map.differenceWith f m1 m2)
  where
    f t1 t2 = let t' = difference t1 t2 in if null t' then Nothing else Just t'
 
 -- O(n1+n2)
 intersection :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 intersection (Tr b1 m1) (Tr b2 m2) =
-   Tr (b1 && b2) (Map.intersectionWith intersection m1 m2)
+   tr (b1 && b2) (Map.intersectionWith intersection m1 m2)
+ where
+   tr b m = case Map.singletonView m of
+                 Just (_, child@(Tr _ subM)) | null child -> Tr b subM
+                 _                                        -> Tr b m
 
 -- * Filtering
 
