@@ -158,7 +158,7 @@ filter p = fromList . Prelude.filter p . toList
 partition :: Map map a => ([a] -> Bool)
                        -> TrieSet map a
                        -> (TrieSet map a, TrieSet map a)
-partition p = (join (***) fromList) . List.partition p . toList
+partition p = join (***) fromList . List.partition p . toList
 
 split :: OrdMap map a => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 split xs tr = let (l,_,g) = splitMember xs tr in (l,g)

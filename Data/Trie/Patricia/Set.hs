@@ -10,7 +10,7 @@ module Data.Trie.Patricia.Set where
 
 import Control.Arrow ((***))
 import Control.Exception (assert)
-import Control.Monad (mplus)
+import Control.Monad (join, mplus)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.List as List
@@ -325,7 +325,7 @@ filter p = fromList . Prelude.filter p . toList
 partition :: (Eq a, Map map a) => ([a] -> Bool)
                                -> TrieSet map a
                                -> (TrieSet map a, TrieSet map a)
-partition p = (fromList *** fromList) . List.partition p . toList
+partition p = join (***) fromList . List.partition p . toList
 
 split :: (Ord a, OrdMap map a)
       => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
