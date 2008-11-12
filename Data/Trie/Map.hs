@@ -631,7 +631,7 @@ minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
  where
    go cond base mapView xs tr@(Tr v m) =
       if cond tr
-         then base tr ((DL.toList xs, fromJust v), Tr v m)
+         then base tr ((DL.toList xs, fromJust v), Tr Nothing m)
          else let (k,      t)  = fromJust (mapView m)
                   (minMax, t') = go cond base mapView (xs `DL.snoc` k) t
                in ( minMax
