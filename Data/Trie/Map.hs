@@ -640,14 +640,12 @@ findPredecessor tr_ xs_         = go tr_ xs_
  where
    go _        []     = Nothing
    go (Tr v m) (x:xs) =
-      let candidates = Map.toDescList . fst . Map.split m $ x
-          (best,btr) = head candidates
-
+      let predecessor = Map.findPredecessor m x
        in fmap (first (x:)) (Map.lookup m x >>= flip go xs)
           <|>
-          if Prelude.null candidates
-             then fmap ((,) []) v
-             else fmap (first (best:)) (findMax btr)
+          case predecessor of
+               Nothing         -> fmap ((,) []) v
+               Just (best,btr) -> fmap (first (best:)) (findMax btr)
 
 -- O(m b)
 findSuccessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
@@ -658,11 +656,8 @@ findSuccessor tr_ xs_         = go tr_ xs_
                        fmap (first (k:)) (findMin t)
 
    go (Tr _ m) (x:xs) =
-      let candidates = Map.toAscList . snd . Map.split m $ x
-          (best,btr) = head candidates
+      let successor = Map.findSuccessor m x
 
        in fmap (first (x:)) (Map.lookup m x >>= flip go xs)
           <|>
-          if Prelude.null candidates
-             then Nothing
-             else fmap (first (best:)) (findMin btr)
+          (successor >>= \(best,btr) -> fmap (first (best:)) (findMin btr))

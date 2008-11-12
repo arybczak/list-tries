@@ -10,9 +10,10 @@
 
 module Data.Trie.Set where
 
+import Control.Applicative ((<|>))
 import Control.Arrow ((***))
 import Control.Exception (assert)
-import Control.Monad (join, mplus)
+import Control.Monad (join)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.List as List
@@ -324,14 +325,12 @@ findPredecessor tr_ xs_         = go tr_ xs_
    -- If there's no branch less than 'f' we try the current position as a last
    -- resort.
    go (Tr b m) (x:xs) =
-      let candidates = Map.toDescList . fst . Map.split m $ x
-          (best,btr) = head candidates
-
+      let predecessor = Map.findPredecessor m x
        in fmap (x:) (Map.lookup m x >>= flip go xs)
-          `mplus`
-          if Prelude.null candidates
-             then if b then Just [] else Nothing
-             else fmap (best:) (findMax btr)
+          <|>
+          case predecessor of
+               Nothing         -> if b then Just [] else Nothing
+               Just (best,btr) -> fmap (best:) (findMax btr)
 
 -- O(m b)
 findSuccessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
@@ -342,11 +341,7 @@ findSuccessor tr_ xs_         = go tr_ xs_
                        fmap (k:) (findMin t)
 
    go (Tr _ m) (x:xs) =
-      let candidates = Map.toAscList . snd . Map.split m $ x
-          (best,btr) = head candidates
-
+      let successor = Map.findSuccessor m x
        in fmap (x:) (Map.lookup m x >>= flip go xs)
-          `mplus`
-          if Prelude.null candidates
-             then Nothing
-             else fmap (best:) (findMin btr)
+          <|>
+          (successor >>= \(best,btr) -> fmap (best:) (findMin btr))

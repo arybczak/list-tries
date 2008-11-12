@@ -8,9 +8,10 @@
 
 module Data.Trie.Patricia.Set where
 
+import Control.Applicative ((<|>))
 import Control.Arrow ((***))
 import Control.Exception (assert)
-import Control.Monad (join, mplus)
+import Control.Monad (join)
 import qualified Data.DList as DL
 import Data.DList (DList)
 import qualified Data.List as List
@@ -515,14 +516,12 @@ findPredecessor tr_ xs_         = go tr_ xs_
 
            -- See comment in non-Patricia version for explanation of algorithm
            PostFix (Right (y:ys)) ->
-              let candidates = Map.toDescList . fst . Map.split m $ y
-                  (best,btr) = head candidates
-
+              let predecessor = Map.findPredecessor m y
                in fmap (prepend pre y) (Map.lookup m y >>= flip go ys)
-                  `mplus`
-                  if Prelude.null candidates
-                     then if b then Just pre else Nothing
-                     else fmap (prepend pre best) (findMax btr)
+                  <|>
+                  case predecessor of
+                       Nothing         -> if b then Just pre else Nothing
+                       Just (best,btr) -> fmap (prepend pre best) (findMax btr)
 
            _ -> can'tHappen
 
@@ -547,14 +546,11 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
            PostFix (Left  _)      -> findMin tr
            PostFix (Right (y:ys)) ->
-              let candidates = Map.toAscList . snd . Map.split m $ y
-                  (best,btr) = head candidates
-
+              let successor = Map.findSuccessor m y
                in fmap (prepend pre y) (Map.lookup m y >>= flip go ys)
-                  `mplus`
-                  if Prelude.null candidates
-                     then Nothing
-                     else fmap (prepend pre best) (findMin btr)
+                  <|>
+                  (successor >>= \(best,btr) ->
+                      fmap (prepend pre best) (findMin btr))
 
            _ -> can'tHappen
 

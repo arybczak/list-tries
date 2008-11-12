@@ -92,6 +92,9 @@ class Map m k => OrdMap m k where
    minViewWithKey :: m k a -> (Maybe (k,a), m k a)
    maxViewWithKey :: m k a -> (Maybe (k,a), m k a)
 
+   findPredecessor :: m k a -> k -> Maybe (k,a)
+   findSuccessor   :: m k a -> k -> Maybe (k,a)
+
    mapAccumAsc         :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
    mapAccumAscWithKey  :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
    mapAccumDesc        :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
@@ -113,6 +116,9 @@ class Map m k => OrdMap m k where
       case toDescList m of
            []     -> (Nothing, m)
            (x:xs) -> (Just x, fromDistinctDescList xs)
+
+   findPredecessor m x = fst . maxViewWithKey . fst . split m $ x
+   findSuccessor   m x = fst . minViewWithKey . snd . split m $ x
 
    mapAccumAsc  f = mapAccumAscWithKey  (const . f)
    mapAccumDesc f = mapAccumDescWithKey (const . f)
