@@ -55,12 +55,12 @@ member k (Tr b prefix m) =
 
 -- O(?)
 isSubsetOf :: (Eq a, Map map a) => TrieSet map a -> TrieSet map a -> Bool
-isSubsetOf (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
+isSubsetOf tr1@(Tr b1 pre1 m1) (Tr b2 pre2 m2) =
    case comparePrefixes pre1 pre2 of
         DifferedAt _ _ _  -> False
 
         -- Special case here: if the left trie is empty we return True.
-        PostFix (Right _) -> not b1 && Map.null m1
+        PostFix (Right _) -> null tr1
 
         PostFix (Left xs) -> go m2 b1 m1 xs
         Same              -> not (b1 && not b2)
@@ -133,14 +133,14 @@ singleton s = Tr True s Map.empty
 
 -- O(m)
 insert :: (Eq a, Map map a) => [a] -> TrieSet map a -> TrieSet map a
-insert k (Tr b prefix m) =
+insert k tr@(Tr b prefix m) =
    case comparePrefixes prefix k of
         Same                   -> Tr True prefix m
         PostFix (Left  (p:pr)) -> Tr True k $ Map.singleton p (Tr b pr m)
         PostFix (Right (x:xs)) ->
            -- Minor optimization: instead of tryCompress we just check for the
            -- case of an empty trie
-           if not b && Map.null m
+           if null tr
               then Tr True k m
               else Tr b prefix $ Map.insertWith (\_ old -> insert xs old)
                                                 m x (singleton xs)

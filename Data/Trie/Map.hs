@@ -131,7 +131,7 @@ insert = insertWith const
 -- O(m)
 insertWith :: Map map k
            => (a -> a -> a) -> [k] -> a -> TrieMap map k a -> TrieMap map k a
-insertWith f []     v (Tr o m) = Tr (maybe (Just v) (Just . f v) o) m
+insertWith f []     v (Tr o m) = Tr (Just $ maybe v (f v) o) m
 insertWith f (x:xs) v (Tr o m) = Tr o $
    Map.insertWith (\_ old -> insertWith f xs v old)
                   m x (singleton xs v)
@@ -141,14 +141,7 @@ insertWithKey :: Map map k => ([k] -> a -> a -> a)
                            -> [k] -> a
                            -> TrieMap map k a
                            -> TrieMap map k a
-insertWithKey = go DL.empty
- where
-   go k f []     v (Tr o m) =
-      Tr (maybe (Just v) (Just . f (DL.toList k) v) o) m
-
-   go k f (x:xs) v (Tr o m) = Tr o $
-      Map.insertWith (\_ old -> go (k `DL.snoc` x) f xs v old)
-                     m x (singleton xs v)
+insertWithKey f k = insertWith (f k) k
 
 -- O(m)
 delete :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
@@ -185,7 +178,7 @@ updateLookup f (x:xs) orig@(Tr v m) =
                                else Map.adjust (const upd) m x
                    )
 
-
+-- O(m)
 alter :: Map map k
       => (Maybe a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
 alter f []     (Tr v m) = Tr (f v) m
@@ -496,7 +489,7 @@ mapKeys'With :: (Map map k1, Map map k2)
 mapKeys'With j f (Tr v m) =
    Tr v $
       Map.fromListWith (unionWith j) .
-         Prelude.map (f *** mapKeys' f) .
+         Prelude.map (f *** mapKeys'With j f) .
       Map.toList $ m
 
 -- * Folding
@@ -589,13 +582,13 @@ findMinMax :: OrdMap map k => (TrieMap map k a -> Bool)
                            -> TrieMap map k a
                            -> Maybe ([k], a)
 findMinMax _ _ _ tr_ | null tr_ = Nothing
-findMinMax f g h tr_ = Just (go DL.empty f g h tr_)
+findMinMax f g h tr_ = Just (go f g h tr_)
  where
-   go k cond base mapView tr@(Tr v m) =
+   go cond base mapView tr@(Tr v m) =
       if cond tr
-         then base tr (DL.toList k, fromJust v)
-         else let (x,t) = fromJust (mapView m)
-               in go (k `DL.snoc` x) cond base mapView t
+         then base tr ([], fromJust v)
+         else let (k,t) = fromJust (mapView m)
+               in first (k:) (go cond base mapView t)
 
 -- O(m log b)
 deleteMin :: OrdMap map k => TrieMap map k a -> TrieMap map k a
@@ -617,7 +610,7 @@ maxView = minMaxView (\(Tr _ m) -> Map.null m)
                      (\(Tr v _) -> assert (isJust v))
                      (fst . Map.maxViewWithKey)
 
-minMaxView :: OrdMap map k
+minMaxView :: Map map k
            => (TrieMap map k a -> Bool)
            -> (  TrieMap map k a
               -> (([k], a), TrieMap map k a)
