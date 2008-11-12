@@ -188,7 +188,7 @@ map f = fromList . Prelude.map f . toList
 map' :: (Map map a, Map map b) => (a -> b) -> TrieSet map a -> TrieSet map b
 map' f (Tr b m) =
    Tr b $
-      Map.fromList .
+      Map.fromListWith union .
          Prelude.map (f *** map' f) .
       Map.toList $ m
 

@@ -6,8 +6,8 @@ module Data.Trie.Base.Map where
 
 import Control.Arrow ((***), first)
 import Control.Monad (join)
-import Data.List     (foldl', partition, sortBy)
-import Data.Maybe    (listToMaybe)
+import Data.Function (on)
+import Data.List     (foldl', foldl1', nubBy, partition, sortBy)
 import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
@@ -20,34 +20,42 @@ class Map m k where
    null   :: m k a -> Bool
    lookup :: m k a -> k -> Maybe a
 
-   insert     :: m k a -> k -> a -> m k a
+   insert     ::                  m k a -> k -> a -> m k a
    insertWith :: (a -> a -> a) -> m k a -> k -> a -> m k a
 
    update :: (a -> Maybe a) -> m k a -> k -> m k a
    adjust :: (a -> a)       -> m k a -> k -> m k a
    delete ::                   m k a -> k -> m k a
 
+   difference       ::                        m k a -> m k b -> m k a
    unionWith        :: (a -> a -> a)       -> m k a -> m k a -> m k a
    differenceWith   :: (a -> b -> Maybe a) -> m k a -> m k b -> m k a
    intersectionWith :: (a -> b -> c)       -> m k a -> m k b -> m k c
-   difference       ::                        m k a -> m k b -> m k a
 
    foldValues :: (a -> b -> b) -> b -> m k a -> b
 
-   toList   :: m k a -> [(k,a)]
-   fromList :: [(k,a)] -> m k a
+   toList       :: m k a -> [(k,a)]
+   fromList     ::                  [(k,a)] -> m k a
+   fromListWith :: (a -> a -> a) -> [(k,a)] -> m k a
 
    isSubmapOfBy :: (a -> b -> Bool) -> m k a -> m k b -> Bool
 
    singletonView :: m k a -> Maybe (k,a)
 
-   singleton     = insert empty
-   doubleton     = (insert .) . singleton
-   insert        = insertWith const
-   adjust f      = update (Just . f)
-   delete        = update (const Nothing)
-   difference    = differenceWith (\_ _ -> Nothing)
-   singletonView = listToMaybe . toList
+   singleton = insert empty
+   doubleton = (insert .) . singleton
+
+   insert = insertWith const
+
+   adjust f = update (Just . f)
+   delete   = update (const Nothing)
+
+   difference = differenceWith (\_ _ -> Nothing)
+
+   singletonView m =
+      case toList m of
+           [x] -> Just x
+           _   -> Nothing
 
 -- Minimal complete definition: toAscList or toDescList, and splitLookup
 --
@@ -131,8 +139,14 @@ instance Eq k => Map AList k where
 
    foldValues f z (AL xs) = foldr (f.snd) z xs
 
-   toList (AL xs) = xs
-   fromList       = AL
+   toList (AL xs)      = xs
+   fromList            = AL . nubBy ((==) `on` fst)
+   fromListWith f_ xs_ = AL (go f_ xs_)
+    where
+      go _ []     = []
+      go f (x:xs) =
+         let (as,bs) = partition (((==) `on` fst) x) xs
+          in (fst x, foldl1' f . map snd $ x:as) : go f bs
 
    isSubmapOfBy f_ (AL xs_) (AL ys_) = go f_ xs_ ys_
     where
@@ -146,7 +160,7 @@ instance Eq k => Map AList k where
 instance Ord k => OrdMap AList k where
    toAscList  = sortBy (       comparing fst) . toList
    toDescList = sortBy (flip $ comparing fst) . toList
-   
+
    splitLookup (AL xs) k =
       let (ls,gs) = partition ((< k).fst) xs
        in case gs of
@@ -194,14 +208,16 @@ instance Ord k => Map M.Map k where
    adjust = flip . M.adjust
    delete = flip   M.delete
 
+   difference       = M.difference
    unionWith        = M.unionWith
    differenceWith   = M.differenceWith
    intersectionWith = M.intersectionWith
 
    foldValues = M.fold
 
-   toList   = M.toList
-   fromList = M.fromList
+   toList       = M.toList
+   fromList     = M.fromList
+   fromListWith = M.fromListWith
 
    isSubmapOfBy = M.isSubmapOfBy
 
@@ -236,6 +252,7 @@ instance Enum k => Map IMap k where
    adjust f (IMap m) k = IMap$ IM.adjust f (fromEnum k) m
    delete   (IMap m) k = IMap$ IM.delete   (fromEnum k) m
 
+   difference         (IMap x) (IMap y) = IMap$ IM.difference         x y
    unionWith        f (IMap x) (IMap y) = IMap$ IM.unionWith        f x y
    differenceWith   f (IMap x) (IMap y) = IMap$ IM.differenceWith   f x y
 
@@ -246,7 +263,8 @@ instance Enum k => Map IMap k where
    foldValues f z (IMap m) = IM.fold f z m
 
    toList (IMap m) = map (first toEnum) . IM.toList $ m
-   fromList        = IMap . IM.fromList . map (first fromEnum)
+   fromList        = IMap . IM.fromList       . map (first fromEnum)
+   fromListWith f  = IMap . IM.fromListWith f . map (first fromEnum)
 
    isSubmapOfBy f (IMap x) (IMap y) = IM.isSubmapOfBy f x y
 

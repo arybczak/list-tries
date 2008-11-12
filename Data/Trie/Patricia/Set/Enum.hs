@@ -102,7 +102,7 @@ map = Base.map
 
 -- O(n)
 -- needs a name!
-map' :: (Enum a, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
+map' :: (Enum a, Eq b, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
 map' = Base.map'
 
 -- * Folding

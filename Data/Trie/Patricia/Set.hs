@@ -322,9 +322,8 @@ filter :: (Eq a, Map map a) => ([a] -> Bool) -> TrieSet map a -> TrieSet map a
 filter p = fromList . Prelude.filter p . toList
 
 -- O(n)
-partition :: (Eq a, Map map a) => ([a] -> Bool)
-                               -> TrieSet map a
-                               -> (TrieSet map a, TrieSet map a)
+partition :: (Eq a, Map map a)
+          => ([a] -> Bool) -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 partition p = join (***) fromList . List.partition p . toList
 
 split :: (Ord a, OrdMap map a)
@@ -371,10 +370,11 @@ map f = fromList . Prelude.map f . toList
 
 -- O(n)
 -- needs a name!
-map' :: (Map map a, Map map b) => (a -> b) -> TrieSet map a -> TrieSet map b
+map' :: (Map map a, Map map b, Eq b)
+     => (a -> b) -> TrieSet map a -> TrieSet map b
 map' f (Tr b p m) =
    Tr b (Prelude.map f p) $
-      Map.fromList .
+      Map.fromListWith union .
          Prelude.map (f *** map' f) .
       Map.toList $ m
 
@@ -496,8 +496,6 @@ minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
                                   then Map.delete            m k
                                   else Map.adjust (const t') m k
                   )
-
--- * Trie-specific operations
 
 -- O(m b)
 findPredecessor :: (Ord a, OrdMap map a) => TrieSet map a -> [a] -> Maybe [a]
