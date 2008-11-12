@@ -4,10 +4,10 @@
 
 module Data.Trie.Base.Map where
 
-import Control.Arrow ((***), first)
+import Control.Arrow ((***), first, second)
 import Control.Monad (join)
 import Data.Function (on)
-import Data.List     (foldl', foldl1', nubBy, partition, sortBy)
+import Data.List     (foldl', foldl1', mapAccumL, nubBy, partition, sortBy)
 import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
@@ -27,10 +27,18 @@ class Map m k where
    adjust :: (a -> a)       -> m k a -> k -> m k a
    delete ::                   m k a -> k -> m k a
 
-   difference       ::                        m k a -> m k b -> m k a
-   unionWith        :: (a -> a -> a)       -> m k a -> m k a -> m k a
-   differenceWith   :: (a -> b -> Maybe a) -> m k a -> m k b -> m k a
-   intersectionWith :: (a -> b -> c)       -> m k a -> m k b -> m k c
+   difference          ::                             m k a -> m k b -> m k a
+   unionWith           ::      (a -> a -> a)       -> m k a -> m k a -> m k a
+   differenceWith      ::      (a -> b -> Maybe a) -> m k a -> m k b -> m k a
+   intersectionWith    ::      (a -> b -> c)       -> m k a -> m k b -> m k c
+   unionWithKey        :: (k -> a -> a -> a)       -> m k a -> m k a -> m k a
+   differenceWithKey   :: (k -> a -> b -> Maybe a) -> m k a -> m k b -> m k a
+   intersectionWithKey :: (k -> a -> b -> c)       -> m k a -> m k b -> m k c
+
+   map             ::      (a -> b) -> m k a -> m k b
+   mapWithKey      :: (k -> a -> b) -> m k a -> m k b
+   mapAccum        :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
+   mapAccumWithKey :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
 
    foldValues :: (a -> b -> b) -> b -> m k a -> b
 
@@ -50,7 +58,17 @@ class Map m k where
    adjust f = update (Just . f)
    delete   = update (const Nothing)
 
-   difference = differenceWith (\_ _ -> Nothing)
+   difference       = differenceWith (\_ _ -> Nothing)
+   unionWith        = unionWithKey        . const
+   differenceWith   = differenceWithKey   . const
+   intersectionWith = intersectionWithKey . const
+
+   map                 = mapWithKey . const
+   mapAccum        f   = mapAccumWithKey (const . f)
+   mapAccumWithKey f z =
+      second fromList .
+         mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
+      toList
 
    singletonView m =
       case toList m of
@@ -74,6 +92,11 @@ class Map m k => OrdMap m k where
    minViewWithKey :: m k a -> (Maybe (k,a), m k a)
    maxViewWithKey :: m k a -> (Maybe (k,a), m k a)
 
+   mapAccumAsc         :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
+   mapAccumAscWithKey  :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
+   mapAccumDesc        :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
+   mapAccumDescWithKey :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
+
    toAscList  = reverse . toDescList
    toDescList = reverse . toAscList
    fromDistinctAscList  = fromList
@@ -90,6 +113,17 @@ class Map m k => OrdMap m k where
       case toDescList m of
            []     -> (Nothing, m)
            (x:xs) -> (Just x, fromDistinctDescList xs)
+
+   mapAccumAsc  f = mapAccumAscWithKey  (const . f)
+   mapAccumDesc f = mapAccumDescWithKey (const . f)
+   mapAccumAscWithKey f z =
+      second fromList .
+         mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
+      toAscList
+   mapAccumDescWithKey f z =
+      second fromList .
+         mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
+      toDescList
 
 newtype AList k v = AL [(k,v)]
 
@@ -118,24 +152,31 @@ instance Eq k => Map AList k where
 
    delete (AL xs) k = AL$ deleteBy (\a (b,_) -> a == b) k xs
 
-   unionWith f (AL xs) (AL ys) =
-      AL$ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (Just $ f x y))
+   unionWithKey f (AL xs) (AL ys) =
+      AL$ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (Just $ f k x y))
                          (\x y -> fst x == fst y)
                          xs ys
 
-   differenceWith f (AL xs) (AL ys) =
-      AL$ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (f x y))
+   differenceWithKey f (AL xs) (AL ys) =
+      AL$ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (f k x y))
                          (\x y -> fst x == fst y)
                          xs ys
 
-   intersectionWith f_ (AL xs_) (AL ys_) = AL$ go f_ xs_ ys_
+   intersectionWithKey f_ (AL xs_) (AL ys_) = AL$ go f_ xs_ ys_
     where
       go _ [] _ = []
       go f ((k,x):xs) ys =
          let (my,ys') = deleteAndGetBy ((== k).fst) ys
           in case my of
-                  Just (_,y) -> (k, f x y) : go f xs ys'
-                  Nothing    ->              go f xs ys
+                  Just (_,y) -> (k, f k x y) : go f xs ys'
+                  Nothing    ->                go f xs ys
+
+   mapWithKey f (AL xs) = AL $ Prelude.map (\(k,v) -> (k, f k v)) xs
+
+   mapAccumWithKey f z (AL xs) =
+      second AL $ mapAccumL (\a (k,v) -> let (a',v') = f a k v
+                                          in (a', (k, v')))
+                            z xs
 
    foldValues f z (AL xs) = foldr (f.snd) z xs
 
@@ -146,7 +187,7 @@ instance Eq k => Map AList k where
       go _ []     = []
       go f (x:xs) =
          let (as,bs) = partition (((==) `on` fst) x) xs
-          in (fst x, foldl1' f . map snd $ x:as) : go f bs
+          in (fst x, foldl1' f . Prelude.map snd $ x:as) : go f bs
 
    isSubmapOfBy f_ (AL xs_) (AL ys_) = go f_ xs_ ys_
     where
@@ -208,10 +249,18 @@ instance Ord k => Map M.Map k where
    adjust = flip . M.adjust
    delete = flip   M.delete
 
-   difference       = M.difference
-   unionWith        = M.unionWith
-   differenceWith   = M.differenceWith
-   intersectionWith = M.intersectionWith
+   difference          = M.difference
+   unionWith           = M.unionWith
+   differenceWith      = M.differenceWith
+   intersectionWith    = M.intersectionWith
+   unionWithKey        = M.unionWithKey
+   differenceWithKey   = M.differenceWithKey
+   intersectionWithKey = M.intersectionWithKey
+
+   map             = M.map
+   mapWithKey      = M.mapWithKey
+   mapAccum        = M.mapAccum
+   mapAccumWithKey = M.mapAccumWithKey
 
    foldValues = M.fold
 
@@ -237,6 +286,11 @@ instance Ord k => OrdMap M.Map k where
    minViewWithKey m = maybe (Nothing, m) (first Just) (M.minViewWithKey m)
    maxViewWithKey m = maybe (Nothing, m) (first Just) (M.maxViewWithKey m)
 
+   mapAccumAsc        = M.mapAccum
+   mapAccumAscWithKey = M.mapAccumWithKey
+
+   -- mapAccumDesc waiting on http://hackage.haskell.org/trac/ghc/ticket/2769
+
 newtype IMap k v = IMap (IM.IntMap v)
 
 instance Enum k => Map IMap k where
@@ -260,11 +314,27 @@ instance Enum k => Map IMap k where
    --intersectionWith f (IMap x) (IMap y) = IMap$ IM.intersectionWith f x y
    intersectionWith = undefined
 
+   unionWithKey      f (IMap x) (IMap y) =
+      IMap$ IM.unionWithKey (f . toEnum) x y
+   differenceWithKey f (IMap x) (IMap y) =
+      IMap$ IM.differenceWithKey (f . toEnum) x y
+
+   -- http://hackage.haskell.org/trac/ghc/ticket/2644
+   --intersectionWithKey f (IMap x) (IMap y) =
+   --   IMap$ IM.intersectionWithKey (f . toEnum) x y
+   intersectionWithKey = undefined
+
+   map             f   (IMap x) = IMap$ IM.map f x
+   mapWithKey      f   (IMap x) = IMap$ IM.mapWithKey (f . toEnum) x
+   mapAccum        f z (IMap x) = second IMap$ IM.mapAccum f z x
+   mapAccumWithKey f z (IMap x) =
+      second IMap$ IM.mapAccumWithKey (\a -> f a . toEnum) z x
+
    foldValues f z (IMap m) = IM.fold f z m
 
-   toList (IMap m) = map (first toEnum) . IM.toList $ m
-   fromList        = IMap . IM.fromList       . map (first fromEnum)
-   fromListWith f  = IMap . IM.fromListWith f . map (first fromEnum)
+   toList (IMap m) = Prelude.map (first toEnum) . IM.toList $ m
+   fromList        = IMap . IM.fromList       . Prelude.map (first fromEnum)
+   fromListWith f  = IMap . IM.fromListWith f . Prelude.map (first fromEnum)
 
    isSubmapOfBy f (IMap x) (IMap y) = IM.isSubmapOfBy f x y
 
@@ -274,8 +344,9 @@ instance Enum k => Map IMap k where
            _                                -> Nothing
 
 instance Enum k => OrdMap IMap k where
-   toAscList (IMap m)   = map (first toEnum) . IM.toAscList $ m
-   fromDistinctAscList  = IMap . IM.fromDistinctAscList . map (first fromEnum)
+   toAscList (IMap m)   = Prelude.map (first toEnum) . IM.toAscList $ m
+   fromDistinctAscList  =
+      IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)
    fromDistinctDescList = fromDistinctAscList . reverse
 
    splitLookup (IMap m) =
@@ -287,3 +358,9 @@ instance Enum k => OrdMap IMap k where
       maybe (Nothing, o) (Just . first toEnum *** IMap) (IM.minViewWithKey m)
    maxViewWithKey o@(IMap m) =
       maybe (Nothing, o) (Just . first toEnum *** IMap) (IM.maxViewWithKey m)
+
+   mapAccumAsc        f z (IMap m) = second IMap $ IM.mapAccum f z m
+   mapAccumAscWithKey f z (IMap m) =
+      second IMap $ IM.mapAccumWithKey (\a k -> f a (toEnum k)) z m
+
+   -- mapAccumDesc waiting on http://hackage.haskell.org/trac/ghc/ticket/2769
