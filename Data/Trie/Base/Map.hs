@@ -13,6 +13,10 @@ import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
 class Map m k where
+   -- Like an Eq instance over k, but should compare on the same type as 'm'
+   -- does. In most cases this can be defined just as 'const (==)'.
+   eqCmp :: m k a -> k -> k -> Bool
+
    empty     ::                     m k a
    singleton ::           k -> a -> m k a
    doubleton :: k -> a -> k -> a -> m k a
@@ -81,6 +85,10 @@ class Map m k where
 -- definitions of splitLookup, minViewWithKey and maxViewWithKey, and default
 -- to fromList
 class Map m k => OrdMap m k where
+   -- Like an Ord instance over k, but should compare on the same type as 'm'
+   -- does. In most cases this can be defined just as 'const compare'.
+   ordCmp :: m k a -> k -> k -> Ordering
+
    toAscList            :: m k a -> [(k,a)]
    toDescList           :: m k a -> [(k,a)]
    fromDistinctAscList  :: [(k,a)] -> m k a
@@ -134,6 +142,8 @@ class Map m k => OrdMap m k where
 newtype AList k v = AL [(k,v)]
 
 instance Eq k => Map AList k where
+   eqCmp = const (==)
+
    empty              = AL []
    singleton k v      = AL [(k,v)]
    doubleton a b p q  = AL [(a,b),(p,q)]
@@ -205,6 +215,8 @@ instance Eq k => Map AList k where
                   Nothing    -> False
 
 instance Ord k => OrdMap AList k where
+   ordCmp = const compare
+
    toAscList  = sortBy (       comparing fst) . toList
    toDescList = sortBy (flip $ comparing fst) . toList
 
@@ -243,6 +255,8 @@ updateFirstsBy f eq (x:xs) ys =
                     Nothing ->     updateFirstsBy f eq xs ys'
 
 instance Ord k => Map M.Map k where
+   eqCmp = const (==)
+
    empty        = M.empty
    singleton    = M.singleton
 
@@ -282,6 +296,8 @@ instance Ord k => Map M.Map k where
            _                               -> Nothing
 
 instance Ord k => OrdMap M.Map k where
+   ordCmp = const compare
+
    toAscList            = M.toAscList
    fromDistinctAscList  = M.fromDistinctAscList
    fromDistinctDescList = fromDistinctAscList . reverse
@@ -300,6 +316,8 @@ instance Ord k => OrdMap M.Map k where
 newtype IMap k v = IMap (IM.IntMap v)
 
 instance Enum k => Map IMap k where
+   eqCmp = const ((==) `on` fromEnum)
+
    empty               = IMap IM.empty
    singleton k v       = IMap$ IM.singleton (fromEnum k) v
 
@@ -350,6 +368,8 @@ instance Enum k => Map IMap k where
            _                                -> Nothing
 
 instance Enum k => OrdMap IMap k where
+   ordCmp = const (compare `on` fromEnum)
+
    toAscList (IMap m)   = Prelude.map (first toEnum) . IM.toAscList $ m
    fromDistinctAscList  =
       IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)

@@ -43,9 +43,9 @@ size :: Map map a => TrieSet map a -> Int
 size (Tr b _ m) = Map.foldValues ((+) . size) (fromEnum b) m
 
 -- O(m).
-member :: (Eq a, Map map a) => [a] -> TrieSet map a -> Bool
+member :: Map map a => [a] -> TrieSet map a -> Bool
 member k (Tr b prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> b
         PostFix (Right (x:xs)) ->
            case Map.lookup m x of
@@ -55,9 +55,9 @@ member k (Tr b prefix m) =
         _ -> False
 
 -- O(?)
-isSubsetOf :: (Eq a, Map map a) => TrieSet map a -> TrieSet map a -> Bool
+isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isSubsetOf tr1@(Tr b1 pre1 m1) (Tr b2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         DifferedAt _ _ _  -> False
 
         -- Special case here: if the left trie is empty we return True.
@@ -71,7 +71,7 @@ isSubsetOf tr1@(Tr b1 pre1 m1) (Tr b2 pre2 m2) =
       case Map.lookup mr x of
            Nothing              -> False
            Just (Tr br pre mr') ->
-              case comparePrefixes xs pre of
+              case comparePrefixes (Map.eqCmp mr) xs pre of
                    DifferedAt _ _ _  -> False
                    PostFix (Right _) -> False
                    PostFix (Left ys) -> go mr' bl ml ys
@@ -82,11 +82,11 @@ isSubsetOf tr1@(Tr b1 pre1 m1) (Tr b2 pre2 m2) =
       error "Data.Trie.Patricia.Set.isSubsetOf :: internal error"
 
 -- O(?)
-isProperSubsetOf :: (Eq a, Map map a) => TrieSet map a -> TrieSet map a -> Bool
+isProperSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isProperSubsetOf = f False
  where
    f proper (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
-      case comparePrefixes pre1 pre2 of
+      case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
            DifferedAt _ _ _  -> False
 
            -- Special case, as in isSubsetOf.
@@ -102,7 +102,7 @@ isProperSubsetOf = f False
       case Map.lookup mr x of
            Nothing              -> False
            Just (Tr br pre mr') ->
-              case comparePrefixes xs pre of
+              case comparePrefixes (Map.eqCmp mr) xs pre of
                    DifferedAt _ _ _  -> False
                    PostFix (Right _) -> False
                    PostFix (Left ys) -> go proper mr' bl ml ys
@@ -133,9 +133,9 @@ singleton :: Map map a => [a] -> TrieSet map a
 singleton s = Tr True s Map.empty
 
 -- O(m)
-insert :: (Eq a, Map map a) => [a] -> TrieSet map a -> TrieSet map a
+insert :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 insert k tr@(Tr b prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> Tr True prefix m
         PostFix (Left  (p:pr)) -> Tr True k $ Map.singleton p (Tr b pr m)
         PostFix (Right (x:xs)) ->
@@ -152,9 +152,9 @@ insert k tr@(Tr b prefix m) =
         _ -> error "Data.Trie.Patricia.Set.insert :: internal error"
 
 -- O(m)
-delete :: (Eq a, Map map a) => [a] -> TrieSet map a -> TrieSet map a
+delete :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 delete k tr@(Tr b prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> tryCompress (Tr False prefix m)
         PostFix (Right (x:xs)) ->
            tryCompress . Tr b prefix $
@@ -169,9 +169,9 @@ delete k tr@(Tr b prefix m) =
 
 -- I think all the properly-written ones here are O(min(n1,n2)).
 
-union :: (Eq a, Map map a) => TrieSet map a -> TrieSet map a -> TrieSet map a
+union :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 union (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         Same              -> tryCompress $ Tr (b1 || b2) pre1 (mapUnion m1 m2)
         PostFix remainder ->
            tryCompress $ either (Tr b2 pre2 . mapUnion m2 . decompress m1 b1)
@@ -190,13 +190,12 @@ union (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
 
    can'tHappen = error "Data.Trie.Patricia.Set.union :: internal error"
 
-unions :: (Eq a, Map map a) => [TrieSet map a] -> TrieSet map a
+unions :: Map map a => [TrieSet map a] -> TrieSet map a
 unions = foldl' union empty
 
-difference :: (Eq a, Map map a)
-           => TrieSet map a -> TrieSet map a -> TrieSet map a
+difference :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         DifferedAt _ _ _   -> tr1
         Same               -> tr b1 b2 pre1 (mapDifference m1 m2)
         PostFix (Left  xs) -> goRight tr1 m2  xs
@@ -222,7 +221,7 @@ difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
       case Map.lookup rightMap x of
            Nothing                     -> left
            Just right'@(Tr b' pre' m') ->
-              case comparePrefixes xs pre' of
+              case comparePrefixes (Map.eqCmp m') xs pre' of
                    DifferedAt _ _ _   -> left
                    Same               -> tr b b' pre (mapDifference m m')
                    PostFix (Left  ys) -> goRight left m'     ys
@@ -234,7 +233,7 @@ difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
       tryCompress . Tr bl prel $ Map.adjust f ml x
     where
       f left@(Tr b pre m) =
-         case comparePrefixes pre xs of
+         case comparePrefixes (Map.eqCmp m) pre xs of
               DifferedAt _ _ _   -> left
               Same               -> tr b br pre (mapDifference m mr)
               PostFix (Left  ys) -> goRight left mr    ys
@@ -242,10 +241,9 @@ difference tr1@(Tr b1 pre1 m1) tr2@(Tr b2 pre2 m2) =
 
    goLeft _ _ _ = error "Data.Trie.Patricia.Set.difference :: internal error"
 
-intersection :: (Eq a, Map map a)
-             => TrieSet map a -> TrieSet map a -> TrieSet map a
+intersection :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         DifferedAt _ _ _ -> empty
         Same             -> tr b1 b2 pre1 (mapIntersect m1 m2)
 
@@ -308,7 +306,7 @@ intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
       case Map.lookup ma x of
            Nothing              -> empty
            Just (Tr b' pre' m') ->
-              case comparePrefixes xs pre' of
+              case comparePrefixes (Map.eqCmp ma) xs pre' of
                    DifferedAt _ _ _   -> empty
                    Same               -> tr b b' pre (mapIntersect mb m')
                    PostFix (Right ys) -> go mb b' m' (pre ++ ys) ys
@@ -319,25 +317,24 @@ intersection (Tr b1 pre1 m1) (Tr b2 pre2 m2) =
 -- * Filtering
 
 -- O(n)
-filter :: (Eq a, Map map a) => ([a] -> Bool) -> TrieSet map a -> TrieSet map a
+filter :: Map map a => ([a] -> Bool) -> TrieSet map a -> TrieSet map a
 filter p = fromList . Prelude.filter p . toList
 
 -- O(n)
-partition :: (Eq a, Map map a)
+partition :: Map map a
           => ([a] -> Bool) -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 partition p = join (***) fromList . List.partition p . toList
 
-split :: (Ord a, OrdMap map a)
-      => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
+split :: OrdMap map a => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 split x tr = let (l,_,g) = splitMember x tr in (l,g)
 
-splitMember :: (Ord a, OrdMap map a)
+splitMember :: OrdMap map a
             => [a] -> TrieSet map a -> (TrieSet map a, Bool, TrieSet map a)
 splitMember xs orig@(Tr b pre m) =
-   case comparePrefixes pre xs of
+   case comparePrefixes (Map.eqCmp m) pre xs of
         Same                     -> (empty, b, tr False pre m)
         DifferedAt _ (p:_) (x:_) ->
-           case compare p x of
+           case Map.ordCmp m p x of
                 LT -> (orig, False, empty)
                 GT -> (empty, False, orig)
                 EQ -> can'tHappen
@@ -365,14 +362,12 @@ splitMember xs orig@(Tr b pre m) =
 -- * Mapping
 
 -- O(n)
-map :: (Map map a, Map map b, Eq b)
-    => ([a] -> [b]) -> TrieSet map a -> TrieSet map b
+map :: (Map map a, Map map b) => ([a] -> [b]) -> TrieSet map a -> TrieSet map b
 map f = fromList . Prelude.map f . toList
 
 -- O(n)
 -- needs a name!
-map' :: (Map map a, Map map b, Eq b)
-     => (a -> b) -> TrieSet map a -> TrieSet map b
+map' :: (Map map a, Map map b) => (a -> b) -> TrieSet map a -> TrieSet map b
 map' f (Tr b p m) =
    Tr b (Prelude.map f p) $
       Map.fromListWith union .
@@ -425,7 +420,7 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
              else                  xs
 
 -- O(n)
-fromList :: (Eq a, Map map a) => [[a]] -> TrieSet map a
+fromList :: Map map a => [[a]] -> TrieSet map a
 fromList = foldl' (flip insert) empty
 
 -- * Min/max
@@ -499,17 +494,17 @@ minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
                   )
 
 -- O(m b)
-findPredecessor :: (Ord a, OrdMap map a) => TrieSet map a -> [a] -> Maybe [a]
+findPredecessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findPredecessor tr  _ | null tr = Nothing
 findPredecessor tr_ xs_         = go tr_ xs_
  where
    go tr@(Tr b pre m) xs =
-      case comparePrefixes pre xs of
+      case comparePrefixes (Map.eqCmp m) pre xs of
            Same             -> Nothing
            PostFix (Left _) -> Nothing
 
            DifferedAt _ (p:_) (x:_) ->
-              case compare p x of
+              case Map.ordCmp m p x of
                    LT -> findMax tr
                    GT -> Nothing
                    EQ -> can'tHappen
@@ -529,17 +524,17 @@ findPredecessor tr_ xs_         = go tr_ xs_
       error "Data.Trie.Patricia.Set.findPredecessor :: internal error"
 
 -- O(m b)
-findSuccessor :: (Ord a, OrdMap map a) => TrieSet map a -> [a] -> Maybe [a]
+findSuccessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findSuccessor tr  _ | null tr = Nothing
 findSuccessor tr_ xs_         = go tr_ xs_
  where
    go tr@(Tr _ pre m) xs =
-      case comparePrefixes pre xs of
+      case comparePrefixes (Map.eqCmp m) pre xs of
            Same -> do (k,t) <- fst $ Map.minViewWithKey m
                       fmap (prepend pre k) (findMin t)
 
            DifferedAt _ (p:_) (x:_) ->
-              case compare p x of
+              case Map.ordCmp m p x of
                    LT -> Nothing
                    GT -> findMin tr
                    EQ -> can'tHappen
@@ -575,16 +570,16 @@ data PrefixOrdering a
 --                       arguments respectively.
 --
 --                       all (pre `isPrefixOf`) [xs,ys] --> True.
-comparePrefixes :: Eq a => [a] -> [a] -> PrefixOrdering a
+comparePrefixes :: (a -> a -> Bool) -> [a] -> [a] -> PrefixOrdering a
 comparePrefixes = go []
  where
-   go _ [] [] = Same
-   go _ [] xs = PostFix (Right xs)
-   go _ xs [] = PostFix (Left  xs)
+   go _ _ [] [] = Same
+   go _ _ [] xs = PostFix (Right xs)
+   go _ _ xs [] = PostFix (Left  xs)
 
-   go samePart xs@(a:as) ys@(b:bs) =
-      if a == b
-         then go (a:samePart) as bs
+   go samePart (===) xs@(a:as) ys@(b:bs) =
+      if a === b
+         then go (a:samePart) (===) as bs
          else DifferedAt (reverse samePart) xs ys
 
 -- After modifying the trie, compress a trie node into the prefix if possible.

@@ -6,11 +6,6 @@
 -- do not compare the elements themselves, but rather their Int representation
 -- after 'fromEnum'.
 --
--- Moreover, the element lists are stored partially as Ints and partially as
--- themselves: to get sensible results out of functions which require both an
--- 'Ord' and an 'Enum' context, 'compare' @`on`@ 'fromEnum' should be
--- equivalent to 'compare'. The same applies to 'Eq' and '(==)'.
---
 -- Complexities are given; @n@ refers to the number of elements in the set, @m@
 -- to their maximum length, @b@ to the trie's branching factor.
 
@@ -32,15 +27,15 @@ size :: Enum a => TrieSet a -> Int
 size = Base.size
 
 -- O(m).
-member :: (Eq a, Enum a) => [a] -> TrieSet a -> Bool
+member :: Enum a => [a] -> TrieSet a -> Bool
 member = Base.member
 
 -- O(?)
-isSubsetOf :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> Bool
+isSubsetOf :: Enum a => TrieSet a -> TrieSet a -> Bool
 isSubsetOf = Base.isSubsetOf
 
 -- O(?)
-isProperSubsetOf :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> Bool
+isProperSubsetOf :: Enum a => TrieSet a -> TrieSet a -> Bool
 isProperSubsetOf = Base.isProperSubsetOf
 
 -- * Construction
@@ -54,55 +49,52 @@ singleton :: Enum a => [a] -> TrieSet a
 singleton = Base.singleton
 
 -- O(m)
-insert :: (Eq a, Enum a) => [a] -> TrieSet a -> TrieSet a
+insert :: Enum a => [a] -> TrieSet a -> TrieSet a
 insert = Base.insert
 
 -- O(m)
-delete :: (Eq a, Enum a) => [a] -> TrieSet a -> TrieSet a
+delete :: Enum a => [a] -> TrieSet a -> TrieSet a
 delete = Base.delete
 
 -- * Combination
 
-union :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
+union :: Enum a => TrieSet a -> TrieSet a -> TrieSet a
 union = Base.union
 
-unions :: (Eq a, Enum a) => [TrieSet a] -> TrieSet a
+unions :: Enum a => [TrieSet a] -> TrieSet a
 unions = Base.unions
 
-difference :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
+difference :: Enum a => TrieSet a -> TrieSet a -> TrieSet a
 difference = Base.difference
 
-intersection :: (Eq a, Enum a) => TrieSet a -> TrieSet a -> TrieSet a
+intersection :: Enum a => TrieSet a -> TrieSet a -> TrieSet a
 intersection = Base.intersection
 
 -- * Filtering
 
 -- O(n)
-filter :: (Eq a, Enum a) => ([a] -> Bool) -> TrieSet a -> TrieSet a
+filter :: Enum a => ([a] -> Bool) -> TrieSet a -> TrieSet a
 filter = Base.filter
 
 -- O(n)
-partition :: (Eq a, Enum a) => ([a] -> Bool)
-                            -> TrieSet a
-                            -> (TrieSet a, TrieSet a)
+partition :: Enum a => ([a] -> Bool) -> TrieSet a -> (TrieSet a, TrieSet a)
 partition = Base.partition
 
-split :: (Ord a, Enum a) => [a] -> TrieSet a -> (TrieSet a, TrieSet a)
+split :: Enum a => [a] -> TrieSet a -> (TrieSet a, TrieSet a)
 split = Base.split
 
-splitMember :: (Ord a, Enum a)
-            => [a] -> TrieSet a -> (TrieSet a, Bool, TrieSet a)
+splitMember :: Enum a => [a] -> TrieSet a -> (TrieSet a, Bool, TrieSet a)
 splitMember = Base.splitMember
 
 -- * Mapping
 
 -- O(n)
-map :: (Enum a, Eq b, Enum b) => ([a] -> [b]) -> TrieSet a -> TrieSet b
+map :: (Enum a, Enum b) => ([a] -> [b]) -> TrieSet a -> TrieSet b
 map = Base.map
 
 -- O(n)
 -- needs a name!
-map' :: (Enum a, Eq b, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
+map' :: (Enum a, Enum b) => (a -> b) -> TrieSet a -> TrieSet b
 map' = Base.map'
 
 -- * Folding
@@ -134,7 +126,7 @@ toDescList :: Enum a => TrieSet a -> [[a]]
 toDescList = Base.toDescList
 
 -- O(n)
-fromList :: (Eq a, Enum a) => [[a]] -> TrieSet a
+fromList :: Enum a => [[a]] -> TrieSet a
 fromList = Base.fromList
 
 -- * Min/max
@@ -163,12 +155,10 @@ minView = Base.minView
 maxView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 maxView = Base.maxView
 
--- * Trie-specific operations
-
 -- O(m b)
-findPredecessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findPredecessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findPredecessor = Base.findPredecessor
 
 -- O(m b)
-findSuccessor :: (Ord a, Enum a) => TrieSet a -> [a] -> Maybe [a]
+findSuccessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findSuccessor = Base.findSuccessor

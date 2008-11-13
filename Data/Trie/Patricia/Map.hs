@@ -43,7 +43,7 @@ instance (Map map k, Show k, Show a) => Show (TrieMap map k a) where
    showsPrec p s = showParen (p > 10) $
       showString "fromList " . shows (toList s)
 
-instance (Map map k, Eq k, Read k, Read a) => Read (TrieMap map k a) where
+instance (Map map k, Read k, Read a) => Read (TrieMap map k a) where
 #if __GLASGOW_HASKELL__
    readPrec = parens $ prec 10 $ do
       text <- lexP
@@ -72,27 +72,26 @@ size :: Map map k => TrieMap map k a -> Int
 size (Tr v _ m) = Map.foldValues ((+) . size) (fromEnum . isJust $ v) m
 
 -- O(m).
-member :: (Map map k, Eq k) => [k] -> TrieMap map k a -> Bool
+member :: Map map k => [k] -> TrieMap map k a -> Bool
 member k m = isJust (lookup k m)
 
 -- O(m)
-lookup :: (Map map k, Eq k) => [k] -> TrieMap map k a -> Maybe a
+lookup :: Map map k => [k] -> TrieMap map k a -> Maybe a
 lookup k (Tr v prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> v
         PostFix (Right (x:xs)) -> Map.lookup m x >>= lookup xs
         _ -> Nothing
 
 -- O(?)
-isSubmapOf :: (Map map k, Eq k, Eq a)
-           => TrieMap map k a -> TrieMap map k a -> Bool
+isSubmapOf :: (Map map k, Eq a) => TrieMap map k a -> TrieMap map k a -> Bool
 isSubmapOf = isSubmapOfBy (==)
 
 -- O(?)
-isSubmapOfBy :: (Map map k, Eq k)
+isSubmapOfBy :: Map map k
              => (a -> b -> Bool) -> TrieMap map k a -> TrieMap map k b -> Bool
 isSubmapOfBy f tr1@(Tr v1 pre1 m1) (Tr v2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         DifferedAt _ _ _  -> False
         PostFix (Right _) -> null tr1
         PostFix (Left xs) -> go m2 v1 m1 xs
@@ -103,7 +102,7 @@ isSubmapOfBy f tr1@(Tr v1 pre1 m1) (Tr v2 pre2 m2) =
       case Map.lookup mr x of
            Nothing              -> False
            Just (Tr vr pre mr') ->
-              case comparePrefixes xs pre of
+              case comparePrefixes (Map.eqCmp mr) xs pre of
                    DifferedAt _ _ _  -> False
                    PostFix (Right _) -> False
                    PostFix (Left ys) -> go mr' vl ml ys
@@ -115,19 +114,19 @@ isSubmapOfBy f tr1@(Tr v1 pre1 m1) (Tr v2 pre2 m2) =
       error "Data.Trie.Patricia.Map.isSubmapOfBy :: internal error"
 
 -- O(?)
-isProperSubmapOf :: (Map map k, Eq k, Eq a)
+isProperSubmapOf :: (Map map k, Eq a)
                  => TrieMap map k a -> TrieMap map k a -> Bool
 isProperSubmapOf = isProperSubmapOfBy (==)
 
 -- O(?)
-isProperSubmapOfBy :: (Map map k, Eq k) => (a -> b -> Bool)
-                                        -> TrieMap map k a
-                                        -> TrieMap map k b
-                                        -> Bool
+isProperSubmapOfBy :: Map map k => (a -> b -> Bool)
+                                -> TrieMap map k a
+                                -> TrieMap map k b
+                                -> Bool
 isProperSubmapOfBy = f False
  where
    f proper g tr1@(Tr v1 pre1 m1) (Tr v2 pre2 m2) =
-      case comparePrefixes pre1 pre2 of
+      case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
            DifferedAt _ _ _  -> False
            PostFix (Right _) -> null tr1
            PostFix (Left xs) -> go proper g m2 v1 m1 xs
@@ -137,7 +136,7 @@ isProperSubmapOfBy = f False
       case Map.lookup mr x of
            Nothing              -> False
            Just (Tr vr pre mr') ->
-              case comparePrefixes xs pre of
+              case comparePrefixes (Map.eqCmp mr) xs pre of
                    DifferedAt _ _ _  -> False
                    PostFix (Right _) -> False
                    PostFix (Left ys) -> go proper g mr' vl ml ys
@@ -168,14 +167,14 @@ singleton :: Map map k => [k] -> a -> TrieMap map k a
 singleton k v = Tr (Just v) k Map.empty
 
 -- O(m)
-insert :: (Map map k, Eq k) => [k] -> a -> TrieMap map k a -> TrieMap map k a
+insert :: Map map k => [k] -> a -> TrieMap map k a -> TrieMap map k a
 insert = insertWith const
 
 -- O(m)
-insertWith :: (Map map k, Eq k)
+insertWith :: Map map k
            => (a -> a -> a) -> [k] -> a -> TrieMap map k a -> TrieMap map k a
 insertWith f k v tr@(Tr o prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> Tr (Just $ maybe v (f v) o) prefix m
         PostFix (Left  (p:pr)) -> Tr (Just v) k $ Map.singleton p (Tr o pr m)
         PostFix (Right (x:xs)) ->
@@ -191,37 +190,36 @@ insertWith f k v tr@(Tr o prefix m) =
         _ -> error "Data.Trie.Patricia.Map.insertWith :: internal error"
 
 -- O(m)
-insertWithKey :: (Map map k, Eq k) => ([k] -> a -> a -> a)
-                                   -> [k] -> a
-                                   -> TrieMap map k a
-                                   -> TrieMap map k a
+insertWithKey :: Map map k => ([k] -> a -> a -> a)
+                           -> [k] -> a
+                           -> TrieMap map k a
+                           -> TrieMap map k a
 insertWithKey f k = insertWith (f k) k
 
 -- O(m)
-delete :: (Map map k, Eq k) => [k] -> TrieMap map k a -> TrieMap map k a
+delete :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 delete = alter (const Nothing)
 
 -- O(m)
-adjust :: (Map map k, Eq k)
-       => (a -> a) -> [k] -> TrieMap map k a -> TrieMap map k a
+adjust :: Map map k => (a -> a) -> [k] -> TrieMap map k a -> TrieMap map k a
 adjust f k tr@(Tr v prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> Tr (fmap f v) prefix m
         PostFix (Right (x:xs)) -> Tr v prefix $ Map.adjust (adjust f xs) m x
         _                      -> tr
 
 -- O(m)
-update :: (Map map k, Eq k)
+update :: Map map k
        => (a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
 update f k t = snd (updateLookup f k t)
 
 -- O(m)
-updateLookup :: (Map map k, Eq k) => (a -> Maybe a)
-                                  -> [k]
-                                  -> TrieMap map k a
-                                  -> (Maybe a, TrieMap map k a)
+updateLookup :: Map map k => (a -> Maybe a)
+                          -> [k]
+                          -> TrieMap map k a
+                          -> (Maybe a, TrieMap map k a)
 updateLookup f k orig@(Tr v prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> let v' = v >>= f
                                    in (v' <|> v, Tr v' prefix m)
         PostFix (Right (x:xs)) ->
@@ -238,10 +236,10 @@ updateLookup f k orig@(Tr v prefix m) =
         _ -> (Nothing, orig)
 
 -- O(m)
-alter :: (Map map k, Eq k)
+alter :: Map map k
       => (Maybe a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
 alter f k tr@(Tr v prefix m) =
-   case comparePrefixes prefix k of
+   case comparePrefixes (Map.eqCmp m) prefix k of
         Same                   -> tryCompress (Tr (f v) prefix m)
         PostFix (Right (x:xs)) ->
            tryCompress . Tr v prefix $
@@ -252,16 +250,15 @@ alter f k tr@(Tr v prefix m) =
 
 -- * Combination
 
-union :: (Map map k, Eq k)
-      => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
+union :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 union = unionWith const
 
-unionWith :: (Map map k, Eq k) => (a -> a -> a)
-                               -> TrieMap map k a
-                               -> TrieMap map k a
-                               -> TrieMap map k a
+unionWith :: Map map k => (a -> a -> a)
+                       -> TrieMap map k a
+                       -> TrieMap map k a
+                       -> TrieMap map k a
 unionWith f (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         Same              ->
            tryCompress $ Tr (unionMaybes f v1 v2) pre1 (mapUnion f m1 m2)
         PostFix remainder ->
@@ -281,14 +278,14 @@ unionWith f (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
 
    can'tHappen = error "Data.Trie.Patricia.Map.unionWith :: internal error"
 
-unionWithKey :: (Map map k, Eq k) => ([k] -> a -> a -> a)
-                                  -> TrieMap map k a
-                                  -> TrieMap map k a
-                                  -> TrieMap map k a
+unionWithKey :: Map map k => ([k] -> a -> a -> a)
+                          -> TrieMap map k a
+                          -> TrieMap map k a
+                          -> TrieMap map k a
 unionWithKey = go DL.empty
  where
    go k f (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
-      case comparePrefixes pre1 pre2 of
+      case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
            Same              ->
               let k' = DL.toList $ k `DL.append` DL.fromList pre1
                in tryCompress $
@@ -316,23 +313,23 @@ unionWithKey = go DL.empty
 unionMaybes :: (a -> a -> a) -> Maybe a -> Maybe a -> Maybe a
 unionMaybes f ma mb = maybe mb (\a -> maybe ma (Just . f a) mb) ma
 
-unions :: (Map map k, Eq k) => [TrieMap map k a] -> TrieMap map k a
+unions :: Map map k => [TrieMap map k a] -> TrieMap map k a
 unions = unionsWith const
 
-unionsWith :: (Map map k, Eq k)
+unionsWith :: Map map k
            => (a -> a -> a) -> [TrieMap map k a] -> TrieMap map k a
 unionsWith f = foldl' (unionWith f) empty
 
-difference :: (Map map k, Eq k)
+difference :: Map map k
            => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 difference = differenceWith (\_ _ -> Nothing)
 
-differenceWith :: (Map map k, Eq k) => (a -> b -> Maybe a)
-                                    -> TrieMap map k a
-                                    -> TrieMap map k b
-                                    -> TrieMap map k a
+differenceWith :: Map map k => (a -> b -> Maybe a)
+                            -> TrieMap map k a
+                            -> TrieMap map k b
+                            -> TrieMap map k a
 differenceWith j_ tr1@(Tr v1 pre1 m1) tr2@(Tr v2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         DifferedAt _ _ _   -> tr1
         Same               -> tr j_ v1 v2 pre1 (mapDifference j_ m1 m2)
         PostFix (Left  xs) -> goRight j_ tr1 m2  xs
@@ -350,7 +347,7 @@ differenceWith j_ tr1@(Tr v1 pre1 m1) tr2@(Tr v2 pre2 m2) =
       case Map.lookup rightMap x of
            Nothing                     -> left
            Just right'@(Tr v' pre' m') ->
-              case comparePrefixes xs pre' of
+              case comparePrefixes (Map.eqCmp m) xs pre' of
                    DifferedAt _ _ _   -> left
                    Same               -> tr j v v' pre (mapDifference j m m')
                    PostFix (Left  ys) -> goRight j left m'     ys
@@ -363,7 +360,7 @@ differenceWith j_ tr1@(Tr v1 pre1 m1) tr2@(Tr v2 pre2 m2) =
       tryCompress . Tr vl prel $ Map.adjust f ml x
     where
       f left@(Tr v pre m) =
-         case comparePrefixes pre xs of
+         case comparePrefixes (Map.eqCmp m) pre xs of
               DifferedAt _ _ _   -> left
               Same               -> tr j v vr pre (mapDifference j m mr)
               PostFix (Left  ys) -> goRight j left mr    ys
@@ -372,14 +369,14 @@ differenceWith j_ tr1@(Tr v1 pre1 m1) tr2@(Tr v2 pre2 m2) =
    goLeft _ _ _ _ =
       error "Data.Trie.Patricia.Map.differenceWith :: internal error"
 
-differenceWithKey :: (Map map k, Eq k) => ([k] -> a -> b -> Maybe a)
-                                       -> TrieMap map k a
-                                       -> TrieMap map k b
-                                       -> TrieMap map k a
+differenceWithKey :: Map map k => ([k] -> a -> b -> Maybe a)
+                               -> TrieMap map k a
+                               -> TrieMap map k b
+                               -> TrieMap map k a
 differenceWithKey = go DL.empty
  where
    go k j tr1@(Tr v1 pre1 m1) tr2@(Tr v2 pre2 m2) =
-      case comparePrefixes pre1 pre2 of
+      case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
            DifferedAt _ _ _   -> tr1
            Same               -> tr j k v1 v2 pre1 m1 m2
            PostFix (Left  xs) -> goRight k j tr1 m2  xs
@@ -400,7 +397,7 @@ differenceWithKey = go DL.empty
       case Map.lookup rightMap x of
            Nothing                     -> left
            Just right'@(Tr v' pre' m') ->
-              case comparePrefixes xs pre' of
+              case comparePrefixes (Map.eqCmp m) xs pre' of
                    DifferedAt _ _ _   -> left
                    Same               -> tr j k v v' pre m m'
                    PostFix (Left  ys) -> goRight k j left m'     ys
@@ -413,7 +410,7 @@ differenceWithKey = go DL.empty
       tryCompress . Tr vl prel $ Map.adjust f ml x
     where
       f left@(Tr v pre m) =
-         case comparePrefixes pre xs of
+         case comparePrefixes (Map.eqCmp m) pre xs of
               DifferedAt _ _ _   -> left
               Same               -> tr j k v vr pre m mr
               PostFix (Left  ys) -> goRight k j left mr    ys
@@ -425,17 +422,16 @@ differenceWithKey = go DL.empty
 differenceMaybes :: (a -> b -> Maybe a) -> Maybe a -> Maybe b -> Maybe a
 differenceMaybes f ma mb = ma >>= \a -> maybe ma (f a) mb
 
-intersection :: (Map map k, Eq k)
+intersection :: Map map k
              => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 intersection = intersectionWith const
 
-intersectionWith :: forall a b c map k.
-                    (Map map k, Eq k) => (a -> b -> c)
-                                      -> TrieMap map k a
-                                      -> TrieMap map k b
-                                      -> TrieMap map k c
+intersectionWith :: forall a b c map k. Map map k => (a -> b -> c)
+                                                  -> TrieMap map k a
+                                                  -> TrieMap map k b
+                                                  -> TrieMap map k c
 intersectionWith j_ (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
-   case comparePrefixes pre1 pre2 of
+   case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
         DifferedAt _ _ _ -> empty
         Same             -> tr j_ v1 v2 pre1 (mapIntersect j_ m1 m2)
         PostFix remainder ->
@@ -445,7 +441,7 @@ intersectionWith j_ (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
    mapIntersect j = Map.intersectionWith (intersectionWith j)
    tr j v v' p m = tryCompress $ Tr (intersectionMaybes j v v') p m
 
-   -- Has to be explicitly typed or it won't compile!
+   -- Polymorphic recursion - has to be explicitly typed or it won't compile!
    go :: (x -> y -> z)
       -> CMap map k y
       -> Maybe x
@@ -457,7 +453,7 @@ intersectionWith j_ (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
       case Map.lookup ma x of
            Nothing              -> empty
            Just (Tr v' pre' m') ->
-              case comparePrefixes xs pre' of
+              case comparePrefixes (Map.eqCmp ma) xs pre' of
                    DifferedAt _ _ _   -> empty
                    Same               -> tr j v v' pre (mapIntersect j mb m')
                    PostFix (Right ys) -> go (flip j) mb v' m' (pre ++ ys) ys
@@ -466,15 +462,14 @@ intersectionWith j_ (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
    go _ _ _ _ _ _ =
       error "Data.Trie.Patricia.Map.intersectionWith :: internal error"
 
-intersectionWithKey :: forall a b c map k.
-                       (Map map k, Eq k) => ([k] -> a -> b -> c)
-                                         -> TrieMap map k a
-                                         -> TrieMap map k b
-                                         -> TrieMap map k c
+intersectionWithKey :: forall a b c map k. Map map k => ([k] -> a -> b -> c)
+                                                     -> TrieMap map k a
+                                                     -> TrieMap map k b
+                                                     -> TrieMap map k c
 intersectionWithKey = f DL.empty
  where
    f k j_ (Tr v1 pre1 m1) (Tr v2 pre2 m2) =
-      case comparePrefixes pre1 pre2 of
+      case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
            DifferedAt _ _ _ -> empty
            Same             -> tr k j_ v1 v2 pre1 m1 m2
            PostFix remainder ->
@@ -503,7 +498,7 @@ intersectionWithKey = f DL.empty
       case Map.lookup ma x of
            Nothing              -> empty
            Just (Tr v' pre' m') ->
-              case comparePrefixes xs pre' of
+              case comparePrefixes (Map.eqCmp ma) xs pre' of
                    DifferedAt _ _ _   -> empty
                    Same               -> tr k j v v' pre mb m'
                    PostFix (Left  ys) -> go k j m' v mb pre ys
@@ -519,40 +514,38 @@ intersectionMaybes = liftM2
 -- * Filtering
 
 -- O(n)
-filter :: (Map map k, Eq k)
-       => (a -> Bool) -> TrieMap map k a -> TrieMap map k a
+filter :: Map map k => (a -> Bool) -> TrieMap map k a -> TrieMap map k a
 filter p = filterWithKey (const p)
 
 -- O(n)
-filterWithKey :: (Map map k, Eq k)
+filterWithKey :: Map map k
               => ([k] -> a -> Bool) -> TrieMap map k a -> TrieMap map k a
 filterWithKey p = fromList . Prelude.filter (uncurry p) . toList
 
 -- O(n)
-partition :: (Map map k, Eq k) => (a -> Bool)
-                               -> TrieMap map k a
-                               -> (TrieMap map k a, TrieMap map k a)
+partition :: Map map k => (a -> Bool)
+                       -> TrieMap map k a
+                       -> (TrieMap map k a, TrieMap map k a)
 partition p = partitionWithKey (const p)
 
 -- O(n)
-partitionWithKey :: (Map map k, Eq k) => ([k] -> a -> Bool)
-                                      -> TrieMap map k a
-                                      -> (TrieMap map k a, TrieMap map k a)
+partitionWithKey :: Map map k => ([k] -> a -> Bool)
+                              -> TrieMap map k a
+                              -> (TrieMap map k a, TrieMap map k a)
 partitionWithKey p = join (***) fromList . List.partition (uncurry p) . toList
 
-split :: (OrdMap map k, Ord k)
+split :: OrdMap map k
       => [k] -> TrieMap map k a -> (TrieMap map k a, TrieMap map k a)
 split x tr = let (l,_,g) = splitLookup x tr in (l,g)
 
-splitLookup :: (OrdMap map k, Ord k)
-            => [k]
-            -> TrieMap map k a
-            -> (TrieMap map k a, Maybe a, TrieMap map k a)
+splitLookup :: OrdMap map k => [k]
+                            -> TrieMap map k a
+                            -> (TrieMap map k a, Maybe a, TrieMap map k a)
 splitLookup xs orig@(Tr v pre m) =
-   case comparePrefixes pre xs of
+   case comparePrefixes (Map.eqCmp m) pre xs of
         Same                     -> (empty, v, tr Nothing pre m)
         DifferedAt _ (p:_) (x:_) ->
-           case compare p x of
+           case Map.ordCmp m p x of
                 LT -> (orig, Nothing, empty)
                 GT -> (empty, Nothing, orig)
                 EQ -> can'tHappen
@@ -574,26 +567,25 @@ splitLookup xs orig@(Tr v pre m) =
    can'tHappen = error "Data.Trie.Patricia.Map.splitLookup :: internal error"
 
 -- O(n)
-mapMaybe :: (Map map k, Eq k)
-         => (a -> Maybe b) -> TrieMap map k a -> TrieMap map k b
+mapMaybe :: Map map k => (a -> Maybe b) -> TrieMap map k a -> TrieMap map k b
 mapMaybe = mapMaybeWithKey . const
 
 -- O(n)
-mapMaybeWithKey :: (Map map k, Eq k)
+mapMaybeWithKey :: Map map k
                 => ([k] -> a -> Maybe b) -> TrieMap map k a -> TrieMap map k b
 mapMaybeWithKey f =
    fromList . Maybe.mapMaybe (\(k,v) -> fmap ((,) k) (f k v)) . toList
 
 -- O(n)
-mapEither :: (Map map k, Eq k) => (a -> Either b c)
-                               -> TrieMap map k a
-                               -> (TrieMap map k b, TrieMap map k c)
+mapEither :: Map map k => (a -> Either b c)
+                       -> TrieMap map k a
+                       -> (TrieMap map k b, TrieMap map k c)
 mapEither = mapEitherWithKey . const
 
 -- O(n)
-mapEitherWithKey :: (Map map k, Eq k) => ([k] -> a -> Either b c)
-                                      -> TrieMap map k a
-                                      -> (TrieMap map k b, TrieMap map k c)
+mapEitherWithKey :: Map map k => ([k] -> a -> Either b c)
+                              -> TrieMap map k a
+                              -> (TrieMap map k b, TrieMap map k c)
 mapEitherWithKey f =
    (fromList *** fromList) . partitionEithers .
    Prelude.map (\(k,v) -> either (Left . (,) k) (Right . (,) k) (f k v)) .
@@ -602,7 +594,7 @@ mapEitherWithKey f =
 -- * Mapping
 
 -- O(n)
-map :: (Map map k) => (a -> b) -> TrieMap map k a -> TrieMap map k b
+map :: Map map k => (a -> b) -> TrieMap map k a -> TrieMap map k b
 map f (Tr v p m) = Tr (fmap f v) p (Map.map (map f) m)
 
 -- O(n)
@@ -617,48 +609,48 @@ mapWithKey = go DL.empty
              (Map.mapWithKey (\x -> go (k' `DL.snoc` x) f) m)
 
 -- O(n)
-mapAccum :: (Map map k) => (acc -> a -> (acc, b))
-                        -> acc
-                        -> TrieMap map k a
-                        -> (acc, TrieMap map k b)
+mapAccum :: Map map k => (acc -> a -> (acc, b))
+                      -> acc
+                      -> TrieMap map k a
+                      -> (acc, TrieMap map k b)
 mapAccum = genericMapAccum Map.mapAccum
 
 -- O(n)
-mapAccumWithKey :: (Map map k) => (acc -> [k] -> a -> (acc, b))
-                               -> acc
-                               -> TrieMap map k a
-                               -> (acc, TrieMap map k b)
+mapAccumWithKey :: Map map k => (acc -> [k] -> a -> (acc, b))
+                             -> acc
+                             -> TrieMap map k a
+                             -> (acc, TrieMap map k b)
 mapAccumWithKey = genericMapAccumWithKey Map.mapAccumWithKey
 
 -- O(n)
-mapAccumAsc :: (OrdMap map k) => (acc -> a -> (acc, b))
-                              -> acc
-                              -> TrieMap map k a
-                              -> (acc, TrieMap map k b)
+mapAccumAsc :: OrdMap map k => (acc -> a -> (acc, b))
+                            -> acc
+                            -> TrieMap map k a
+                            -> (acc, TrieMap map k b)
 mapAccumAsc = genericMapAccum Map.mapAccumAsc
 
 -- O(n)
-mapAccumAscWithKey :: (OrdMap map k) => (acc -> [k] -> a -> (acc, b))
-                                     -> acc
-                                     -> TrieMap map k a
-                                     -> (acc, TrieMap map k b)
+mapAccumAscWithKey :: OrdMap map k => (acc -> [k] -> a -> (acc, b))
+                                   -> acc
+                                   -> TrieMap map k a
+                                   -> (acc, TrieMap map k b)
 mapAccumAscWithKey = genericMapAccumWithKey Map.mapAccumAscWithKey
 
 -- O(n)
-mapAccumDesc :: (OrdMap map k) => (acc -> a -> (acc, b))
-                               -> acc
-                               -> TrieMap map k a
-                               -> (acc, TrieMap map k b)
+mapAccumDesc :: OrdMap map k => (acc -> a -> (acc, b))
+                             -> acc
+                             -> TrieMap map k a
+                             -> (acc, TrieMap map k b)
 mapAccumDesc = genericMapAccum Map.mapAccumDesc
 
 -- O(n)
-mapAccumDescWithKey :: (OrdMap map k) => (acc -> [k] -> a -> (acc, b))
-                                      -> acc
-                                      -> TrieMap map k a
-                                      -> (acc, TrieMap map k b)
+mapAccumDescWithKey :: OrdMap map k => (acc -> [k] -> a -> (acc, b))
+                                    -> acc
+                                    -> TrieMap map k a
+                                    -> (acc, TrieMap map k b)
 mapAccumDescWithKey = genericMapAccumWithKey Map.mapAccumDescWithKey
 
-genericMapAccum :: (Map map k)
+genericMapAccum :: Map map k
                 => (  (acc -> TrieMap map k a -> (acc, TrieMap map k b))
                    -> acc
                    -> CMap map k a
@@ -675,20 +667,19 @@ genericMapAccum subMapAccum f acc (Tr mv p m) =
                Just v  -> second Just (f acc v)
     in second (Tr v' p) $ subMapAccum (genericMapAccum subMapAccum f) acc' m
 
-genericMapAccumWithKey :: (Map map k)
-                       => (  (  acc
-                             -> k
-                             -> TrieMap map k a
-                             -> (acc, TrieMap map k b)
-                             )
-                          -> acc
-                          -> CMap map k a
-                          -> (acc, CMap map k b)
-                          )
-                       -> (acc -> [k] -> a -> (acc, b))
-                       -> acc
-                       -> TrieMap map k a
-                       -> (acc, TrieMap map k b)
+genericMapAccumWithKey :: Map map k => (  (  acc
+                                          -> k
+                                          -> TrieMap map k a
+                                          -> (acc, TrieMap map k b)
+                                          )
+                                       -> acc
+                                       -> CMap map k a
+                                       -> (acc, CMap map k b)
+                                       )
+                                    -> (acc -> [k] -> a -> (acc, b))
+                                    -> acc
+                                    -> TrieMap map k a
+                                    -> (acc, TrieMap map k b)
 genericMapAccumWithKey = go DL.empty
  where
    go k subMapAccum f acc (Tr mv p m) =
@@ -701,20 +692,20 @@ genericMapAccumWithKey = go DL.empty
              subMapAccum (\a x -> go (k' `DL.snoc` x) subMapAccum f a) acc' m
 
 -- O(n)
-mapKeys :: (Map map k1, Map map k2, Eq k2)
+mapKeys :: (Map map k1, Map map k2)
         => ([k1] -> [k2]) -> TrieMap map k1 a -> TrieMap map k2 a
 mapKeys = mapKeysWith const
 
 -- O(n)
-mapKeysWith :: (Map map k1, Map map k2, Eq k2) => (a -> a -> a)
-                                               -> ([k1] -> [k2])
-                                               -> TrieMap map k1 a
-                                               -> TrieMap map k2 a
+mapKeysWith :: (Map map k1, Map map k2) => (a -> a -> a)
+                                        -> ([k1] -> [k2])
+                                        -> TrieMap map k1 a
+                                        -> TrieMap map k2 a
 mapKeysWith j f = fromListWith j . Prelude.map (first f) . toList
 
 -- O(n)
 -- needs a name!
-mapKeys' :: (Map map k1, Map map k2, Eq k2)
+mapKeys' :: (Map map k1, Map map k2)
          => (k1 -> k2) -> TrieMap map k1 a -> TrieMap map k2 a
 mapKeys' f (Tr v p m) =
    Tr v (Prelude.map f p) $
@@ -724,11 +715,10 @@ mapKeys' f (Tr v p m) =
 
 -- O(n)
 -- TODO: needs a name!
-mapKeys'With :: (Map map k1, Map map k2, Eq k2)
-             => (a -> a -> a)
-             -> (k1 -> k2)
-             -> TrieMap map k1 a
-             -> TrieMap map k2 a
+mapKeys'With :: (Map map k1, Map map k2) => (a -> a -> a)
+                                         -> (k1 -> k2)
+                                         -> TrieMap map k1 a
+                                         -> TrieMap map k2 a
 mapKeys'With j f (Tr v p m) =
    Tr v (Prelude.map f p) $
       Map.fromListWith (unionWith j) .
@@ -795,16 +785,15 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
                Nothing ->                     xs
 
 -- O(n*m)
-fromList :: (Map map k, Eq k) => [([k],a)] -> TrieMap map k a
+fromList :: Map map k => [([k],a)] -> TrieMap map k a
 fromList = fromListWith const
 
 -- O(n*m)
-fromListWith :: (Map map k, Eq k)
-             => (a -> a -> a) -> [([k],a)] -> TrieMap map k a
+fromListWith :: Map map k => (a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWith f = foldl' (flip . uncurry $ insertWith f) empty
 
 -- O(n*m)
-fromListWithKey :: (Map map k, Eq k)
+fromListWithKey :: Map map k
                 => ([k] -> a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWithKey f = foldl' (flip . uncurry $ insertWithKey f) empty
 
@@ -857,15 +846,14 @@ maxView = minMaxView (\(Tr _ _ m) -> Map.null m)
                      (\(Tr v _ _) -> assert (isJust v))
                      (fst . Map.maxViewWithKey)
 
-minMaxView :: Map map k
-           => (TrieMap map k a -> Bool)
-           -> (  TrieMap map k a
-              -> (([k], a), TrieMap map k a)
-              -> (([k], a), TrieMap map k a)
-              )
-           -> (CMap map k a -> Maybe (k, TrieMap map k a))
-           -> TrieMap map k a
-           -> Maybe (([k], a), TrieMap map k a)
+minMaxView :: Map map k => (TrieMap map k a -> Bool)
+                        -> (  TrieMap map k a
+                           -> (([k], a), TrieMap map k a)
+                           -> (([k], a), TrieMap map k a)
+                           )
+                        -> (CMap map k a -> Maybe (k, TrieMap map k a))
+                        -> TrieMap map k a
+                        -> Maybe (([k], a), TrieMap map k a)
 minMaxView _ _ _ tr_ | null tr_ = Nothing
 minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
  where
@@ -882,18 +870,17 @@ minMaxView f g h tr_ = Just (go f g h DL.empty tr_)
                       )
 
 -- O(m b)
-findPredecessor :: (OrdMap map k, Ord k)
-                => TrieMap map k a -> [k] -> Maybe ([k], a)
+findPredecessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
 findPredecessor tr  _ | null tr = Nothing
 findPredecessor tr_ xs_         = go tr_ xs_
  where
    go tr@(Tr v pre m) xs =
-      case comparePrefixes pre xs of
+      case comparePrefixes (Map.eqCmp m) pre xs of
            Same             -> Nothing
            PostFix (Left _) -> Nothing
 
            DifferedAt _ (p:_) (x:_) ->
-              case compare p x of
+              case Map.ordCmp m p x of
                    LT -> findMax tr
                    GT -> Nothing
                    EQ -> can'tHappen
@@ -913,18 +900,17 @@ findPredecessor tr_ xs_         = go tr_ xs_
       error "Data.Trie.Patricia.Map.findPredecessor :: internal error"
 
 -- O(m b)
-findSuccessor :: (OrdMap map k, Ord k)
-              => TrieMap map k a -> [k] -> Maybe ([k], a)
+findSuccessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
 findSuccessor tr  _ | null tr = Nothing
 findSuccessor tr_ xs_         = go tr_ xs_
  where
    go tr@(Tr _ pre m) xs =
-      case comparePrefixes pre xs of
+      case comparePrefixes (Map.eqCmp m) pre xs of
            Same -> do (k,t) <- fst $ Map.minViewWithKey m
                       fmap (first (prepend pre k)) (findMin t)
 
            DifferedAt _ (p:_) (x:_) ->
-              case compare p x of
+              case Map.ordCmp m p x of
                    LT -> Nothing
                    GT -> findMin tr
                    EQ -> can'tHappen
@@ -951,16 +937,16 @@ data PrefixOrdering a
    | PostFix (Either [a] [a])
    | DifferedAt [a] [a] [a]
 
-comparePrefixes :: Eq a => [a] -> [a] -> PrefixOrdering a
+comparePrefixes :: (a -> a -> Bool) -> [a] -> [a] -> PrefixOrdering a
 comparePrefixes = go []
  where
-   go _ [] [] = Same
-   go _ [] xs = PostFix (Right xs)
-   go _ xs [] = PostFix (Left  xs)
+   go _ _ [] [] = Same
+   go _ _ [] xs = PostFix (Right xs)
+   go _ _ xs [] = PostFix (Left  xs)
 
-   go samePart xs@(a:as) ys@(b:bs) =
-      if a == b
-         then go (a:samePart) as bs
+   go samePart (===) xs@(a:as) ys@(b:bs) =
+      if a === b
+         then go (a:samePart) (===) as bs
          else DifferedAt (reverse samePart) xs ys
 
 tryCompress :: Map map k => TrieMap map k a -> TrieMap map k a
