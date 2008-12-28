@@ -15,8 +15,6 @@ import Control.Arrow       ((***), second)
 import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
-import qualified Data.List as List
-import Data.List           (foldl')
 import Data.Maybe          (isJust)
 import qualified Data.Maybe as Maybe
 import Prelude hiding      (lookup, filter, foldl, foldr, null, map)
@@ -113,7 +111,7 @@ singleton = Base.singleton
 
 -- O(m)
 insert :: Map map k => [k] -> a -> TrieMap map k a -> TrieMap map k a
-insert = insertWith const
+insert = Base.insert
 
 -- O(m)
 insertWith :: Map map k
@@ -129,7 +127,7 @@ insertWithKey = Base.insertWithKey
 
 -- O(m)
 delete :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
-delete = alter (const Nothing)
+delete = Base.delete
 
 -- O(m)
 adjust :: Map map k => (a -> a) -> [k] -> TrieMap map k a -> TrieMap map k a
@@ -180,7 +178,7 @@ unions = unionsWith defaultUnion
 
 unionsWith :: Map map k
            => (a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
-unionsWith f = foldl' (unionWith f) empty
+unionsWith = Base.unionsWith
 
 -- O(n1+n2)
 difference :: Map map k
@@ -245,7 +243,7 @@ partitionWithKey = Base.partitionWithKey
 
 split :: OrdMap map k
       => [k] -> TrieMap map k a -> (TrieMap map k a, TrieMap map k a)
-split xs tr = let (l,_,g) = splitLookup xs tr in (l,g)
+split = Base.split
 
 splitLookup :: OrdMap map k => [k]
                             -> TrieMap map k a

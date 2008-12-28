@@ -135,6 +135,10 @@ singleton :: (Alt st a, Trie trie st map k) => [k] -> a -> trie map k a
 singleton []     v = mkTrie (pure v) Map.empty
 singleton (x:xs) v = mkTrie altEmpty (Map.singleton x (singleton xs v))
 
+insert :: (Alt st a, Trie trie st map k)
+       => [k] -> a -> trie map k a -> trie map k a
+insert = insertWith const
+
 insertWith :: (Alt st a, Trie trie st map k)
            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
 insertWith f []     new tr = mapVal tr $ \old -> (f new <$> old) <|> pure new
@@ -147,6 +151,10 @@ insertWithKey :: (Alt st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                 -> trie map k a
                                                 -> trie map k a
 insertWithKey f k = insertWith (f k) k
+
+delete :: (Alt st a, Boolable (st a), Trie trie st map k)
+       => [k] -> trie map k a -> trie map k a
+delete = alter (const altEmpty)
 
 adjust :: Trie trie st map k
        => (a -> a) -> [k] -> trie map k a -> trie map k a
@@ -206,6 +214,10 @@ unionWithKey = go DL.empty
    go k f tr1 tr2 =
       mkTrie (onVals (unionVals (f $ DL.toList k)) tr1 tr2)
              (onMaps (Map.unionWithKey $ \x -> go (k `DL.snoc` x) f) tr1 tr2)
+
+unionsWith :: (Alt st a, Unionable st a, Trie trie st map k)
+           => (a -> a -> a) -> [trie map k a] -> trie map k a
+unionsWith f = foldl' (unionWith f) empty
 
 differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                => (a -> b -> Maybe a)
@@ -278,6 +290,10 @@ partitionWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                  -> trie map k a
                  -> (trie map k a, trie map k a)
 partitionWithKey p = join (***) fromList . partition (uncurry p) . toList
+
+split :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
+      => [k] -> trie map k a -> (trie map k a, trie map k a)
+split xs tr = let (l,_,g) = splitLookup xs tr in (l,g)
 
 splitLookup :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
             => [k]
