@@ -76,6 +76,10 @@ null tr = (noValue.tVal $ tr) && Map.null (tMap tr)
 size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
 size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 
+member :: (Alt st a, Boolable (st a), Trie trie st map k)
+       => [k] -> trie map k a -> Bool
+member k tr = hasValue (lookup k tr)
+
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup []     tr = tVal tr
 lookup (x:xs) tr = maybe altEmpty (lookup xs) (Map.lookup (tMap tr) x)

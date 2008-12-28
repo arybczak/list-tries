@@ -81,7 +81,7 @@ size = Base.size . unTS
 
 -- O(m).
 member :: Map map a => [a] -> TrieSet map a -> Bool
-member = unwrap .: Base.lookup .:. unTS
+member = Base.member .:. unTS
 
 -- O(?)
 isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool

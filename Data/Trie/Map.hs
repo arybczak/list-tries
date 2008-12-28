@@ -15,7 +15,6 @@ import Control.Arrow       ((***), second)
 import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
-import Data.Maybe          (isJust)
 import qualified Data.Maybe as Maybe
 import Prelude hiding      (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
@@ -72,7 +71,7 @@ size = Base.size
 
 -- O(m).
 member :: Map map k => [k] -> TrieMap map k a -> Bool
-member k m = isJust (lookup k m)
+member = Base.member
 
 -- O(m)
 lookup :: Map map k => [k] -> TrieMap map k a -> Maybe a
