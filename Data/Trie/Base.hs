@@ -453,6 +453,14 @@ findPredecessor tr  _ | null tr = Nothing
 findPredecessor tr_ xs_         = go tr_ xs_
  where
    go _  [] = Nothing
+
+   -- We need to try the trie at x and then the trie at the predecessor of x:
+   -- e.g. if looking for "foo", we need to try any 'f' branch to see if it has
+   -- "fob" first, before grabbing the next-best option of the maximum of the
+   -- 'b' branch, say "bar".
+   --
+   -- If there's no branch less than 'f' we try the current position as a last
+   -- resort.
    go tr (x:xs) =
       let (v,m) = tParts tr
           predecessor = Map.findPredecessor m x
