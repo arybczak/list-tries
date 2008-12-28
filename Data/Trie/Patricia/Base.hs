@@ -78,6 +78,8 @@ isSubmapOfBy f_ trl trr =
        (vr,prer,mr) = tParts trr
     in case comparePrefixes (Map.eqCmp ml) prel prer of
             DifferedAt _ _ _  -> False
+
+            -- Special case here: if the left trie is empty we return True.
             PostFix (Right _) -> null trl
             PostFix (Left xs) -> go f_ mr vl ml xs
             Same              -> (unwrap $ f_ vl vr <|> pure True)
@@ -114,6 +116,11 @@ isProperSubmapOfBy = f False
           (vr,prer,mr) = tParts trr
        in case comparePrefixes (Map.eqCmp ml) prel prer of
                DifferedAt _ _ _  -> False
+
+              -- Special case, as in isSubsetOf.
+              --
+              -- Note that properness does not affect this: if we hit this
+              -- case, we already know that the right trie is nonempty.
                PostFix (Right _) -> null trl
                PostFix (Left xs) -> go proper g mr vl ml xs
                Same              -> same proper g vl vr ml mr
@@ -134,6 +141,7 @@ isProperSubmapOfBy = f False
 
    same _      _ vl vr _  _  | hasValue vl && noValue vr = False
    same proper g vl vr ml mr =
+      -- As the non-Patricia version, so does this seem suboptimal.
       let proper' = or [ proper
                        , noValue vl && hasValue vr
                        , not (Map.null $ Map.difference mr ml)
@@ -165,6 +173,8 @@ insertWith f k new tr =
             PostFix (Left (p:pr)) -> mkTrie (pure new) k
                                             (Map.singleton p (mkTrie old pr m))
             PostFix (Right (x:xs)) ->
+               -- Minor optimization: instead of tryCompress we just check for
+               -- the case of an empty trie
                if null tr
                   then singleton k new
                   else mkTrie old prefix $
@@ -241,6 +251,12 @@ alter f k tr =
             _ -> tr
 
 -- * Combination
+
+-- I think these are O(min(n1,n2)).
+
+-- The *Key versions are mostly rewritten from the basic ones: they have an
+-- additional O(m) cost from keeping track of the key, which is why the basic
+-- ones can't just call them.
 
 unionWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
@@ -336,6 +352,14 @@ differenceWith j_ tr1 tr2 =
    mk j v v' p m m' = tryCompress $ mkTrie (differenceVals j v v') p
                                            (mapDifference  j m m')
 
+   -- See the comment in 'intersection' for a longish example of the idea
+   -- behind this, which is basically that if we see two prefixes like "foo"
+   -- and "foobar", we traverse the "foo" trie looking for "bar". Then if we
+   -- find "barbaz", we traverse the "foobar" trie looking for "baz", and so
+   -- on.
+   --
+   -- We have two functions for the two tries because set difference is a
+   -- noncommutative operation.
    goRight j left rightMap (x:xs) =
       let (v,pre,m) = tParts left
        in case Map.lookup rightMap x of
@@ -447,6 +471,9 @@ intersectionWith j_ trl trr =
             DifferedAt _ _ _  -> empty
             Same              -> mk j_ vl vr prel ml mr
             PostFix remainder ->
+               -- use the one with a longer prefix as the base for the
+               -- intersection, and descend into the map of the one with a
+               -- shorter prefix
                either (go       j_  mr vl ml (DL.fromList prel))
                       (go (flip j_) ml vr mr (DL.fromList prer))
                       remainder
@@ -464,6 +491,52 @@ intersectionWith j_ trl trr =
    -- whenever we call mk, j will have type (a -> b -> c). Thus we need
    -- Intersectable st b a c (and y x z) as well. Doesn't matter, though.
 
+   -- Like goLeft and goRight in 'difference', but handles both cases (since
+   -- this is a commutative operation).
+   --
+   -- Traverse the map given as the 1st argument, looking for anything that
+   -- begins with the given key (x:xs).
+   --
+   -- If it's found, great: make an intersected trie out of the trie found in
+   -- the map and the boolean, map, and prefix given.
+   --
+   -- If it's not found but might still be, there are two cases.
+   --
+   -- 1. Say we've got the following two TrieSets:
+   --
+   -- fromList ["car","cat"]
+   -- fromList ["car","cot"]
+   --
+   -- i.e. (where <> is stuff we don't care about here)
+   --
+   -- Tr False "ca" (fromList [('r', Tr True ""  <>),<>])
+   -- Tr False "c"  (fromList [('a', Tr True "r" <>),<>])
+   --
+   -- We came in here with (x:xs) = "a", the remainder of comparing "ca" and
+   -- "c". We're looking for anything that begins with "ca" from the children
+   -- of the "c".
+   --
+   -- We find the prefix pre' = "r", and comparePrefixes gives PostFix (Right
+   -- "r"). So now we want anything beginning with "car" in the other trie. We
+   -- switch to traversing the other trie, i.e. the other given map: the
+   -- children of "ca".
+   --
+   -- 2. Say we have the following:
+   --
+   -- fromList ["cat"]
+   -- fromList ["cat","cot","cap"]
+   --
+   -- i.e.
+   --
+   -- Tr True "cat" <>
+   -- Tr False "c" (fromList [('a',Tr False "" (fromList [('t',<>)])),<>])
+   --
+   -- (x:xs) = "at" now, and we find pre' = "". We get PostFix (Left "t"). This
+   -- means that we're staying in the same trie, just looking for "t" now
+   -- instead of "at". So we jump into the m' map.
+   --
+   -- Note that the prefix and boolean don't change: we've already got "ca",
+   -- and we'd still like "cat" so we keep the True from there.
    go :: ( Alt st z, Boolable (st z)
          , Intersectable st x y z, Intersectable st y x z
          )
@@ -752,6 +825,8 @@ findPredecessor tr_ xs_         = go tr_ xs_
                        GT -> Nothing
                        EQ -> can'tHappen
 
+               -- See comment in non-Patricia version for explanation of
+               -- algorithm
                PostFix (Right (y:ys)) ->
                   let predecessor = Map.findPredecessor m y
                    in first (prepend pre y) <$> (Map.lookup m y >>= flip go ys)
@@ -808,6 +883,14 @@ data PrefixOrdering a
    | PostFix (Either [a] [a])
    | DifferedAt [a] [a] [a]
 
+-- Same                  If they're equal.
+-- PostFix (Left  xs)    If the first argument was longer: xs is the remainder.
+-- PostFix (Right xs)    Likewise, but for the second argument.
+-- DifferedAt pre xs ys  Otherwise. pre is the part that was the same and
+--                       xs and ys are the remainders for the first and second
+--                       arguments respectively.
+--
+--                       all (pre `isPrefixOf`) [xs,ys] --> True.
 comparePrefixes :: (a -> a -> Bool) -> [a] -> [a] -> PrefixOrdering a
 comparePrefixes = go []
  where
@@ -820,18 +903,37 @@ comparePrefixes = go []
          then go (a:samePart) (===) as bs
          else DifferedAt (reverse samePart) xs ys
 
+-- After modifying the trie, compress a trie node into the prefix if possible.
+--
+-- Doesn't recurse into children, only checks if this node and its child can be
+-- joined into one. Does it repeatedly, though, until it can't compress any
+-- more.
+--
+-- Note that this is a sledgehammer: for optimization, instead of using this in
+-- every function, we could write a separate tryCompress for each function,
+-- checking only for those cases that we know can arise. This has been done in
+-- 'insert' but not elsewhere.
 tryCompress :: (Boolable (st a), Trie trie st map k)
             => trie map k a -> trie map k a
 tryCompress tr =
    let (v,pre,m) = tParts tr
     in case Map.singletonView m of
+
+          -- We can compress the trie if there is only one child
           Just (x, tr')
+             -- If the parent is empty, we can collapse it into the child
              | noValue v -> tryCompress $ mkTrie v' (prepend pre x pre') subM
 
+             -- If the parent is full and the child is empty and childless, the
+             -- child is irrelevant
              | noValue v' && Map.null subM -> mkTrie v pre subM
            where
              (v',pre',subM) = tParts tr'
 
+          -- If the trie is empty, make sure the prefix is as well.
+          --
+          -- This case can arise in 'intersectionWith', at least.
           Nothing | noValue v -> mkTrie v [] m
 
+          -- Otherwise, leave it unchanged.
           _ -> tr
