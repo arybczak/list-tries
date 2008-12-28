@@ -16,7 +16,7 @@ import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
 import qualified Data.Maybe as Maybe
-import Prelude hiding      (lookup, filter, foldl, foldr, null, map)
+import Prelude hiding      (map)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
