@@ -68,12 +68,6 @@ onMaps :: Trie trie st map k => (  CMap trie map k a
                              -> CMap trie map k c
 onMaps f a b = f (tMap a) (tMap b)
 
-mapt :: Trie trie st map k => (st a -> st b)
-                           -> (CMap trie map k a -> CMap trie map k b)
-                           -> trie map k a
-                           -> trie map k b
-mapt f g tr = mkTrie (f . tVal $ tr) (g . tMap $ tr)
-
 -----------------------
 
 null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
