@@ -113,6 +113,7 @@ isProperSubmapOfBy = go False
    go proper f tr1 tr2 =
       let (v1,m1) = tParts tr1
           (v2,m2) = tParts tr2
+          -- This seems suboptimal but I can't think of anything better
           proper' = or [ proper
                        , noValue v1 && hasValue v2
                        , not (Map.null $ Map.difference m2 m1)
