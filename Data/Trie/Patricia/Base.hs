@@ -912,7 +912,7 @@ comparePrefixes = go []
 -- Note that this is a sledgehammer: for optimization, instead of using this in
 -- every function, we could write a separate tryCompress for each function,
 -- checking only for those cases that we know can arise. This has been done in
--- 'insert' but not elsewhere.
+-- 'insert', at least, but not in many places.
 tryCompress :: (Boolable (st a), Trie trie st map k)
             => trie map k a -> trie map k a
 tryCompress tr =
@@ -933,7 +933,7 @@ tryCompress tr =
           -- If the trie is empty, make sure the prefix is as well.
           --
           -- This case can arise in 'intersectionWith', at least.
-          Nothing | noValue v -> mkTrie v [] m
+          Nothing | noValue v && Map.null m -> mkTrie v [] m
 
           -- Otherwise, leave it unchanged.
           _ -> tr
