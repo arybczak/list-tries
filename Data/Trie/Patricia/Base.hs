@@ -319,7 +319,8 @@ unionWithKey = go DL.empty
 
    mk = mkTrie
 
-   mapUnion j k p = Map.unionWith (go (k `DL.append` DL.fromList p) j)
+   mapUnion j k p =
+      Map.unionWithKey (\x -> go (k `DL.append` DL.fromList p `DL.snoc` x) j)
 
    decompress m v (x:xs) = Map.singleton x (mkTrie v xs m)
    decompress _ _ []     = can'tHappen
@@ -411,7 +412,9 @@ differenceWithKey = go DL.empty
                PostFix (Left  xs) -> goRight k j_ tr1 m2  xs
                PostFix (Right xs) -> goLeft  k j_ tr1 tr2 xs
 
-   mapDifference k j = Map.differenceWith (differenceWithKey' k j)
+   mapDifference k j =
+      Map.differenceWithKey (\x -> differenceWithKey' (k `DL.snoc` x) j)
+
    differenceWithKey' k j a b =
       let c = go k j a b
        in if null c then Nothing else Just c
@@ -446,7 +449,7 @@ differenceWithKey = go DL.empty
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
                   DifferedAt _ _ _   -> left'
-                  Same               -> mk j k  v vr pre m mr
+                  Same               -> mk j k v vr pre m mr
                   PostFix (Left  ys) -> goRight k j left' mr    ys
                   PostFix (Right ys) -> goLeft  k j left' right ys
 
@@ -585,7 +588,7 @@ intersectionWithKey = f DL.empty
                          (go k (flip.j_) ml vr mr (DL.fromList prer))
                          remainder
 
-   mapIntersect k j = Map.intersectionWith (f k j)
+   mapIntersect k j = Map.intersectionWithKey (\x -> f (k `DL.snoc` x) j)
 
    mk k j v v' p m m' =
       let k' = k `DL.append` DL.fromList p
