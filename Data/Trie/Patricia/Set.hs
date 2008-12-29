@@ -10,7 +10,7 @@
 
 module Data.Trie.Patricia.Set where
 
-import Control.Arrow  ((***))
+import Control.Arrow  ((***), second)
 import Data.Function  (on)
 import Prelude hiding (map)
 import qualified Prelude
@@ -222,3 +222,14 @@ findPredecessor = fmap fst .: Base.findPredecessor . unTS
 -- O(m b)
 findSuccessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findSuccessor = fmap fst .: Base.findSuccessor . unTS
+
+-- * Trie-only operations
+
+addPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
+addPrefix = TS .: Base.addPrefix .:. unTS
+
+splitPrefix :: Map map a => TrieSet map a -> ([a], TrieSet map a)
+splitPrefix = second TS . Base.splitPrefix . unTS
+
+lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
+lookupPrefix = TS .: Base.lookupPrefix .:. unTS

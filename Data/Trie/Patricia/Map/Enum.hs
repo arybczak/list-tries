@@ -350,3 +350,14 @@ findPredecessor = Base.findPredecessor
 -- O(m b)
 findSuccessor :: Enum k => TrieMap k a -> [k] -> Maybe ([k], a)
 findSuccessor = Base.findSuccessor
+
+-- * Trie-only operations
+
+addPrefix :: Enum k => [k] -> TrieMap k a -> TrieMap k a
+addPrefix = Base.addPrefix
+
+splitPrefix :: Enum k => TrieMap k a -> ([k], TrieMap k a)
+splitPrefix = Base.splitPrefix
+
+lookupPrefix :: Enum k => [k] -> TrieMap k a -> TrieMap k a
+lookupPrefix = Base.lookupPrefix

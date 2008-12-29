@@ -158,8 +158,6 @@ minView = Base.minView
 maxView :: Enum a => TrieSet a -> Maybe ([a], TrieSet a)
 maxView = Base.maxView
 
--- * Trie-specific operations
-
 -- O(m b)
 findPredecessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findPredecessor = Base.findPredecessor
@@ -167,3 +165,14 @@ findPredecessor = Base.findPredecessor
 -- O(m b)
 findSuccessor :: Enum a => TrieSet a -> [a] -> Maybe [a]
 findSuccessor = Base.findSuccessor
+
+-- * Trie-only operations
+
+addPrefix :: Enum a => [a] -> TrieSet a -> TrieSet a
+addPrefix = Base.addPrefix
+
+splitPrefix :: Enum a => TrieSet a -> ([a], TrieSet a)
+splitPrefix = Base.splitPrefix
+
+lookupPrefix :: Enum a => [a] -> TrieSet a -> TrieSet a
+lookupPrefix = Base.lookupPrefix

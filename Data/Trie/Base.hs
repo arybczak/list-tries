@@ -131,8 +131,7 @@ empty :: (Alt st a, Trie trie st map k) => trie map k a
 empty = mkTrie altEmpty Map.empty
 
 singleton :: (Alt st a, Trie trie st map k) => [k] -> a -> trie map k a
-singleton []     v = mkTrie (pure v) Map.empty
-singleton (x:xs) v = mkTrie altEmpty (Map.singleton x (singleton xs v))
+singleton xs v = addPrefix xs $ mkTrie (pure v) Map.empty
 
 insert :: (Alt st a, Trie trie st map k)
        => [k] -> a -> trie map k a -> trie map k a
@@ -486,3 +485,29 @@ findSuccessor tr_ xs_         = go tr_ xs_
        in fmap (first (x:)) (Map.lookup m x >>= flip go xs)
           <|>
           (successor >>= \(best,btr) -> fmap (first (best:)) (findMin btr))
+
+-- * Trie-only operations
+
+addPrefix :: (Alt st a, Trie trie st map k)
+          => [k] -> trie map k a -> trie map k a
+addPrefix []     = id
+addPrefix (x:xs) = mkTrie altEmpty . Map.singleton x . addPrefix xs
+
+splitPrefix :: (Alt st a, Trie trie st map k)
+            => trie map k a -> ([k], trie map k a)
+splitPrefix = go DL.empty
+ where
+   go xs tr =
+      case Map.singletonView (tMap tr) of
+           Just (x,tr') -> go (xs `DL.snoc` x) tr'
+           Nothing      -> (DL.toList xs, tr)
+
+lookupPrefix :: (Alt st a, Trie trie st map k)
+             => [k] -> trie map k a -> trie map k a
+lookupPrefix = go DL.empty
+ where
+   go pr []     tr = addPrefix (DL.toList pr) tr
+   go pr (x:xs) tr =
+      case Map.lookup (tMap tr) x of
+           Nothing  -> empty
+           Just tr' -> go (pr `DL.snoc` x) xs tr'

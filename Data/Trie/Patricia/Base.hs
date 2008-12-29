@@ -876,6 +876,40 @@ findSuccessor tr_ xs_         = go tr_ xs_
    can'tHappen =
       error "Data.Trie.Patricia.Base.findSuccessor :: internal error"
 
+-- * Trie-only operations
+
+addPrefix :: (Alt st a, Trie trie st map k)
+          => [k] -> trie map k a -> trie map k a
+addPrefix xs tr =
+   let (v,pre,m) = tParts tr
+    in mkTrie v (xs ++ pre) m
+
+splitPrefix :: (Alt st a, Trie trie st map k)
+            => trie map k a -> ([k], trie map k a)
+splitPrefix tr =
+   let (v,pre,m) = tParts tr
+    in (pre, mkTrie v [] m)
+
+lookupPrefix :: (Alt st a, Trie trie st map k)
+             => [k] -> trie map k a -> trie map k a
+lookupPrefix = go DL.empty
+ where
+   go pr xs tr =
+      let (_,pre,m) = tParts tr
+       in case comparePrefixes (Map.eqCmp m) pre xs of
+               Same                   -> addPrefix (DL.toList pr) tr
+               PostFix (Left _)       -> addPrefix (DL.toList pr) tr
+               DifferedAt _ _ _       -> empty
+               PostFix (Right (y:ys)) ->
+                  case Map.lookup m y of
+                       Nothing  -> empty
+                       Just tr' ->
+                          go (pr `DL.append` DL.fromList pre `DL.snoc` y)
+                             ys tr'
+
+               _ -> error
+                       "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
+
 -- helpers
 
 prepend :: [a] -> a -> [a] -> [a]

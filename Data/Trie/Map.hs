@@ -487,3 +487,14 @@ findPredecessor = Base.findPredecessor
 -- O(m b)
 findSuccessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
 findSuccessor = Base.findSuccessor
+
+-- * Trie-only operations
+
+addPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
+addPrefix = Base.addPrefix
+
+splitPrefix :: Map map k => TrieMap map k a -> ([k], TrieMap map k a)
+splitPrefix = Base.splitPrefix
+
+lookupPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
+lookupPrefix = Base.lookupPrefix
