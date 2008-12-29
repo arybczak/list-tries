@@ -6,7 +6,7 @@
 -- Complexities are given; @n@ refers to the number of elements in the set, @m@
 -- to their maximum length, @b@ to the trie's branching factor.
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
 module Data.Trie.Patricia.Set where
 
@@ -14,6 +14,10 @@ import Control.Arrow  ((***))
 import Data.Function  (on)
 import Prelude hiding (map)
 import qualified Prelude
+
+#if __GLASGOW_HASKELL__
+import Text.Read (readPrec, lexP, parens, prec, Lexeme(Ident), pfail)
+#endif
 
 import qualified Data.Trie.Base.Map      as Map
 import qualified Data.Trie.Patricia.Base as Base
@@ -40,7 +44,28 @@ instance Map map k => Base.Trie TrieSetBase Identity map k where
    mkTrie = Tr . unwrap
    tParts (Tr b p m) = (Id b,p,m)
 
--- instances: Eq, Monoid, Foldable, Ord, Show, Read
+-- instances: Eq, Monoid, Foldable, Ord
+
+instance (Map map a, Show a) => Show (TrieSet map a) where
+   showsPrec p s = showParen (p > 10) $
+      showString "fromList " . shows (toList s)
+
+instance (Map map a, Read a) => Read (TrieSet map a) where
+#if __GLASGOW_HASKELL__
+   readPrec = parens $ prec 10 $ do
+      text <- lexP
+      if text == Ident "fromList"
+         then fmap fromList readPrec
+         else pfail
+#else
+   readsPrec p = readParen (p > 10) $ \r -> do
+      (text, list) <- lex r
+      if text == "fromList"
+         then do
+            (xs, rest) <- reads list
+            [(fromList xs, rest)]
+         else []
+#endif
 
 -- * Querying
 
