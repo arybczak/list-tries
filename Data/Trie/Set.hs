@@ -8,11 +8,13 @@
 
 {-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
-module Data.Trie.Set where
+#include "exports.h"
+
+module Data.Trie.Set (SET_EXPORTS) where
 
 import Control.Arrow  ((***), second)
 import Data.Function  (on)
-import Prelude hiding (map)
+import Prelude hiding (filter, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
@@ -29,7 +31,8 @@ import Data.Trie.Util         ((.:), (.:.), both)
 --
 -- We need this 'bool' and Base stuff in order to satisfy the Base.Trie type
 -- class.
-data TrieSetBase map a bool = Tr !bool !(CMapBase map a bool)
+data TrieSetBase map a bool = Tr !bool !(CMap map a bool)
+type CMap map a bool = map a (TrieSetBase map a bool)
 
 -- That makes TrieSet a newtype, which means some unfortunate wrapping and
 -- unwrapping in the function definitions below.
@@ -38,9 +41,6 @@ newtype TrieSet map a = TS { unTS :: TrieSetBase map a Bool }
 inTS :: (TrieSetBase map a Bool -> TrieSetBase nap b Bool)
      -> (TrieSet map a -> TrieSet nap b)
 inTS f = TS . f . unTS
-
-type CMapBase map a bool = map a (TrieSetBase map a bool)
-type CMap map a = CMapBase map a Bool
 
 instance Map map k => Base.Trie TrieSetBase Identity map k where
    mkTrie = Tr . unwrap

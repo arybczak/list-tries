@@ -3,7 +3,23 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
            , FlexibleContexts #-}
 
-module Data.Trie.Base where
+module Data.Trie.Base
+   ( Trie(..)
+   , null, size, member, lookup
+   , isSubmapOfBy, isProperSubmapOfBy
+   , empty, singleton
+   , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
+   , unionWith, unionWithKey, unionsWith
+   , differenceWith, differenceWithKey, intersectionWith, intersectionWithKey
+   , filterWithKey, partitionWithKey
+   , split, splitLookup
+   , mapKeysWith, mapKeys'With
+   , foldWithKey, foldAscWithKey, foldDescWithKey
+   , toList, toAscList, toDescList, fromList, fromListWith, fromListWithKey
+   , findMin, findMax, deleteMin, deleteMax, minView, maxView
+   , findPredecessor, findSuccessor
+   , addPrefix, splitPrefix, lookupPrefix
+   ) where
 
 import Control.Applicative (Applicative(..), (<$>))
 import Control.Arrow       ((***), first)

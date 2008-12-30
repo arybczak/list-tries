@@ -8,11 +8,13 @@
 
 {-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
-module Data.Trie.Patricia.Set where
+#include "exports.h"
+
+module Data.Trie.Patricia.Set (SET_EXPORTS) where
 
 import Control.Arrow  ((***), second)
 import Data.Function  (on)
-import Prelude hiding (map)
+import Prelude hiding (filter, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
@@ -29,16 +31,14 @@ import Data.Trie.Util         ((.:), (.:.), both)
 -- True or have a True descendant.
 --
 -- This Base stuff is needed just as in the non-Patricia version.
-data TrieSetBase map a bool = Tr !bool ![a] !(CMapBase map a bool)
+data TrieSetBase map a bool = Tr !bool ![a] !(CMap map a bool)
+type CMap map a bool = map a (TrieSetBase map a bool)
 
 newtype TrieSet map a = TS { unTS :: TrieSetBase map a Bool }
 
 inTS :: (TrieSetBase map a Bool -> TrieSetBase nap b Bool)
      -> (TrieSet map a -> TrieSet nap b)
 inTS f = TS . f . unTS
-
-type CMapBase map a bool = map a (TrieSetBase map a bool)
-type CMap map a = CMapBase map a Bool
 
 instance Map map k => Base.Trie TrieSetBase Identity map k where
    mkTrie = Tr . unwrap
