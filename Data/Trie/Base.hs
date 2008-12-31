@@ -23,7 +23,6 @@ module Data.Trie.Base
 
 import Control.Applicative (Applicative(..), (<$>))
 import Control.Arrow       ((***), first)
-import Control.Monad       (join)
 import qualified Data.DList as DL
 import Data.DList          (DList)
 import Data.List           (foldl', partition)
@@ -39,6 +38,7 @@ import Data.Trie.Base.Classes
    , Alt(..)
    )
 import Data.Trie.Base.Map (Map, OrdMap)
+import Data.Trie.Util     (both)
 
 class (Map map k, Functor st, Unwrappable st)
    => Trie trie st map k | trie -> st where
@@ -309,7 +309,7 @@ partitionWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                  => ([k] -> a -> Bool)
                  -> trie map k a
                  -> (trie map k a, trie map k a)
-partitionWithKey p = join (***) fromList . partition (uncurry p) . toList
+partitionWithKey p = both fromList . partition (uncurry p) . toList
 
 split :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
       => [k] -> trie map k a -> (trie map k a, trie map k a)

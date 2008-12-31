@@ -5,12 +5,13 @@
 module Data.Trie.Base.Map where
 
 import Control.Arrow ((***), first, second)
-import Control.Monad (join)
 import Data.Function (on)
 import Data.List     (foldl', foldl1', mapAccumL, nubBy, partition, sortBy)
 import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
+
+import Data.Trie.Util (both)
 
 class Map m k where
    -- Like an Eq instance over k, but should compare on the same type as 'm'
@@ -378,7 +379,7 @@ instance Enum k => OrdMap IMap k where
    splitLookup (IMap m) =
       (\(a,b,c) -> (IMap a, b, IMap c)) . flip IM.splitLookup m . fromEnum
 
-   split (IMap m) = join (***) IMap . flip IM.split m . fromEnum
+   split (IMap m) = both IMap . flip IM.split m . fromEnum
 
    minViewWithKey o@(IMap m) =
       maybe (Nothing, o) (Just . first toEnum *** IMap) (IM.minViewWithKey m)
