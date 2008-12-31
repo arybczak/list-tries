@@ -33,7 +33,7 @@
 	\
 	insertWith, insertWithKey, adjust, update, updateLookup, alter, \
 	\
-	unionWith, unionWithKey, unionsWith, \
+	unionWith, unionWithKey, unionsWith, unionsWithKey, \
 	differenceWith, differenceWithKey, intersectionWith, intersectionWithKey, \
 	\
 	filterWithKey, partitionWithKey, splitLookup, \

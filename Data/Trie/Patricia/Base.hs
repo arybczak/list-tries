@@ -9,7 +9,7 @@ module Data.Trie.Patricia.Base
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
    , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
-   , unionWith, unionWithKey, unionsWith
+   , unionWith, unionWithKey, unionsWith, unionsWithKey
    , differenceWith, differenceWithKey, intersectionWith, intersectionWithKey
    , filterWithKey, partitionWithKey
    , split, splitLookup
@@ -350,6 +350,12 @@ unionWithKey = go DL.empty
 unionsWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
            => (a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWith j = foldl' (unionWith j) empty
+
+unionsWithKey :: ( Alt st a, Boolable (st a)
+                 , Unionable st a, Trie trie st map k
+                 )
+              => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
+unionsWithKey j = foldl' (unionWithKey j) empty
 
 differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                => (a -> b -> Maybe a)

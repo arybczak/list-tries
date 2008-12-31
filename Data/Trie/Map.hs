@@ -185,6 +185,10 @@ unionsWith :: Map map k
            => (a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
 unionsWith = Base.unionsWith
 
+unionsWithKey :: Map map k
+              => ([k] -> a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
+unionsWithKey = Base.unionsWithKey
+
 -- O(n1+n2)
 difference :: Map map k
            => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
