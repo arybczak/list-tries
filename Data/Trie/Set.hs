@@ -83,6 +83,10 @@ size = Base.size . unTS
 member :: Map map a => [a] -> TrieSet map a -> Bool
 member = Base.member .:. unTS
 
+-- O(m).
+notMember :: Map map a => [a] -> TrieSet map a -> Bool
+notMember = Base.notMember .:. unTS
+
 -- O(?)
 isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isSubsetOf = Base.isSubmapOfBy (\_ _ -> Id True) `on` unTS

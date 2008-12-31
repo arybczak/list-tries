@@ -5,7 +5,7 @@
 
 module Data.Trie.Patricia.Base
    ( Trie(..)
-   , null, size, member, lookup
+   , null, size, member, notMember, lookup
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
    , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
@@ -71,6 +71,10 @@ size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 member :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
 member k tr = hasValue (lookup k tr)
+
+notMember :: (Alt st a, Boolable (st a), Trie trie st map k)
+       => [k] -> trie map k a -> Bool
+notMember k tr = not (member k tr)
 
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup k tr =

@@ -1,7 +1,7 @@
 -- File created: 2008-12-30 18:33:18
 
 #define COMMON_EXPORTS \
-	null, size, member, \
+	null, size, member, notMember, \
 	\
 	empty, singleton, insert, delete, \
 	\

@@ -76,6 +76,10 @@ size = Base.size
 member :: Map map k => [k] -> TrieMap map k a -> Bool
 member = Base.member
 
+-- O(m).
+notMember :: Map map k => [k] -> TrieMap map k a -> Bool
+notMember = Base.notMember
+
 -- O(m)
 lookup :: Map map k => [k] -> TrieMap map k a -> Maybe a
 lookup = Base.lookup
