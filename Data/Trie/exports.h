@@ -23,7 +23,8 @@
 	\
 	map, map', \
 	\
-	fold, foldAsc, foldDesc
+	foldr, foldrAsc, foldrDesc, \
+	foldl', foldl'Asc, foldl'Desc
 
 #define MAP_EXPORTS TrieMap, COMMON_EXPORTS, \
 	lookup, lookupWithDefault, \
@@ -31,19 +32,38 @@
 	isSubmapOf, isSubmapOfBy, \
 	isProperSubmapOf, isProperSubmapOfBy, \
 	\
-	insertWith, adjust, update, updateLookup, alter, \
+	insertWith, insertWith', \
+   adjust, adjust', update, updateLookup, alter, alter', \
 	\
-	unionWith, unionWithKey, unionsWith, unionsWithKey, \
-	differenceWith, differenceWithKey, intersectionWith, intersectionWithKey, \
+	union', unions', \
+	unionWith,  unionWithKey,  unionsWith,  unionsWithKey, \
+	unionWith', unionWithKey', unionsWith', unionsWithKey', \
+	difference', \
+	differenceWith,  differenceWithKey, \
+	differenceWith', differenceWithKey', \
+	intersection', \
+	intersectionWith,  intersectionWithKey, \
+	intersectionWith', intersectionWithKey', \
 	\
 	filterWithKey, partitionWithKey, splitLookup, \
 	\
 	mapMaybe, mapMaybeWithKey, mapEither, mapEitherWithKey, \
 	\
-	map, mapWithKey, mapAccum, mapAccumWithKey, \
-	mapAccumAsc, mapAccumAscWithKey, mapAccumDesc, mapAccumDescWithKey, \
+	map, map', mapWithKey, mapWithKey', \
+	mapAccum,      mapAccumWithKey, \
+	mapAccum',     mapAccumWithKey', \
+	mapAccumAsc,   mapAccumAscWithKey, \
+	mapAccumAsc',  mapAccumAscWithKey', \
+	mapAccumDesc,  mapAccumDescWithKey, \
+	mapAccumDesc', mapAccumDescWithKey', \
 	mapKeys, mapKeysWith, mapKeys', mapKeys'With, \
 	\
-	fold, foldWithKey, foldAsc, foldAscWithKey, foldDesc, foldDescWithKey, \
+	foldr, foldrWithKey, \
+	foldrAsc, foldrAscWithKey, \
+	foldrDesc, foldrDescWithKey, \
+	foldl', foldl'WithKey, \
+	foldl'Asc, foldl'AscWithKey, \
+	foldl'Desc, foldl'DescWithKey, \
 	\
-	fromListWith, fromListWithKey
+	fromListWith,  fromListWithKey, \
+	fromListWith', fromListWithKey'

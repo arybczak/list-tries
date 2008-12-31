@@ -15,6 +15,6 @@ module Data.Trie.Patricia.Set.Enum (SET_EXPORTS) where
 import Data.Trie.Base.Map            (IMap)
 import Data.Trie.Patricia.Set hiding (TrieSet)
 import qualified Data.Trie.Patricia.Set as Base
-import Prelude hiding (filter, map, null)
+import Prelude hiding (filter, foldr, map, null)
 
 type TrieSet = Base.TrieSet IMap

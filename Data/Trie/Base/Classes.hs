@@ -26,16 +26,22 @@ instance Unwrappable Identity       where unwrap (Id a) = a
 instance Boolable   (Identity Bool) where toBool = unwrap
 
 class Unionable v a where
-   unionVals        :: (a -> a -> a)       -> v a -> v a -> v a
+   unionVals         :: (a -> a -> a)       -> v a -> v a -> v a
+   unionVals'        :: (a -> a -> a)       -> v a -> v a -> v a
 class Differentiable v a b where
-   differenceVals   :: (a -> b -> Maybe a) -> v a -> v b -> v a
+   differenceVals    :: (a -> b -> Maybe a) -> v a -> v b -> v a
 class Intersectable v a b c where
-   intersectionVals :: (a -> b -> c)       -> v a -> v b -> v c
+   intersectionVals  :: (a -> b -> c)       -> v a -> v b -> v c
+   intersectionVals' :: (a -> b -> c)       -> v a -> v b -> v c
 
 instance Unionable    Maybe a  where
    unionVals f (Just a) (Just b) = Just (f a b)
    unionVals _ Nothing  mb       = mb
    unionVals _ ma       _        = ma
+
+   unionVals' f (Just a) (Just b) = Just $! f a b
+   unionVals' _ Nothing  mb       = mb
+   unionVals' _ ma       _        = ma
 
 instance Differentiable Maybe a b where
    differenceVals f (Just a) (Just b) = f a b
@@ -44,13 +50,17 @@ instance Differentiable Maybe a b where
 instance Intersectable Maybe a b c where
    intersectionVals = liftM2
 
+   intersectionVals' f (Just a) (Just b) = Just $! f a b
+   intersectionVals' _ _        _        = Nothing
+
 -- The other option with the following three would have been to just call f
 -- (and, in the case of Differentiable, fromJust) and trust that it's correct.
 -- I think this way is safer. Bottoms are passed to Base.unionWith etc.
 
 -- **FUNKY**
 instance Unionable Identity Bool where
-   unionVals _ (Id a) (Id b) = Id$ a || b
+   unionVals  _ (Id a) (Id b) = Id$ a || b
+   unionVals' = error "Data.Trie.Base.Classes.unionVals' :: internal error"
 
 -- **FUNKY**
 instance Differentiable Identity Bool Bool where
@@ -59,6 +69,8 @@ instance Differentiable Identity Bool Bool where
 -- **FUNKY**
 instance Intersectable Identity Bool Bool Bool where
    intersectionVals _ (Id a) (Id b) = Id$ a && b
+   intersectionVals' =
+      error "Data.Trie.Base.Classes.intersectionVals' :: internal error"
 
 -- TODO: might be reasonably doable with plain Alternative: WrappedMonad for
 -- Identity and a Monoid for Bool (monadLib has this stuff but if base doesn't
@@ -81,3 +93,11 @@ instance Alt Maybe a where
 instance Alt Identity Bool where
    altEmpty = Id False
    Id a <|> Id b = Id (a || b)
+
+fmap', (<$!>) :: (Boolable (f a), Unwrappable f, Alt f b)
+              => (a -> b) -> f a -> f b
+fmap' f ax = if toBool ax
+                then pure $! f (unwrap ax)
+                else altEmpty
+
+(<$!>) = fmap'

@@ -14,7 +14,7 @@ module Data.Trie.Patricia.Set (SET_EXPORTS) where
 
 import Control.Arrow  ((***), second)
 import Data.Function  (on)
-import Prelude hiding (filter, map, null)
+import Prelude hiding (filter, foldr, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
@@ -164,16 +164,28 @@ map' = inTS . Base.mapKeys'With defaultUnion
 -- * Folding
 
 -- O(n)
-fold :: Map map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
-fold f = Base.foldWithKey (\k _ -> f k) .:. unTS
+foldr :: Map map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldr f = Base.foldrWithKey (\k _ -> f k) .:. unTS
 
 -- O(n)
-foldAsc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
-foldAsc f = Base.foldAscWithKey (\k _ -> f k) .:. unTS
+foldrAsc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldrAsc f = Base.foldrAscWithKey (\k _ -> f k) .:. unTS
 
 -- O(n)
-foldDesc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
-foldDesc f = Base.foldDescWithKey (\k _ -> f k) .:. unTS
+foldrDesc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldrDesc f = Base.foldrDescWithKey (\k _ -> f k) .:. unTS
+
+-- O(n)
+foldl' :: Map map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldl' f = Base.foldl'WithKey (\k _ -> f k) .:. unTS
+
+-- O(n)
+foldl'Asc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldl'Asc f = Base.foldl'AscWithKey (\k _ -> f k) .:. unTS
+
+-- O(n)
+foldl'Desc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldl'Desc f = Base.foldl'DescWithKey (\k _ -> f k) .:. unTS
 
 -- * Conversion between lists
 

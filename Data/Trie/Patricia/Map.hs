@@ -5,6 +5,14 @@
 --
 -- Complexities are given; @n@ refers to the number of elements in the set, @m@
 -- to their maximum length, @b@ to the trie's branching factor.
+--
+-- Strict versions of functions are provided for those who want to be certain
+-- that their TrieMap doesn't contain values consisting of unevaluated thunks.
+-- Note, however, that they do not evaluate the whole trie strictly, only the
+-- values. And only to one level of depth: for instance, 'alter\'' and
+-- 'differenceWith\'' do not 'seq' the value within the Maybe, only the Maybe
+-- itself. The user should add the strictness in such cases himself, if he so
+-- wishes.
 
 {-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
@@ -12,13 +20,12 @@
 
 module Data.Trie.Patricia.Map (MAP_EXPORTS) where
 
-import Control.Applicative ((<|>))
 import Control.Arrow       ((***), second)
 import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
 import qualified Data.Maybe as Maybe
-import Prelude hiding      (filter, lookup, map, null)
+import Prelude hiding      (filter, foldr, lookup, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
@@ -27,7 +34,8 @@ import Text.Read (readPrec, lexP, parens, prec, Lexeme(Ident), pfail)
 
 import qualified Data.Trie.Base.Map      as Map
 import qualified Data.Trie.Patricia.Base as Base
-import Data.Trie.Base.Map (Map, OrdMap)
+import Data.Trie.Base.Classes (fmap')
+import Data.Trie.Base.Map     (Map, OrdMap)
 
 -- Invariant: any (Tr Nothing _ _) has at least two children, all of which are
 -- Just or have a Just descendant.
@@ -128,12 +136,21 @@ insertWith :: Map map k
 insertWith = Base.insertWith
 
 -- O(m)
+insertWith' :: Map map k
+           => (a -> a -> a) -> [k] -> a -> TrieMap map k a -> TrieMap map k a
+insertWith' = Base.insertWith'
+
+-- O(m)
 delete :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 delete = Base.delete
 
 -- O(m)
 adjust :: Map map k => (a -> a) -> [k] -> TrieMap map k a -> TrieMap map k a
 adjust = Base.adjust
+
+-- O(m)
+adjust' :: Map map k => (a -> a) -> [k] -> TrieMap map k a -> TrieMap map k a
+adjust' = Base.adjust'
 
 -- O(m)
 update :: Map map k
@@ -145,12 +162,17 @@ updateLookup :: Map map k => (a -> Maybe a)
                           -> [k]
                           -> TrieMap map k a
                           -> (Maybe a, TrieMap map k a)
-updateLookup f = Base.updateLookup (\v -> let v' = v >>= f in (v' <|> v, v'))
+updateLookup = Base.updateLookup
 
 -- O(m)
 alter :: Map map k
       => (Maybe a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
 alter = Base.alter
+
+-- O(m)
+alter' :: Map map k
+      => (Maybe a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
+alter' = Base.alter'
 
 -- * Combination
 
@@ -160,11 +182,20 @@ defaultUnion = const
 union :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 union = unionWith defaultUnion
 
+union' :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
+union' = unionWith' defaultUnion
+
 unionWith :: Map map k => (a -> a -> a)
                        -> TrieMap map k a
                        -> TrieMap map k a
                        -> TrieMap map k a
 unionWith = Base.unionWith
+
+unionWith' :: Map map k => (a -> a -> a)
+                        -> TrieMap map k a
+                        -> TrieMap map k a
+                        -> TrieMap map k a
+unionWith' = Base.unionWith'
 
 unionWithKey :: Map map k => ([k] -> a -> a -> a)
                           -> TrieMap map k a
@@ -172,20 +203,41 @@ unionWithKey :: Map map k => ([k] -> a -> a -> a)
                           -> TrieMap map k a
 unionWithKey = Base.unionWithKey
 
+unionWithKey' :: Map map k => ([k] -> a -> a -> a)
+                           -> TrieMap map k a
+                           -> TrieMap map k a
+                           -> TrieMap map k a
+unionWithKey' = Base.unionWithKey'
+
 unions :: Map map k => [TrieMap map k a] -> TrieMap map k a
 unions = unionsWith defaultUnion
+
+unions' :: Map map k => [TrieMap map k a] -> TrieMap map k a
+unions' = unionsWith' defaultUnion
 
 unionsWith :: Map map k
            => (a -> a -> a) -> [TrieMap map k a] -> TrieMap map k a
 unionsWith = Base.unionsWith
 
+unionsWith' :: Map map k
+            => (a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
+unionsWith' = Base.unionsWith'
+
 unionsWithKey :: Map map k
               => ([k] -> a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
 unionsWithKey = Base.unionsWithKey
 
+unionsWithKey' :: Map map k
+               => ([k] -> a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
+unionsWithKey' = Base.unionsWithKey'
+
 difference :: Map map k
            => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 difference = differenceWith (\_ _ -> Nothing)
+
+difference' :: Map map k
+            => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
+difference' = differenceWith' (\_ _ -> Nothing)
 
 differenceWith :: Map map k => (a -> b -> Maybe a)
                             -> TrieMap map k a
@@ -193,15 +245,31 @@ differenceWith :: Map map k => (a -> b -> Maybe a)
                             -> TrieMap map k a
 differenceWith = Base.differenceWith
 
+differenceWith' :: Map map k => (a -> b -> Maybe a)
+                             -> TrieMap map k a
+                             -> TrieMap map k b
+                             -> TrieMap map k a
+differenceWith' = Base.differenceWith'
+
 differenceWithKey :: Map map k => ([k] -> a -> b -> Maybe a)
                                -> TrieMap map k a
                                -> TrieMap map k b
                                -> TrieMap map k a
 differenceWithKey = Base.differenceWithKey
 
+differenceWithKey' :: Map map k => ([k] -> a -> b -> Maybe a)
+                                -> TrieMap map k a
+                                -> TrieMap map k b
+                                -> TrieMap map k a
+differenceWithKey' = Base.differenceWithKey'
+
 intersection :: Map map k
              => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 intersection = intersectionWith const
+
+intersection' :: Map map k
+              => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
+intersection' = intersectionWith' const
 
 intersectionWith :: Map map k => (a -> b -> c)
                               -> TrieMap map k a
@@ -209,11 +277,23 @@ intersectionWith :: Map map k => (a -> b -> c)
                               -> TrieMap map k c
 intersectionWith = Base.intersectionWith
 
+intersectionWith' :: Map map k => (a -> b -> c)
+                               -> TrieMap map k a
+                               -> TrieMap map k b
+                               -> TrieMap map k c
+intersectionWith' = Base.intersectionWith'
+
 intersectionWithKey :: Map map k => ([k] -> a -> b -> c)
                                  -> TrieMap map k a
                                  -> TrieMap map k b
                                  -> TrieMap map k c
 intersectionWithKey = Base.intersectionWithKey
+
+intersectionWithKey' :: Map map k => ([k] -> a -> b -> c)
+                                  -> TrieMap map k a
+                                  -> TrieMap map k b
+                                  -> TrieMap map k c
+intersectionWithKey' = Base.intersectionWithKey'
 
 -- * Filtering
 
@@ -276,60 +356,122 @@ mapEitherWithKey f =
 
 -- O(n)
 map :: Map map k => (a -> b) -> TrieMap map k a -> TrieMap map k b
-map f (Tr v p m) = Tr (fmap f v) p (Map.map (map f) m)
+map = genericMap fmap
 
 -- O(n)
-mapWithKey :: (Map map k)
+map' :: Map map k => (a -> b) -> TrieMap map k a -> TrieMap map k b
+map' = genericMap fmap'
+
+genericMap :: Map map k => ((a -> b) -> Maybe a -> Maybe b)
+                        -> (a -> b) -> TrieMap map k a -> TrieMap map k b
+genericMap myFmap f (Tr v p m) = Tr (myFmap f v) p
+                                    (Map.map (genericMap myFmap f) m)
+
+-- O(n)
+mapWithKey :: Map map k
            => ([k] -> a -> b) -> TrieMap map k a -> TrieMap map k b
-mapWithKey = go DL.empty
+mapWithKey = genericMapWithKey fmap
+
+-- O(n)
+mapWithKey' :: Map map k
+            => ([k] -> a -> b) -> TrieMap map k a -> TrieMap map k b
+mapWithKey' = genericMapWithKey fmap'
+
+genericMapWithKey :: Map map k
+                  => ((a -> b) -> Maybe a -> Maybe b)
+                  -> ([k] -> a -> b) -> TrieMap map k a -> TrieMap map k b
+genericMapWithKey = go DL.empty
  where
-   go k f (Tr v p m) =
+   go k myFmap f (Tr v p m) =
       let k' = k `DL.append` DL.fromList p
-       in Tr (fmap (f $ DL.toList k') v)
+       in Tr (myFmap (f $ DL.toList k') v)
              p
-             (Map.mapWithKey (\x -> go (k' `DL.snoc` x) f) m)
+             (Map.mapWithKey (\x -> go (k' `DL.snoc` x) myFmap f) m)
 
 -- O(n)
 mapAccum :: Map map k => (acc -> a -> (acc, b))
                       -> acc
                       -> TrieMap map k a
                       -> (acc, TrieMap map k b)
-mapAccum = genericMapAccum Map.mapAccum
+mapAccum = genericMapAccum Map.mapAccum (flip const)
+
+-- O(n)
+mapAccum' :: Map map k => (acc -> a -> (acc, b))
+                       -> acc
+                       -> TrieMap map k a
+                       -> (acc, TrieMap map k b)
+mapAccum' = genericMapAccum Map.mapAccum seq
 
 -- O(n)
 mapAccumWithKey :: Map map k => (acc -> [k] -> a -> (acc, b))
                              -> acc
                              -> TrieMap map k a
                              -> (acc, TrieMap map k b)
-mapAccumWithKey = genericMapAccumWithKey Map.mapAccumWithKey
+mapAccumWithKey = genericMapAccumWithKey Map.mapAccumWithKey (flip const)
+
+-- O(n)
+mapAccumWithKey' :: Map map k => (acc -> [k] -> a -> (acc, b))
+                              -> acc
+                              -> TrieMap map k a
+                              -> (acc, TrieMap map k b)
+mapAccumWithKey' = genericMapAccumWithKey Map.mapAccumWithKey seq
 
 -- O(n)
 mapAccumAsc :: OrdMap map k => (acc -> a -> (acc, b))
                             -> acc
                             -> TrieMap map k a
                             -> (acc, TrieMap map k b)
-mapAccumAsc = genericMapAccum Map.mapAccumAsc
+mapAccumAsc = genericMapAccum Map.mapAccumAsc (flip const)
+
+-- O(n)
+mapAccumAsc' :: OrdMap map k => (acc -> a -> (acc, b))
+                             -> acc
+                             -> TrieMap map k a
+                             -> (acc, TrieMap map k b)
+mapAccumAsc' = genericMapAccum Map.mapAccumAsc seq
 
 -- O(n)
 mapAccumAscWithKey :: OrdMap map k => (acc -> [k] -> a -> (acc, b))
                                    -> acc
                                    -> TrieMap map k a
                                    -> (acc, TrieMap map k b)
-mapAccumAscWithKey = genericMapAccumWithKey Map.mapAccumAscWithKey
+mapAccumAscWithKey = genericMapAccumWithKey Map.mapAccumAscWithKey (flip const)
+
+-- O(n)
+mapAccumAscWithKey' :: OrdMap map k => (acc -> [k] -> a -> (acc, b))
+                                    -> acc
+                                    -> TrieMap map k a
+                                    -> (acc, TrieMap map k b)
+mapAccumAscWithKey' = genericMapAccumWithKey Map.mapAccumAscWithKey seq
 
 -- O(n)
 mapAccumDesc :: OrdMap map k => (acc -> a -> (acc, b))
                              -> acc
                              -> TrieMap map k a
                              -> (acc, TrieMap map k b)
-mapAccumDesc = genericMapAccum Map.mapAccumDesc
+mapAccumDesc = genericMapAccum Map.mapAccumDesc (flip const)
+
+-- O(n)
+mapAccumDesc' :: OrdMap map k => (acc -> a -> (acc, b))
+                              -> acc
+                              -> TrieMap map k a
+                              -> (acc, TrieMap map k b)
+mapAccumDesc' = genericMapAccum Map.mapAccumDesc seq
 
 -- O(n)
 mapAccumDescWithKey :: OrdMap map k => (acc -> [k] -> a -> (acc, b))
                                     -> acc
                                     -> TrieMap map k a
                                     -> (acc, TrieMap map k b)
-mapAccumDescWithKey = genericMapAccumWithKey Map.mapAccumDescWithKey
+mapAccumDescWithKey =
+   genericMapAccumWithKey Map.mapAccumDescWithKey (flip const)
+
+-- O(n)
+mapAccumDescWithKey' :: OrdMap map k => (acc -> [k] -> a -> (acc, b))
+                                     -> acc
+                                     -> TrieMap map k a
+                                     -> (acc, TrieMap map k b)
+mapAccumDescWithKey' = genericMapAccumWithKey Map.mapAccumDescWithKey seq
 
 genericMapAccum :: Map map k
                 => (  (acc -> TrieMap map k a -> (acc, TrieMap map k b))
@@ -337,16 +479,20 @@ genericMapAccum :: Map map k
                    -> CMap map k a
                    -> (acc, CMap map k b)
                    )
+                -> (b -> (acc, Maybe b) -> (acc, Maybe b))
                 -> (acc -> a -> (acc, b))
                 -> acc
                 -> TrieMap map k a
                 -> (acc, TrieMap map k b)
-genericMapAccum subMapAccum f acc (Tr mv p m) =
-   let (acc', v') =
+genericMapAccum subMapAccum seeq f acc (Tr mv p m) =
+   let (acc', mv') =
           case mv of
                Nothing -> (acc, Nothing)
-               Just v  -> second Just (f acc v)
-    in second (Tr v' p) $ subMapAccum (genericMapAccum subMapAccum f) acc' m
+               Just v  ->
+                  let (acc'', v') = f acc v
+                   in v' `seeq` (acc'', Just v')
+    in second (Tr mv' p) $
+         subMapAccum (genericMapAccum subMapAccum seeq f) acc' m
 
 genericMapAccumWithKey :: Map map k => (  (  acc
                                           -> k
@@ -357,20 +503,24 @@ genericMapAccumWithKey :: Map map k => (  (  acc
                                        -> CMap map k a
                                        -> (acc, CMap map k b)
                                        )
+                                    -> (b -> (acc, Maybe b) -> (acc, Maybe b))
                                     -> (acc -> [k] -> a -> (acc, b))
                                     -> acc
                                     -> TrieMap map k a
                                     -> (acc, TrieMap map k b)
 genericMapAccumWithKey = go DL.empty
  where
-   go k subMapAccum f acc (Tr mv p m) =
+   go k subMapAccum seeq f acc (Tr mv p m) =
       let k'         = k `DL.append` DL.fromList p
-          (acc', v') =
+          (acc', mv') =
              case mv of
                   Nothing -> (acc, Nothing)
-                  Just v  -> second Just (f acc (DL.toList k') v)
-       in second (Tr v' p) $
-             subMapAccum (\a x -> go (k' `DL.snoc` x) subMapAccum f a) acc' m
+                  Just v  ->
+                     let (acc'', v') = f acc (DL.toList k') v
+                      in v' `seeq` (acc'', Just v')
+       in second (Tr mv' p) $
+             subMapAccum (\a x -> go (k' `DL.snoc` x) subMapAccum seeq f a)
+                         acc' m
 
 -- O(n)
 mapKeys :: (Map map k1, Map map k2)
@@ -401,30 +551,56 @@ mapKeys'With = Base.mapKeys'With
 -- * Folding
 
 -- O(n)
-fold :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-fold f = foldWithKey (const f)
+foldr :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldr f = foldrWithKey (const f)
 
 -- O(n)
-foldWithKey :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
-foldWithKey = Base.foldWithKey
+foldrWithKey :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldrWithKey = Base.foldrWithKey
 
 -- O(n)
-foldAsc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldAsc f = foldAscWithKey (const f)
+foldrAsc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldrAsc f = foldrAscWithKey (const f)
 
 -- O(n)
-foldAscWithKey :: OrdMap map k
-               => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
-foldAscWithKey = Base.foldAscWithKey
-
--- O(n)
-foldDesc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldDesc f = foldDescWithKey (const f)
-
--- O(n)
-foldDescWithKey :: OrdMap map k
+foldrAscWithKey :: OrdMap map k
                 => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
-foldDescWithKey = Base.foldDescWithKey
+foldrAscWithKey = Base.foldrAscWithKey
+
+-- O(n)
+foldrDesc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldrDesc f = foldrDescWithKey (const f)
+
+-- O(n)
+foldrDescWithKey :: OrdMap map k
+                 => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldrDescWithKey = Base.foldrDescWithKey
+
+-- O(n)
+foldl' :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldl' f = foldl'WithKey (const f)
+
+-- O(n)
+foldl'WithKey :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldl'WithKey = Base.foldl'WithKey
+
+-- O(n)
+foldl'Asc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldl'Asc f = foldl'AscWithKey (const f)
+
+-- O(n)
+foldl'AscWithKey :: OrdMap map k
+                 => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldl'AscWithKey = Base.foldl'AscWithKey
+
+-- O(n)
+foldl'Desc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldl'Desc f = foldl'DescWithKey (const f)
+
+-- O(n)
+foldl'DescWithKey :: OrdMap map k
+                  => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldl'DescWithKey = Base.foldl'DescWithKey
 
 -- * Conversion between lists
 
@@ -449,10 +625,18 @@ fromListWith :: Map map k => (a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWith = Base.fromListWith
 
 -- O(n*m)
+fromListWith' :: Map map k => (a -> a -> a) -> [([k],a)] -> TrieMap map k a
+fromListWith' = Base.fromListWith'
+
+-- O(n*m)
 fromListWithKey :: Map map k
                 => ([k] -> a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWithKey = Base.fromListWithKey
 
+-- O(n*m)
+fromListWithKey' :: Map map k
+                 => ([k] -> a -> a -> a) -> [([k],a)] -> TrieMap map k a
+fromListWithKey' = Base.fromListWithKey'
 
 -- * Min/max
 
