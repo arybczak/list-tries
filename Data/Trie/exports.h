@@ -31,7 +31,7 @@
 	isSubmapOf, isSubmapOfBy, \
 	isProperSubmapOf, isProperSubmapOfBy, \
 	\
-	insertWith, insertWithKey, adjust, update, updateLookup, alter, \
+	insertWith, adjust, update, updateLookup, alter, \
 	\
 	unionWith, unionWithKey, unionsWith, unionsWithKey, \
 	differenceWith, differenceWithKey, intersectionWith, intersectionWithKey, \

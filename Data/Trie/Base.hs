@@ -8,7 +8,7 @@ module Data.Trie.Base
    , null, size, member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
-   , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
+   , insert, insertWith, delete, adjust, updateLookup, alter
    , unionWith, unionWithKey, unionsWith, unionsWithKey
    , differenceWith, differenceWithKey, intersectionWith, intersectionWithKey
    , filterWithKey, partitionWithKey
@@ -167,12 +167,6 @@ insertWith f []     new tr = mapVal tr $ \old -> (f new <$> old) <|> pure new
 insertWith f (x:xs) val tr = mapMap tr $ \m ->
    Map.insertWith (\_ old -> insertWith f xs val old)
                   m x (singleton xs val)
-
-insertWithKey :: (Alt st a, Trie trie st map k) => ([k] -> a -> a -> a)
-                                                -> [k] -> a
-                                                -> trie map k a
-                                                -> trie map k a
-insertWithKey f k = insertWith (f k) k
 
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> trie map k a
@@ -411,7 +405,7 @@ fromListWith f = foldl' (flip . uncurry $ insertWith f) empty
 
 fromListWithKey :: (Alt st a, Trie trie st map k)
                 => ([k] -> a -> a -> a) -> [([k],a)] -> trie map k a
-fromListWithKey f = foldl' (flip . uncurry $ insertWithKey f) empty
+fromListWithKey f = foldl' (\tr (k,v) -> insertWith (f k) k v tr) empty
 
 -- * Min/max
 

@@ -8,7 +8,7 @@ module Data.Trie.Patricia.Base
    , null, size, member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
-   , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
+   , insert, insertWith, delete, adjust, updateLookup, alter
    , unionWith, unionWithKey, unionsWith, unionsWithKey
    , differenceWith, differenceWithKey, intersectionWith, intersectionWithKey
    , filterWithKey, partitionWithKey
@@ -210,13 +210,6 @@ insertWith f k new tr =
                                                    p (mkTrie old pr m)
 
             _ -> error "Data.Trie.Patricia.Base.insertWith :: internal error"
-
-insertWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
-              => ([k] -> a -> a -> a)
-              -> [k] -> a
-              -> trie map k a
-              -> trie map k a
-insertWithKey f k = insertWith (f k) k
 
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> trie map k a
@@ -778,7 +771,7 @@ fromListWith f = foldl' (flip . uncurry $ insertWith f) empty
 
 fromListWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                 => ([k] -> a -> a -> a) -> [([k],a)] -> trie map k a
-fromListWithKey f = foldl' (flip . uncurry $ insertWithKey f) empty
+fromListWithKey f = foldl' (\tr (k,v) -> insertWith (f k) k v tr) empty
 
 
 -- * Min/max

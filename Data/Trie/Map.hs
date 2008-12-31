@@ -127,13 +127,6 @@ insertWith :: Map map k
 insertWith = Base.insertWith
 
 -- O(m)
-insertWithKey :: Map map k => ([k] -> a -> a -> a)
-                           -> [k] -> a
-                           -> TrieMap map k a
-                           -> TrieMap map k a
-insertWithKey = Base.insertWithKey
-
--- O(m)
 delete :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 delete = Base.delete
 
