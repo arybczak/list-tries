@@ -83,6 +83,9 @@ notMember = Base.notMember
 lookup :: Map map k => [k] -> TrieMap map k a -> Maybe a
 lookup = Base.lookup
 
+lookupWithDefault :: Map map k => a -> [k] -> TrieMap map k a -> a
+lookupWithDefault = Base.lookupWithDefault
+
 -- O(?)
 isSubmapOf :: (Map map k, Eq a) => TrieMap map k a -> TrieMap map k a -> Bool
 isSubmapOf = isSubmapOfBy (==)

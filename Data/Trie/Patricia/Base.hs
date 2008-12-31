@@ -5,7 +5,7 @@
 
 module Data.Trie.Patricia.Base
    ( Trie(..)
-   , null, size, member, notMember, lookup
+   , null, size, member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
    , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
@@ -84,6 +84,10 @@ lookup k tr =
             PostFix (Right (x:xs)) -> maybe altEmpty (lookup xs)
                                             (Map.lookup m x)
             _                      -> altEmpty
+
+lookupWithDefault :: (Alt st a, Trie trie st map k)
+                  => a -> [k] -> trie map k a -> a
+lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
 isSubmapOfBy :: ( Boolable (st a), Boolable (st b)
                 , Alt st Bool

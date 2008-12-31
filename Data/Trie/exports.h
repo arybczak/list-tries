@@ -26,7 +26,7 @@
 	fold, foldAsc, foldDesc
 
 #define MAP_EXPORTS TrieMap, COMMON_EXPORTS, \
-	lookup, \
+	lookup, lookupWithDefault, \
 	\
 	isSubmapOf, isSubmapOfBy, \
 	isProperSubmapOf, isProperSubmapOfBy, \

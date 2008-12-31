@@ -5,7 +5,7 @@
 
 module Data.Trie.Base
    ( Trie(..)
-   , null, size, member, notMember, lookup
+   , null, size, member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
    , insert, insertWith, insertWithKey, delete, adjust, updateLookup, alter
@@ -103,6 +103,10 @@ notMember k tr = not (member k tr)
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup []     tr = tVal tr
 lookup (x:xs) tr = maybe altEmpty (lookup xs) (Map.lookup (tMap tr) x)
+
+lookupWithDefault :: (Alt st a, Trie trie st map k)
+                  => a -> [k] -> trie map k a -> a
+lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
 isSubmapOfBy :: ( Boolable (st a), Boolable (st b)
                 , Alt st Bool
