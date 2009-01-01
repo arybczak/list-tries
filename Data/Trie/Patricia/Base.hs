@@ -1145,7 +1145,7 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
 -- * Trie-only operations
 
--- O(1)
+-- O(s) where s is the input
 addPrefix :: (Alt st a, Trie trie st map k)
           => [k] -> trie map k a -> trie map k a
 addPrefix xs tr =

@@ -254,7 +254,7 @@ findSuccessor = fmap fst .: Base.findSuccessor . unTS
 
 -- * Trie-only operations
 
--- O(1)
+-- O(s) where s is the input
 addPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 addPrefix = TS .: Base.addPrefix .:. unTS
 

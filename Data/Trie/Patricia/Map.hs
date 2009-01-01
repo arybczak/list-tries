@@ -703,7 +703,7 @@ findSuccessor = Base.findSuccessor
 
 -- * Trie-only operations
 
--- O(1)
+-- O(s) where s is the input
 addPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 addPrefix = Base.addPrefix
 
