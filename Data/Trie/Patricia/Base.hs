@@ -1162,23 +1162,18 @@ splitPrefix tr =
 -- O(m)
 lookupPrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
-lookupPrefix = go DL.empty
- where
-   go pr xs tr =
-      let (_,pre,m) = tParts tr
-       in case comparePrefixes (Map.eqCmp m) pre xs of
-               Same                   -> addPrefix (DL.toList pr) tr
-               PostFix (Left _)       -> addPrefix (DL.toList pr) tr
-               DifferedAt _ _ _       -> empty
-               PostFix (Right (y:ys)) ->
-                  case Map.lookup m y of
-                       Nothing  -> empty
-                       Just tr' ->
-                          go (pr `DL.append` DL.fromList pre `DL.snoc` y)
-                             ys tr'
+lookupPrefix xs tr =
+   let (_,pre,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) pre xs of
+            Same                   -> tr
+            PostFix (Left _)       -> tr
+            DifferedAt _ _ _       -> empty
+            PostFix (Right (y:ys)) ->
+               case Map.lookup m y of
+                    Nothing  -> empty
+                    Just tr' -> lookupPrefix ys tr'
 
-               _ -> error
-                       "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
+            _ -> error "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
 
 -- helpers
 

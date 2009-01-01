@@ -761,10 +761,8 @@ splitPrefix = go DL.empty
 -- O(m)
 lookupPrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
-lookupPrefix = go DL.empty
- where
-   go pr []     tr = addPrefix (DL.toList pr) tr
-   go pr (x:xs) tr =
-      case Map.lookup (tMap tr) x of
-           Nothing  -> empty
-           Just tr' -> go (pr `DL.snoc` x) xs tr'
+lookupPrefix []     tr = tr
+lookupPrefix (x:xs) tr =
+   case Map.lookup (tMap tr) x of
+        Nothing  -> empty
+        Just tr' -> lookupPrefix xs tr'
