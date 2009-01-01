@@ -3,8 +3,16 @@
 -- The base implementation of a Patricia trie representing a map with list
 -- keys, generalized over any type of map from element values to tries.
 --
--- Complexities are given; @n@ refers to the number of elements in the set, @m@
--- to their maximum length, @b@ to the trie's branching factor.
+-- Complexities are given; @n@ refers to the number of elements in the set and
+-- @m@ to their maximum length. In addition, the trie's branching factor plays
+-- a part in almost every operation, but the complexity depends on the
+-- underlying Map. Thus, for instance, 'member' is actually O(m f(b)) where
+-- f(b) is the complexity of a lookup operation on the Map used. Because this
+-- complexity depends on the underlying operation, which is visible only in the
+-- source code and thus can be changed whilst affecting the complexity only for
+-- certain Map types, this "b factor" is not shown explicitly.
+-- 
+-- Disclaimer: the complexities have not been proven.
 --
 -- Strict versions of functions are provided for those who want to be certain
 -- that their TrieMap doesn't contain values consisting of unevaluated thunks.
@@ -92,24 +100,25 @@ notMember = Base.notMember
 lookup :: Map map k => [k] -> TrieMap map k a -> Maybe a
 lookup = Base.lookup
 
+-- O(m)
 lookupWithDefault :: Map map k => a -> [k] -> TrieMap map k a -> a
 lookupWithDefault = Base.lookupWithDefault
 
--- O(?)
+-- O(min(n1,n2))
 isSubmapOf :: (Map map k, Eq a) => TrieMap map k a -> TrieMap map k a -> Bool
 isSubmapOf = isSubmapOfBy (==)
 
--- O(?)
+-- O(min(n1,n2))
 isSubmapOfBy :: Map map k
              => (a -> b -> Bool) -> TrieMap map k a -> TrieMap map k b -> Bool
 isSubmapOfBy f = Base.isSubmapOfBy (liftM2 f)
 
--- O(?)
+-- O(min(n1,n2))
 isProperSubmapOf :: (Map map k, Eq a)
                  => TrieMap map k a -> TrieMap map k a -> Bool
 isProperSubmapOf = isProperSubmapOfBy (==)
 
--- O(?)
+-- O(min(n1,n2))
 isProperSubmapOfBy :: Map map k => (a -> b -> Bool)
                                 -> TrieMap map k a
                                 -> TrieMap map k b
@@ -179,30 +188,36 @@ alter' = Base.alter'
 defaultUnion :: a -> a -> a
 defaultUnion = const
 
+-- O(min(n1,n2))
 union :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 union = unionWith defaultUnion
 
+-- O(min(n1,n2))
 union' :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 union' = unionWith' defaultUnion
 
+-- O(min(n1,n2))
 unionWith :: Map map k => (a -> a -> a)
                        -> TrieMap map k a
                        -> TrieMap map k a
                        -> TrieMap map k a
 unionWith = Base.unionWith
 
+-- O(min(n1,n2))
 unionWith' :: Map map k => (a -> a -> a)
                         -> TrieMap map k a
                         -> TrieMap map k a
                         -> TrieMap map k a
 unionWith' = Base.unionWith'
 
+-- O(min(n1,n2))
 unionWithKey :: Map map k => ([k] -> a -> a -> a)
                           -> TrieMap map k a
                           -> TrieMap map k a
                           -> TrieMap map k a
 unionWithKey = Base.unionWithKey
 
+-- O(min(n1,n2))
 unionWithKey' :: Map map k => ([k] -> a -> a -> a)
                            -> TrieMap map k a
                            -> TrieMap map k a
@@ -231,64 +246,76 @@ unionsWithKey' :: Map map k
                => ([k] -> a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
 unionsWithKey' = Base.unionsWithKey'
 
+-- O(min(n1,n2))
 difference :: Map map k
            => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 difference = differenceWith (\_ _ -> Nothing)
 
+-- O(min(n1,n2))
 difference' :: Map map k
             => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
 difference' = differenceWith' (\_ _ -> Nothing)
 
+-- O(min(n1,n2))
 differenceWith :: Map map k => (a -> b -> Maybe a)
                             -> TrieMap map k a
                             -> TrieMap map k b
                             -> TrieMap map k a
 differenceWith = Base.differenceWith
 
+-- O(min(n1,n2))
 differenceWith' :: Map map k => (a -> b -> Maybe a)
                              -> TrieMap map k a
                              -> TrieMap map k b
                              -> TrieMap map k a
 differenceWith' = Base.differenceWith'
 
+-- O(min(n1,n2))
 differenceWithKey :: Map map k => ([k] -> a -> b -> Maybe a)
                                -> TrieMap map k a
                                -> TrieMap map k b
                                -> TrieMap map k a
 differenceWithKey = Base.differenceWithKey
 
+-- O(min(n1,n2))
 differenceWithKey' :: Map map k => ([k] -> a -> b -> Maybe a)
                                 -> TrieMap map k a
                                 -> TrieMap map k b
                                 -> TrieMap map k a
 differenceWithKey' = Base.differenceWithKey'
 
+-- O(min(n1,n2))
 intersection :: Map map k
              => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 intersection = intersectionWith const
 
+-- O(min(n1,n2))
 intersection' :: Map map k
               => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
 intersection' = intersectionWith' const
 
+-- O(min(n1,n2))
 intersectionWith :: Map map k => (a -> b -> c)
                               -> TrieMap map k a
                               -> TrieMap map k b
                               -> TrieMap map k c
 intersectionWith = Base.intersectionWith
 
+-- O(min(n1,n2))
 intersectionWith' :: Map map k => (a -> b -> c)
                                -> TrieMap map k a
                                -> TrieMap map k b
                                -> TrieMap map k c
 intersectionWith' = Base.intersectionWith'
 
+-- O(min(n1,n2))
 intersectionWithKey :: Map map k => ([k] -> a -> b -> c)
                                  -> TrieMap map k a
                                  -> TrieMap map k b
                                  -> TrieMap map k c
 intersectionWithKey = Base.intersectionWithKey
 
+-- O(min(n1,n2))
 intersectionWithKey' :: Map map k => ([k] -> a -> b -> c)
                                   -> TrieMap map k a
                                   -> TrieMap map k b
@@ -297,31 +324,33 @@ intersectionWithKey' = Base.intersectionWithKey'
 
 -- * Filtering
 
--- O(n)
+-- O(n m)
 filter :: Map map k => (a -> Bool) -> TrieMap map k a -> TrieMap map k a
 filter p = filterWithKey (const p)
 
--- O(n)
+-- O(n m)
 filterWithKey :: Map map k
               => ([k] -> a -> Bool) -> TrieMap map k a -> TrieMap map k a
 filterWithKey = Base.filterWithKey
 
--- O(n)
+-- O(n m)
 partition :: Map map k => (a -> Bool)
                        -> TrieMap map k a
                        -> (TrieMap map k a, TrieMap map k a)
 partition p = partitionWithKey (const p)
 
--- O(n)
+-- O(n m)
 partitionWithKey :: Map map k => ([k] -> a -> Bool)
                               -> TrieMap map k a
                               -> (TrieMap map k a, TrieMap map k a)
 partitionWithKey = Base.partitionWithKey
 
+-- O(m)
 split :: OrdMap map k
       => [k] -> TrieMap map k a -> (TrieMap map k a, TrieMap map k a)
 split = Base.split
 
+-- O(m)
 splitLookup :: OrdMap map k => [k]
                             -> TrieMap map k a
                             -> (TrieMap map k a, Maybe a, TrieMap map k a)
@@ -522,12 +551,12 @@ genericMapAccumWithKey = go DL.empty
              subMapAccum (\a x -> go (k' `DL.snoc` x) subMapAccum seeq f a)
                          acc' m
 
--- O(n)
+-- O(n m)
 mapKeys :: (Map map k1, Map map k2)
         => ([k1] -> [k2]) -> TrieMap map k1 a -> TrieMap map k2 a
 mapKeys = mapKeysWith const
 
--- O(n)
+-- O(n m)
 mapKeysWith :: (Map map k1, Map map k2) => (a -> a -> a)
                                         -> ([k1] -> [k2])
                                         -> TrieMap map k1 a
@@ -616,69 +645,72 @@ toAscList = Base.toAscList
 toDescList :: OrdMap map k => TrieMap map k a -> [([k],a)]
 toDescList = Base.toDescList
 
--- O(n*m)
+-- O(n m)
 fromList :: Map map k => [([k],a)] -> TrieMap map k a
 fromList = Base.fromList
 
--- O(n*m)
+-- O(n m)
 fromListWith :: Map map k => (a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWith = Base.fromListWith
 
--- O(n*m)
+-- O(n m)
 fromListWith' :: Map map k => (a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWith' = Base.fromListWith'
 
--- O(n*m)
+-- O(n m)
 fromListWithKey :: Map map k
                 => ([k] -> a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWithKey = Base.fromListWithKey
 
--- O(n*m)
+-- O(n m)
 fromListWithKey' :: Map map k
                  => ([k] -> a -> a -> a) -> [([k],a)] -> TrieMap map k a
 fromListWithKey' = Base.fromListWithKey'
 
 -- * Min/max
 
--- O(m log b)
+-- O(m)
 findMin :: OrdMap map k => TrieMap map k a -> Maybe ([k], a)
 findMin = Base.findMin
 
--- O(m log b)
+-- O(m)
 findMax :: OrdMap map k => TrieMap map k a -> Maybe ([k], a)
 findMax = Base.findMax
 
--- O(m log b)
+-- O(m)
 deleteMin :: OrdMap map k => TrieMap map k a -> TrieMap map k a
 deleteMin = Base.deleteMin
 
--- O(m log b)
+-- O(m)
 deleteMax :: OrdMap map k => TrieMap map k a -> TrieMap map k a
 deleteMax = Base.deleteMax
 
--- O(m log b)
+-- O(m)
 minView :: OrdMap map k => TrieMap map k a -> Maybe (([k], a), TrieMap map k a)
 minView = Base.minView
 
--- O(m log b)
+-- O(m)
 maxView :: OrdMap map k => TrieMap map k a -> Maybe (([k], a), TrieMap map k a)
 maxView = Base.maxView
 
--- O(m b)
+-- O(m)
 findPredecessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
 findPredecessor = Base.findPredecessor
 
--- O(m b)
+-- O(m)
 findSuccessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
 findSuccessor = Base.findSuccessor
 
 -- * Trie-only operations
 
+-- O(1)
 addPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 addPrefix = Base.addPrefix
 
+-- O(1)
 splitPrefix :: Map map k => TrieMap map k a -> ([k], TrieMap map k a)
 splitPrefix = Base.splitPrefix
 
+-- O(m)
 lookupPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 lookupPrefix = Base.lookupPrefix

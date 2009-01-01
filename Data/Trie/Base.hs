@@ -93,28 +93,35 @@ onMaps f a b = f (tMap a) (tMap b)
 
 -----------------------
 
+-- O(1)
 null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
 null tr = (noValue.tVal $ tr) && Map.null (tMap tr)
 
+-- O(n)
 size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
 size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 
+-- O(m)
 member :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
 member k tr = hasValue (lookup k tr)
 
+-- O(m)
 notMember :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
 notMember k tr = not (member k tr)
 
+-- O(m)
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup []     tr = tVal tr
 lookup (x:xs) tr = maybe altEmpty (lookup xs) (Map.lookup (tMap tr) x)
 
+-- O(m)
 lookupWithDefault :: (Alt st a, Trie trie st map k)
                   => a -> [k] -> trie map k a -> a
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
+-- O(min(n1,n2))
 isSubmapOfBy :: ( Boolable (st a), Boolable (st b)
                 , Alt st Bool
                 , Trie trie st map k
@@ -131,6 +138,7 @@ isSubmapOfBy f tr1 tr2 =
            , Map.isSubmapOfBy (isSubmapOfBy f) m1 m2
            ]
 
+-- O(min(n1,n2))
 isProperSubmapOfBy :: ( Boolable (st a), Boolable (st b)
                       , Alt st Bool
                       , Trie trie st map k
@@ -158,20 +166,25 @@ isProperSubmapOfBy = go False
 
 -- * Construction
 
+-- O(1)
 empty :: (Alt st a, Trie trie st map k) => trie map k a
 empty = mkTrie altEmpty Map.empty
 
+-- O(m)
 singleton :: (Alt st a, Trie trie st map k) => [k] -> a -> trie map k a
 singleton xs v = addPrefix xs $ mkTrie (pure v) Map.empty
 
+-- O(m)
 insert :: (Alt st a, Trie trie st map k)
        => [k] -> a -> trie map k a -> trie map k a
 insert = insertWith const
 
+-- O(m)
 insertWith :: (Alt st a, Trie trie st map k)
            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
 insertWith = genericInsertWith (<$>)
 
+-- O(m)
 insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
             => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
 insertWith' = genericInsertWith (<$!>)
@@ -186,14 +199,17 @@ genericInsertWith (<$$>) f (x:xs) val tr = mapMap tr $ \m ->
    Map.insertWith (\_ old -> genericInsertWith (<$$>) f xs val old)
                   m x (singleton xs val)
 
+-- O(m)
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> trie map k a
 delete = alter (const altEmpty)
 
+-- O(m)
 adjust :: Trie trie st map k
        => (a -> a) -> [k] -> trie map k a -> trie map k a
 adjust = genericAdjust fmap
 
+-- O(m)
 adjust' :: (Alt st a, Boolable (st a), Trie trie st map k)
         => (a -> a) -> [k] -> trie map k a -> trie map k a
 adjust' = genericAdjust fmap'
@@ -205,6 +221,7 @@ genericAdjust myFmap f []     tr = mapVal tr (myFmap f)
 genericAdjust myFmap f (x:xs) tr =
    mapMap tr $ \m -> Map.adjust (genericAdjust myFmap f xs) m x
 
+-- O(m)
 updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (a -> st a) -> [k] -> trie map k a -> (st a, trie map k a)
 updateLookup f [] tr =
@@ -225,10 +242,12 @@ updateLookup f (x:xs) orig =
                                              else Map.adjust (const upd) m x
                    )
 
+-- O(m)
 alter :: (Boolable (st a), Trie trie st map k)
       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter = genericAlter (flip const)
 
+-- O(m)
 alter' :: (Boolable (st a), Trie trie st map k)
        => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter' = genericAlter seq
@@ -248,10 +267,12 @@ genericAlter seeq f (x:xs) tr = mapMap tr $ \m ->
 
 -- * Combination
 
+-- O(min(m1,m2))
 unionWith :: (Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith f = genericUnionWith (unionVals f) (flip const)
 
+-- O(min(m1,m2))
 unionWith' :: (Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith' f = genericUnionWith (unionVals' f) seq
@@ -269,12 +290,14 @@ genericUnionWith valUnion seeq tr1 tr2 =
              onMaps (Map.unionWith (genericUnionWith valUnion seeq))
                     tr1 tr2)
 
+-- O(min(m1,m2))
 unionWithKey :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                      -> trie map k a
                                                      -> trie map k a
                                                      -> trie map k a
 unionWithKey = genericUnionWithKey unionVals (flip const)
 
+-- O(min(m1,m2))
 unionWithKey' :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                       -> trie map k a
                                                       -> trie map k a
@@ -314,6 +337,7 @@ unionsWithKey' :: (Alt st a, Unionable st a, Trie trie st map k)
                => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWithKey' j = foldl' (unionWithKey' j) empty
 
+-- O(min(m1,m2))
 differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                => (a -> b -> Maybe a)
                -> trie map k a
@@ -321,6 +345,7 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k a
 differenceWith = genericDifferenceWith (flip const)
 
+-- O(min(m1,m2))
 differenceWith' :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                 => (a -> b -> Maybe a)
                 -> trie map k a
@@ -343,6 +368,7 @@ genericDifferenceWith seeq f tr1 tr2 =
    g seeq' f' t1 t2 = let t' = genericDifferenceWith seeq' f' t1 t2
                        in if null t' then Nothing else Just t'
 
+-- O(min(m1,m2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
                      , Trie trie st map k
                      )
@@ -352,6 +378,7 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
                   -> trie map k a
 differenceWithKey = genericDifferenceWithKey (flip const)
 
+-- O(min(m1,m2))
 differenceWithKey' :: ( Boolable (st a), Differentiable st a b
                       , Trie trie st map k
                       )
@@ -379,6 +406,7 @@ genericDifferenceWithKey = go DL.empty
    g k seeq f x t1 t2 = let t' = go (k `DL.snoc` x) seeq f t1 t2
                          in if null t' then Nothing else Just t'
 
+-- O(min(m1,m2))
 intersectionWith :: ( Boolable (st c), Intersectable st a b c
                      , Trie trie st map k
                      )
@@ -388,6 +416,7 @@ intersectionWith :: ( Boolable (st c), Intersectable st a b c
                  -> trie map k c
 intersectionWith f = genericIntersectionWith (intersectionVals f) (flip const)
 
+-- O(min(m1,m2))
 intersectionWith' :: ( Boolable (st c), Intersectable st a b c
                      , Trie trie st map k
                      )
@@ -416,6 +445,7 @@ genericIntersectionWith valIntersection seeq tr1 tr2 =
                          Just (_, child) | null child -> tMap child
                          _                            -> m)
 
+-- O(min(m1,m2))
 intersectionWithKey :: ( Boolable (st c), Intersectable st a b c
                        , Trie trie st map k
                        )
@@ -425,6 +455,7 @@ intersectionWithKey :: ( Boolable (st c), Intersectable st a b c
                     -> trie map k c
 intersectionWithKey = genericIntersectionWithKey intersectionVals (flip const)
 
+-- O(min(m1,m2))
 intersectionWithKey' :: ( Boolable (st c), Intersectable st a b c
                         , Trie trie st map k
                         )
@@ -456,20 +487,24 @@ genericIntersectionWithKey = go DL.empty
                         Just (_, child) | null child -> tMap child
                         _                            -> m)
 
+-- O(n m)
 filterWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
               => ([k] -> a -> Bool) -> trie map k a -> trie map k a
 filterWithKey p = fromList . Prelude.filter (uncurry p) . toList
 
+-- O(n m)
 partitionWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                  => ([k] -> a -> Bool)
                  -> trie map k a
                  -> (trie map k a, trie map k a)
 partitionWithKey p = both fromList . partition (uncurry p) . toList
 
+-- O(m)
 split :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
       => [k] -> trie map k a -> (trie map k a, trie map k a)
 split xs tr = let (l,_,g) = splitLookup xs tr in (l,g)
 
+-- O(m)
 splitLookup :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
             => [k]
             -> trie map k a
@@ -488,6 +523,7 @@ splitLookup (x:xs) tr =
 
 -- * Mapping
 
+-- O(n m)
 mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
             => ([([k2],a)] -> trie map k2 a)
             -> ([k1] -> [k2])
@@ -495,6 +531,7 @@ mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
             -> trie map k2 a
 mapKeysWith fromlist f = fromlist . Prelude.map (first f) . toList
 
+-- O(n)
 -- TODO: needs a name!
 mapKeys'With :: (Unionable st a, Trie trie st map k1, Trie trie st map k2)
              => (a -> a -> a)
@@ -509,39 +546,48 @@ mapKeys'With j f tr =
 
 -- * Folding
 
+-- O(n)
 foldrWithKey :: (Boolable (st a), Trie trie st map k)
              => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrWithKey f x = Prelude.foldr (uncurry f) x . toList
 
+-- O(n)
 foldrAscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrAscWithKey f x = Prelude.foldr (uncurry f) x . toAscList
 
+-- O(n)
 foldrDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                  => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrDescWithKey f x = Prelude.foldr (uncurry f) x . toDescList
 
+-- O(n)
 foldl'WithKey :: (Boolable (st a), Trie trie st map k)
               => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldl'WithKey f x = foldl' (flip $ uncurry f) x . toList
 
+-- O(n)
 foldl'AscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                  => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldl'AscWithKey f x = foldl' (flip $ uncurry f) x . toAscList
 
+-- O(n)
 foldl'DescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                   => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldl'DescWithKey f x = foldl' (flip $ uncurry f) x . toDescList
 
 -- * Conversion between lists
 
+-- O(n)
 toList :: (Boolable (st a), Trie trie st map k) => trie map k a -> [([k],a)]
 toList = genericToList Map.toList DL.cons
 
+-- O(n)
 toAscList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> [([k],a)]
 toAscList = genericToList Map.toAscList DL.cons
 
+-- O(n)
 toDescList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
            => trie map k a -> [([k],a)]
 toDescList = genericToList (reverse . Map.toAscList) (flip DL.snoc)
@@ -563,34 +609,41 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
              then add (DL.toList xs, unwrap v) xs'
              else                              xs'
 
+-- O(n m)
 fromList :: (Alt st a, Trie trie st map k) => [([k],a)] -> trie map k a
 fromList = fromListWith const
 
+-- O(n m)
 fromListWith :: (Alt st a, Trie trie st map k)
              => (a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWith f = foldl' (flip . uncurry $ insertWith f) empty
 
+-- O(n m)
 fromListWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
               => (a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWith' f = foldl' (flip . uncurry $ insertWith' f) empty
 
+-- O(n m)
 fromListWithKey :: (Alt st a, Trie trie st map k)
                 => ([k] -> a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWithKey f = foldl' (\tr (k,v) -> insertWith (f k) k v tr) empty
 
+-- O(n m)
 fromListWithKey' :: (Alt st a, Boolable (st a), Trie trie st map k)
                  => ([k] -> a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWithKey' f = foldl' (\tr (k,v) -> insertWith' (f k) k v tr) empty
 
 -- * Min/max
 
+-- O(m)
 findMin :: (Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe ([k], a)
-findMin = findMinMax (hasValue.tVal) (fst . Map.minViewWithKey)
+findMin = findMinMax (hasValue . tVal) (fst . Map.minViewWithKey)
 
+-- O(m)
 findMax :: (Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe ([k], a)
-findMax = findMinMax (Map.null.tMap) (fst . Map.maxViewWithKey)
+findMax = findMinMax (Map.null . tMap) (fst . Map.maxViewWithKey)
 
 findMinMax :: (Boolable (st a), Trie trie st map k)
            => (trie map k a -> Bool)
@@ -614,13 +667,15 @@ deleteMax :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> trie map k a
 deleteMax = maybe empty snd . maxView
 
+-- O(m)
 minView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe (([k], a), trie map k a)
-minView = minMaxView (hasValue.tVal) (fst . Map.minViewWithKey)
+minView = minMaxView (hasValue . tVal) (fst . Map.minViewWithKey)
 
+-- O(m)
 maxView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe (([k], a), trie map k a)
-maxView = minMaxView (Map.null.tMap) (fst . Map.maxViewWithKey)
+maxView = minMaxView (Map.null . tMap) (fst . Map.maxViewWithKey)
 
 minMaxView :: (Alt st a, Boolable (st a), Trie trie st map k)
            => (trie map k a -> Bool)
@@ -642,6 +697,7 @@ minMaxView f g tr_ = Just (go f g tr_)
                                       else Map.adjust (const tr'') m k
                       )
 
+-- O(m)
 findPredecessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => trie map k a -> [k] -> Maybe ([k], a)
 findPredecessor tr  _ | null tr = Nothing
@@ -668,6 +724,7 @@ findPredecessor tr_ xs_         = go tr_ xs_
                      else Nothing
                Just (best,btr) -> fmap (first (best:)) (findMax btr)
 
+-- O(m)
 findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
               => trie map k a -> [k] -> Maybe ([k], a)
 findSuccessor tr  _ | null tr = Nothing
@@ -685,11 +742,13 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
 -- * Trie-only operations
 
+-- O(m)
 addPrefix :: (Alt st a, Trie trie st map k)
           => [k] -> trie map k a -> trie map k a
 addPrefix []     = id
 addPrefix (x:xs) = mkTrie altEmpty . Map.singleton x . addPrefix xs
 
+-- O(m)
 splitPrefix :: (Alt st a, Trie trie st map k)
             => trie map k a -> ([k], trie map k a)
 splitPrefix = go DL.empty
@@ -699,6 +758,7 @@ splitPrefix = go DL.empty
            Just (x,tr') -> go (xs `DL.snoc` x) tr'
            Nothing      -> (DL.toList xs, tr)
 
+-- O(m)
 lookupPrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
 lookupPrefix = go DL.empty

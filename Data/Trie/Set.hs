@@ -3,8 +3,16 @@
 -- The base implementation of a trie representing a set of lists, generalized
 -- over any type of map from element values to tries.
 --
--- Complexities are given; @n@ refers to the number of elements in the set, @m@
--- to their maximum length, @b@ to the trie's branching factor.
+-- Complexities are given; @n@ refers to the number of elements in the set and
+-- @m@ to their maximum length. In addition, the trie's branching factor plays
+-- a part in almost every operation, but the complexity depends on the
+-- underlying Map. Thus, for instance, 'member' is actually O(m f(b)) where
+-- f(b) is the complexity of a lookup operation on the Map used. Because this
+-- complexity depends on the underlying operation, which is visible only in the
+-- source code and thus can be changed whilst affecting the complexity only for
+-- certain Map types, this "b factor" is not shown explicitly.
+-- 
+-- Disclaimer: the complexities have not been proven.
 
 {-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
@@ -87,11 +95,11 @@ member = Base.member .:. unTS
 notMember :: Map map a => [a] -> TrieSet map a -> Bool
 notMember = Base.notMember .:. unTS
 
--- O(?)
+-- O(min(n1,n2))
 isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isSubsetOf = Base.isSubmapOfBy (\_ _ -> Id True) `on` unTS
 
--- O(?)
+-- O(min(n1,n2))
 isProperSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isProperSubsetOf = Base.isProperSubmapOfBy (\_ _ -> Id True) `on` unTS
 
@@ -118,20 +126,20 @@ delete = inTS . Base.delete
 defaultUnion :: Bool -> Bool -> Bool
 defaultUnion = error "TrieSet.union :: internal error"
 
--- O(n1+n2)
+-- O(min(n1,n2))
 union :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 union = TS .: Base.unionWith defaultUnion `on` unTS
 
 unions :: Map map a => [TrieSet map a] -> TrieSet map a
 unions = TS . Base.unionsWith defaultUnion . Prelude.map unTS
 
--- O(n1+n2)
+-- O(min(n1,n2))
 difference :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 difference = TS .: Base.differenceWith
                       (error "TrieSet.difference :: internal error")
                    `on` unTS
 
--- O(n1+n2)
+-- O(min(n1,n2))
 intersection :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 intersection = TS .: Base.intersectionWith
                         (error "TrieSet.intersection :: internal error")
@@ -139,19 +147,21 @@ intersection = TS .: Base.intersectionWith
 
 -- * Filtering
 
--- O(n)
+-- O(n m)
 filter :: Map map a => ([a] -> Bool) -> TrieSet map a -> TrieSet map a
 filter p = inTS $ Base.filterWithKey (\k _ -> p k)
 
--- O(n)
+-- O(n m)
 partition :: Map map a => ([a] -> Bool)
                        -> TrieSet map a
                        -> (TrieSet map a, TrieSet map a)
 partition p = both TS . Base.partitionWithKey (\k _ -> p k) . unTS
 
+-- O(m)
 split :: OrdMap map a => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 split = both TS .: Base.split .:. unTS
 
+-- O(m)
 splitMember :: OrdMap map a => [a]
                             -> TrieSet map a
                             -> (TrieSet map a, Bool, TrieSet map a)
@@ -159,7 +169,7 @@ splitMember = (\(l,b,g) -> (TS l,unwrap b,TS g)) .: Base.splitLookup .:. unTS
 
 -- * Mapping
 
--- O(n)
+-- O(n m)
 map :: (Map map a, Map map b) => ([a] -> [b]) -> TrieSet map a -> TrieSet map b
 map = inTS . Base.mapKeysWith Base.fromList
 
@@ -214,45 +224,48 @@ fromList = TS . Base.fromList . Prelude.map (flip (,) True)
 
 -- * Min/max
 
--- O(m log b)
+-- O(m)
 findMin :: OrdMap map a => TrieSet map a -> Maybe [a]
 findMin = fmap fst . Base.findMin . unTS
 
--- O(m log b)
+-- O(m)
 findMax :: OrdMap map a => TrieSet map a -> Maybe [a]
 findMax = fmap fst . Base.findMax . unTS
 
--- O(m log b)
+-- O(m)
 deleteMin :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMin = inTS Base.deleteMin
 
--- O(m log b)
+-- O(m)
 deleteMax :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMax = inTS Base.deleteMax
 
--- O(m log b)
+-- O(m)
 minView :: OrdMap map a => TrieSet map a -> Maybe ([a], TrieSet map a)
 minView = fmap (fst *** TS) . Base.minView . unTS
 
--- O(m log b)
+-- O(m)
 maxView :: OrdMap map a => TrieSet map a -> Maybe ([a], TrieSet map a)
 maxView = fmap (fst *** TS) . Base.maxView . unTS
 
--- O(m b)
+-- O(m)
 findPredecessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findPredecessor = fmap fst .: Base.findPredecessor . unTS
 
--- O(m b)
+-- O(m)
 findSuccessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findSuccessor = fmap fst .: Base.findSuccessor . unTS
 
 -- * Trie-only operations
 
+-- O(m)
 addPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 addPrefix = TS .: Base.addPrefix .:. unTS
 
+-- O(m)
 splitPrefix :: Map map a => TrieSet map a -> ([a], TrieSet map a)
 splitPrefix = second TS . Base.splitPrefix . unTS
 
+-- O(m)
 lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 lookupPrefix = TS .: Base.lookupPrefix .:. unTS

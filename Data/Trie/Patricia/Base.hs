@@ -68,21 +68,26 @@ tMap = (\(_,_,c) -> c) . tParts
 
 -----------------------
 
+-- O(1)
 null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
 null tr = let (v,p,m) = tParts tr
            in noValue v && Map.null m && assert (Prelude.null p) True
 
+-- O(n)
 size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
 size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 
+-- O(m)
 member :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
 member k tr = hasValue (lookup k tr)
 
+-- O(m)
 notMember :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
 notMember k tr = not (member k tr)
 
+-- O(m)
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup k tr =
    let (v,prefix,m) = tParts tr
@@ -92,10 +97,12 @@ lookup k tr =
                                             (Map.lookup m x)
             _                      -> altEmpty
 
+-- O(m)
 lookupWithDefault :: (Alt st a, Trie trie st map k)
                   => a -> [k] -> trie map k a -> a
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
+-- O(min(n1,n2))
 isSubmapOfBy :: ( Boolable (st a), Boolable (st b)
                 , Alt st Bool
                 , Trie trie st map k
@@ -132,6 +139,7 @@ isSubmapOfBy f_ trl trr =
    go _ _ _ _ [] =
       error "Data.Trie.Patricia.Base.isSubmapOfBy :: internal error"
 
+-- O(min(n1,n2))
 isProperSubmapOfBy :: ( Boolable (st a), Boolable (st b)
                       , Alt st Bool
                       , Trie trie st map k
@@ -184,20 +192,25 @@ isProperSubmapOfBy = f False
 
 -- * Construction
 
+-- O(1)
 empty :: (Alt st a, Trie trie st map k) => trie map k a
 empty = mkTrie altEmpty [] Map.empty
 
+-- O(1)
 singleton :: (Alt st a, Trie trie st map k) => [k] -> a -> trie map k a
 singleton k v = mkTrie (pure v) k Map.empty
 
+-- O(m)
 insert :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> a -> trie map k a -> trie map k a
 insert = insertWith const
 
+-- O(m)
 insertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
 insertWith = genericInsertWith (<$>)
 
+-- O(m)
 insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
             => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
 insertWith' = genericInsertWith (<$!>)
@@ -229,14 +242,17 @@ genericInsertWith (<$$>) f k new tr =
 
             _ -> error "Data.Trie.Patricia.Base.insertWith :: internal error"
 
+-- O(m)
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> trie map k a
 delete = alter (const altEmpty)
 
+-- O(m)
 adjust :: Trie trie st map k
        => (a -> a) -> [k] -> trie map k a -> trie map k a
 adjust = genericAdjust fmap
 
+-- O(m)
 adjust' :: (Alt st a, Boolable (st a), Trie trie st map k)
         => (a -> a) -> [k] -> trie map k a -> trie map k a
 adjust' = genericAdjust fmap'
@@ -252,7 +268,7 @@ genericAdjust myFmap f k tr =
                mkTrie v prefix $ Map.adjust (genericAdjust myFmap f xs) m x
             _                      -> tr
 
-
+-- O(m)
 updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (a -> st a) -> [k] -> trie map k a -> (st a, trie map k a)
 updateLookup f k tr =
@@ -275,10 +291,12 @@ updateLookup f k tr =
                            )
             _ -> (altEmpty, tr)
 
+-- O(m)
 alter :: (Boolable (st a), Trie trie st map k)
       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter = genericAlter (flip const)
 
+-- O(m)
 alter' :: (Boolable (st a), Trie trie st map k)
        => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter' = genericAlter seq
@@ -301,16 +319,16 @@ genericAlter seeq f k tr =
 
 -- * Combination
 
--- I think these are O(min(n1,n2)).
-
 -- The *Key versions are mostly rewritten from the basic ones: they have an
 -- additional O(m) cost from keeping track of the key, which is why the basic
 -- ones can't just call them.
 
+-- O(min(n1,n2))
 unionWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith f = genericUnionWith (unionVals f) (flip const)
 
+-- O(min(n1,n2))
 unionWith' :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith' f = genericUnionWith (unionVals' f) seq
@@ -352,6 +370,7 @@ genericUnionWith valUnion seeq tr1 tr2 =
 
    can'tHappen = error "Data.Trie.Patricia.Base.unionWith :: internal error"
 
+-- O(min(n1,n2))
 unionWithKey :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
              => ([k] -> a -> a -> a)
              -> trie map k a
@@ -359,6 +378,7 @@ unionWithKey :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
              -> trie map k a
 unionWithKey = genericUnionWithKey unionVals (flip const)
 
+-- O(min(n1,n2))
 unionWithKey' :: ( Alt st a, Boolable (st a), Unionable st a
                  , Trie trie st map k
                  )
@@ -434,6 +454,7 @@ unionsWithKey' :: ( Alt st a, Boolable (st a)
                => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWithKey' j = foldl' (unionWithKey' j) empty
 
+-- O(min(n1,n2))
 differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                => (a -> b -> Maybe a)
                -> trie map k a
@@ -441,6 +462,7 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k a
 differenceWith = genericDifferenceWith (flip const)
 
+-- O(min(n1,n2))
 differenceWith' :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                 => (a -> b -> Maybe a)
                 -> trie map k a
@@ -515,6 +537,7 @@ genericDifferenceWith seeq_ j_ tr1 tr2 =
    can'tHappen =
       error "Data.Trie.Patricia.Base.differenceWith :: internal error"
 
+-- O(min(n1,n2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
                      , Trie trie st map k
                      )
@@ -524,6 +547,7 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
                   -> trie map k a
 differenceWithKey = genericDifferenceWithKey (flip const)
 
+-- O(min(n1,n2))
 differenceWithKey' :: ( Boolable (st a), Differentiable st a b
                       , Trie trie st map k
                       )
@@ -597,6 +621,7 @@ genericDifferenceWithKey = go DL.empty
    can'tHappen =
       error "Data.Trie.Patricia.Base.differenceWithKey :: internal error"
 
+-- O(min(n1,n2))
 intersectionWith :: ( Alt st c, Boolable (st c)
                     , Intersectable st a b c, Intersectable st b a c
                     , Trie trie st map k
@@ -607,6 +632,7 @@ intersectionWith :: ( Alt st c, Boolable (st c)
                  -> trie map k c
 intersectionWith f = genericIntersectionWith (intersectionVals f) (flip const)
 
+-- O(min(n1,n2))
 intersectionWith' :: ( Alt st c, Boolable (st c)
                      , Intersectable st a b c, Intersectable st b a c
                      , Trie trie st map k
@@ -725,6 +751,7 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
    go _ _ _ _ _ _ [] =
       error "Data.Trie.Patricia.Map.intersectionWith :: internal error"
 
+-- O(min(n1,n2))
 intersectionWithKey :: ( Alt st c, Boolable (st c)
                        , Intersectable st a b c, Intersectable st b a c
                        , Trie trie st map k
@@ -735,6 +762,7 @@ intersectionWithKey :: ( Alt st c, Boolable (st c)
                     -> trie map k c
 intersectionWithKey = genericIntersectionWithKey intersectionVals (flip const)
 
+-- O(min(n1,n2))
 intersectionWithKey' :: ( Alt st c, Boolable (st c)
                         , Intersectable st a b c, Intersectable st b a c
                         , Trie trie st map k
@@ -814,20 +842,26 @@ genericIntersectionWithKey = main DL.empty
    go _ _ _ _ _ _ _ _ [] =
       error "Data.Trie.Patricia.Map.intersectionWithKey :: internal error"
 
+-- * Filtering
+
+-- O(n m)
 filterWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
               => ([k] -> a -> Bool) -> trie map k a -> trie map k a
 filterWithKey p = fromList . Prelude.filter (uncurry p) . toList
 
+-- O(n m)
 partitionWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                  => ([k] -> a -> Bool)
                  -> trie map k a
                  -> (trie map k a, trie map k a)
 partitionWithKey p = both fromList . partition (uncurry p) . toList
 
+-- O(m)
 split :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
       => [k] -> trie map k a -> (trie map k a, trie map k a)
 split xs tr = let (l,_,g) = splitLookup xs tr in (l,g)
 
+-- O(m)
 splitLookup :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
             => [k]
             -> trie map k a
@@ -861,6 +895,7 @@ splitLookup xs tr =
 
 -- * Mapping
 
+-- O(n m)
 mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
             => ([([k2],a)] -> trie map k2 a)
             -> ([k1] -> [k2])
@@ -868,6 +903,7 @@ mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
             -> trie map k2 a
 mapKeysWith fromlist f = fromlist . Prelude.map (first f) . toList
 
+-- O(n)
 -- TODO: needs a name!
 mapKeys'With :: ( Alt st a, Boolable (st a), Unionable st a
                 , Trie trie st map k1, Trie trie st map k2
@@ -885,39 +921,48 @@ mapKeys'With j f tr =
 
 -- * Folding
 
+-- O(n)
 foldrWithKey :: (Boolable (st a), Trie trie st map k)
             => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrWithKey f x = Prelude.foldr (uncurry f) x . toList
 
+-- O(n)
 foldrAscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrAscWithKey f x = Prelude.foldr (uncurry f) x . toAscList
 
+-- O(n)
 foldrDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrDescWithKey f x = Prelude.foldr (uncurry f) x . toDescList
 
+-- O(n)
 foldl'WithKey :: (Boolable (st a), Trie trie st map k)
             => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldl'WithKey f x = foldl' (flip $ uncurry f) x . toList
 
+-- O(n)
 foldl'AscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldl'AscWithKey f x = foldl' (flip $ uncurry f) x . toAscList
 
+-- O(n)
 foldl'DescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldl'DescWithKey f x = foldl' (flip $ uncurry f) x . toDescList
 
 -- * Conversion between lists
 
+-- O(n)
 toList :: (Boolable (st a), Trie trie st map k) => trie map k a -> [([k],a)]
 toList = genericToList Map.toList DL.cons
 
+-- O(n)
 toAscList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> [([k],a)]
 toAscList = genericToList Map.toAscList DL.cons
 
+-- O(n)
 toDescList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
            => trie map k a -> [([k],a)]
 toDescList = genericToList (reverse . Map.toAscList) (flip DL.snoc)
@@ -940,35 +985,42 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
              then add (DL.toList l', unwrap v) xs
              else                              xs
 
+-- O(n m)
 fromList :: (Alt st a, Boolable (st a), Trie trie st map k)
          => [([k],a)] -> trie map k a
 fromList = fromListWith const
 
+-- O(n m)
 fromListWith :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWith f = foldl' (flip . uncurry $ insertWith f) empty
 
+-- O(n m)
 fromListWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWith' f = foldl' (flip . uncurry $ insertWith' f) empty
 
+-- O(n m)
 fromListWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                 => ([k] -> a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWithKey f = foldl' (\tr (k,v) -> insertWith (f k) k v tr) empty
 
+-- O(n m)
 fromListWithKey' :: (Alt st a, Boolable (st a), Trie trie st map k)
                 => ([k] -> a -> a -> a) -> [([k],a)] -> trie map k a
 fromListWithKey' f = foldl' (\tr (k,v) -> insertWith' (f k) k v tr) empty
 
 -- * Min/max
 
+-- O(m)
 findMin :: (Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe ([k], a)
-findMin = findMinMax (hasValue.tVal) (fst . Map.minViewWithKey)
+findMin = findMinMax (hasValue . tVal) (fst . Map.minViewWithKey)
 
+-- O(m)
 findMax :: (Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe ([k], a)
-findMax = findMinMax (Map.null.tMap) (fst . Map.maxViewWithKey)
+findMax = findMinMax (Map.null . tMap) (fst . Map.maxViewWithKey)
 
 findMinMax :: (Boolable (st a), Trie trie st map k)
            => (trie map k a -> Bool)
@@ -984,18 +1036,22 @@ findMinMax f g tr_ = Just (go f g DL.empty tr_)
          else let (k, tr') = fromJust . mapView . tMap $ tr
                in go isWanted mapView (xs `DL.snoc` k) tr'
 
+-- O(m)
 deleteMin :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> trie map k a
 deleteMin = maybe empty snd . minView
 
+-- O(m)
 deleteMax :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> trie map k a
 deleteMax = maybe empty snd . maxView
 
+-- O(m)
 minView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe (([k], a), trie map k a)
 minView = minMaxView (hasValue.tVal) (fst . Map.minViewWithKey)
 
+-- O(m)
 maxView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe (([k], a), trie map k a)
 maxView = minMaxView (Map.null.tMap) (fst . Map.maxViewWithKey)
@@ -1020,6 +1076,7 @@ minMaxView f g tr_ = Just (go f g tr_)
                                           else Map.adjust (const tr'') m k
                       )
 
+-- O(m)
 findPredecessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => trie map k a -> [k] -> Maybe ([k], a)
 findPredecessor tr  _ | null tr = Nothing
@@ -1055,6 +1112,7 @@ findPredecessor tr_ xs_         = go tr_ xs_
    can'tHappen =
       error "Data.Trie.Patricia.Base.findPredecessor :: internal error"
 
+-- O(m)
 findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
               => trie map k a -> [k] -> Maybe ([k], a)
 findSuccessor tr  _ | null tr = Nothing
@@ -1087,18 +1145,21 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
 -- * Trie-only operations
 
+-- O(1)
 addPrefix :: (Alt st a, Trie trie st map k)
           => [k] -> trie map k a -> trie map k a
 addPrefix xs tr =
    let (v,pre,m) = tParts tr
     in mkTrie v (xs ++ pre) m
 
+-- O(1)
 splitPrefix :: (Alt st a, Trie trie st map k)
             => trie map k a -> ([k], trie map k a)
 splitPrefix tr =
    let (v,pre,m) = tParts tr
     in (pre, mkTrie v [] m)
 
+-- O(m)
 lookupPrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
 lookupPrefix = go DL.empty
