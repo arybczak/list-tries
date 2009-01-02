@@ -237,12 +237,12 @@ deleteMax :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMax = inTS Base.deleteMax
 
 -- O(m)
-minView :: OrdMap map a => TrieSet map a -> Maybe ([a], TrieSet map a)
-minView = fmap (fst *** TS) . Base.minView . unTS
+minView :: OrdMap map a => TrieSet map a -> (Maybe [a], TrieSet map a)
+minView = (fmap fst *** TS) . Base.minView . unTS
 
 -- O(m)
-maxView :: OrdMap map a => TrieSet map a -> Maybe ([a], TrieSet map a)
-maxView = fmap (fst *** TS) . Base.maxView . unTS
+maxView :: OrdMap map a => TrieSet map a -> (Maybe [a], TrieSet map a)
+maxView = (fmap fst *** TS) . Base.maxView . unTS
 
 -- O(m)
 findPredecessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]

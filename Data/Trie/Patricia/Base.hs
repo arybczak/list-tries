@@ -1039,30 +1039,30 @@ findMinMax f g tr_ = Just (go f g DL.empty tr_)
 -- O(m)
 deleteMin :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> trie map k a
-deleteMin = maybe empty snd . minView
+deleteMin = snd . minView
 
 -- O(m)
 deleteMax :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> trie map k a
-deleteMax = maybe empty snd . maxView
+deleteMax = snd . maxView
 
 -- O(m)
 minView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
-        => trie map k a -> Maybe (([k], a), trie map k a)
+        => trie map k a -> (Maybe ([k], a), trie map k a)
 minView = minMaxView (hasValue.tVal) (fst . Map.minViewWithKey)
 
 -- O(m)
 maxView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
-        => trie map k a -> Maybe (([k], a), trie map k a)
+        => trie map k a -> (Maybe ([k], a), trie map k a)
 maxView = minMaxView (Map.null.tMap) (fst . Map.maxViewWithKey)
 
 minMaxView :: (Alt st a, Boolable (st a), Trie trie st map k)
            => (trie map k a -> Bool)
            -> (CMap trie map k a -> Maybe (k, trie map k a))
            -> trie map k a
-           -> Maybe (([k], a), trie map k a)
-minMaxView _ _ tr_ | null tr_ = Nothing
-minMaxView f g tr_ = Just (go f g tr_)
+           -> (Maybe ([k], a), trie map k a)
+minMaxView _ _ tr_ | null tr_ = (Nothing, tr_)
+minMaxView f g tr_ = first Just (go f g tr_)
  where
    go isWanted mapView tr =
       let (v,pre,m) = tParts tr

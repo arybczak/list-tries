@@ -686,11 +686,11 @@ deleteMax :: OrdMap map k => TrieMap map k a -> TrieMap map k a
 deleteMax = Base.deleteMax
 
 -- O(m)
-minView :: OrdMap map k => TrieMap map k a -> Maybe (([k], a), TrieMap map k a)
+minView :: OrdMap map k => TrieMap map k a -> (Maybe ([k], a), TrieMap map k a)
 minView = Base.minView
 
 -- O(m)
-maxView :: OrdMap map k => TrieMap map k a -> Maybe (([k], a), TrieMap map k a)
+maxView :: OrdMap map k => TrieMap map k a -> (Maybe ([k], a), TrieMap map k a)
 maxView = Base.maxView
 
 -- O(m)
