@@ -22,17 +22,22 @@
 -- itself. The user should add the strictness in such cases himself, if he so
 -- wishes.
 
-{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances
+           , FlexibleContexts, UndecidableInstances #-}
 
 #include "exports.h"
 
 module Data.Trie.Map (MAP_EXPORTS) where
 
+import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
 import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
+import qualified Data.Foldable as F
 import qualified Data.Maybe as Maybe
+import Data.Monoid         (Monoid(..))
+import Data.Traversable    (Traversable(traverse))
 import Prelude hiding      (filter, foldr, lookup, map, null)
 import qualified Prelude
 
@@ -54,7 +59,26 @@ instance Map map k => Base.Trie TrieMap Maybe map k where
    mkTrie = Tr
    tParts (Tr v m) = (v,m)
 
--- instances: Eq, Monoid, Foldable, Ord
+instance (Eq (CMap map k a), Eq a) => Eq (TrieMap map k a) where
+   Tr v1 m1 == Tr v2 m2 = v1 == v2 && m1 == m2
+
+instance (Ord (CMap map k a), Ord a) => Ord (TrieMap map k a) where
+   compare (Tr v1 m1) (Tr v2 m2) =
+      compare v1 v2 `mappend` compare m1 m2
+
+instance Map map k => Monoid (TrieMap map k a) where
+   mempty  = empty
+   mappend = union
+   mconcat = unions
+
+instance Map map k => Functor (TrieMap map k) where
+   fmap = map
+
+instance Map map k => F.Foldable (TrieMap map k) where
+   foldr = foldr
+
+instance (Map map k, Traversable (map k)) => Traversable (TrieMap map k) where
+   traverse f (Tr v m) = Tr <$> traverse f v <*> traverse (traverse f) m
 
 instance (Map map k, Show k, Show a) => Show (TrieMap map k a) where
    showsPrec p s = showParen (p > 10) $
