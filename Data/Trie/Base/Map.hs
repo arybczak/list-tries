@@ -11,8 +11,20 @@ import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
-import Data.Trie.Util (both)
+import Data.Trie.Util (both, (.:))
 
+-- Minimal complete implementation:
+-- * eqCmp
+-- * null, lookup
+-- * insertWith
+-- * update
+-- * unionWithKey, differenceWithKey, intersectionWithKey
+-- * foldValues
+-- * toList, fromListWith
+-- * isSubmapOfBy
+--
+-- For decent performance, supplying 'mapAccumWithKey' as well is probably a
+-- good idea.
 class Map m k where
    -- Like an Eq instance over k, but should compare on the same type as 'm'
    -- does. In most cases this can be defined just as 'const (==)'.
@@ -20,7 +32,7 @@ class Map m k where
 
    empty     ::                     m k a
    singleton ::           k -> a -> m k a
-   doubleton :: k -> a -> k -> a -> m k a
+   doubleton :: k -> a -> k -> a -> m k a -- Precondition: the two keys differ
 
    null   :: m k a -> Bool
    lookup :: m k a -> k -> Maybe a
@@ -32,7 +44,6 @@ class Map m k where
    adjust :: (a -> a)       -> m k a -> k -> m k a
    delete ::                   m k a -> k -> m k a
 
-   difference          ::                             m k a -> m k b -> m k a
    unionWith           ::      (a -> a -> a)       -> m k a -> m k a -> m k a
    differenceWith      ::      (a -> b -> Maybe a) -> m k a -> m k b -> m k a
    intersectionWith    ::      (a -> b -> c)       -> m k a -> m k b -> m k c
@@ -55,36 +66,46 @@ class Map m k where
 
    singletonView :: m k a -> Maybe (k,a)
 
-   singleton = insert empty
-   doubleton = (insert .) . singleton
+   empty     = fromList []
+   singleton = insertWith const empty
+   doubleton = insertWith const .: singleton
 
    insert = insertWith const
 
    adjust f = update (Just . f)
    delete   = update (const Nothing)
 
-   difference       = differenceWith (\_ _ -> Nothing)
    unionWith        = unionWithKey        . const
    differenceWith   = differenceWithKey   . const
    intersectionWith = intersectionWithKey . const
 
    map                 = mapWithKey . const
+   mapWithKey      f   = snd . mapAccumWithKey (\_ k v -> ((), f k v)) ()
    mapAccum        f   = mapAccumWithKey (const . f)
    mapAccumWithKey f z =
       second fromList .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
       toList
 
+   fromList = fromListWith const
+
    singletonView m =
       case toList m of
            [x] -> Just x
            _   -> Nothing
 
--- Minimal complete definition: toAscList or toDescList, and splitLookup
+-- Minimal complete definition:
+-- * ordCmp
+-- * toAscList or toDescList
+-- * splitLookup
 --
 -- fromDistinctAscList and fromDistinctAscList are only used in the default
--- definitions of splitLookup, minViewWithKey and maxViewWithKey, and default
--- to fromList
+-- definitions of minViewWithKey and maxViewWithKey, and default to fromList.
+--
+-- For decent performance, supplying at least the following is probably a good
+-- idea:
+-- * minViewWithKey, maxViewWithKey
+-- * mapAccumAscWithKey, mapAccumDescWithKey
 class Map m k => OrdMap m k where
    -- Like an Ord instance over k, but should compare on the same type as 'm'
    -- does. In most cases this can be defined just as 'const compare'.
@@ -139,6 +160,13 @@ class Map m k => OrdMap m k where
       second fromList .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
       toDescList
+
+-- Moved this outside Map because it's an odd one out: union and intersection
+-- aren't needed
+difference :: Map m k => m k a -> m k b -> m k a
+difference = differenceWith (\_ _ -> Nothing)
+
+------------- Instances
 
 newtype AList k v = AL [(k,v)]
 
@@ -270,7 +298,6 @@ instance Ord k => Map M.Map k where
    adjust = flip . M.adjust
    delete = flip   M.delete
 
-   difference          = M.difference
    unionWith           = M.unionWith
    differenceWith      = M.differenceWith
    intersectionWith    = M.intersectionWith
@@ -331,7 +358,6 @@ instance Enum k => Map IMap k where
    adjust f (IMap m) k = IMap$ IM.adjust f (fromEnum k) m
    delete   (IMap m) k = IMap$ IM.delete   (fromEnum k) m
 
-   difference         (IMap x) (IMap y) = IMap$ IM.difference         x y
    unionWith        f (IMap x) (IMap y) = IMap$ IM.unionWith        f x y
    differenceWith   f (IMap x) (IMap y) = IMap$ IM.differenceWith   f x y
 
