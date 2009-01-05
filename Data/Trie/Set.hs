@@ -14,7 +14,8 @@
 -- 
 -- Disclaimer: the complexities have not been proven.
 
-{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances
+           , FlexibleContexts, UndecidableInstances #-}
 
 #include "exports.h"
 
@@ -22,6 +23,7 @@ module Data.Trie.Set (SET_EXPORTS) where
 
 import Control.Arrow  ((***), second)
 import Data.Function  (on)
+import Data.Monoid    (Monoid(..))
 import Prelude hiding (filter, foldr, map, null)
 import qualified Prelude
 
@@ -54,7 +56,17 @@ instance Map map k => Base.Trie TrieSetBase Identity map k where
    mkTrie = Tr . unwrap
    tParts (Tr b m) = (Id b,m)
 
--- instances: Eq, Monoid, Foldable, Ord
+instance (Eq (CMap map a Bool)) => Eq (TrieSet map a) where
+   TS (Tr b1 m1) == TS (Tr b2 m2) = b1 == b2 && m1 == m2
+
+instance (Ord (CMap map a Bool)) => Ord (TrieSet map a) where
+   compare (TS (Tr b1 m1)) (TS (Tr b2 m2)) =
+      compare b1 b2 `mappend` compare m1 m2
+
+instance Map map a => Monoid (TrieSet map a) where
+   mempty  = empty
+   mappend = union
+   mconcat = unions
 
 instance (Map map a, Show a) => Show (TrieSet map a) where
    showsPrec p s = showParen (p > 10) $
