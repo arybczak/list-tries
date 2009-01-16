@@ -82,6 +82,12 @@ $(makeFunc mapsOnly ["lookup","insert"] [d|
        in (fromJust . lookup k . insert k v) (m :: TrieType) == v
  |])
 
+$(makeFunc allTries ["notMember","delete"] [d|
+   prop_delete1 notMember delete k_ m =
+      let k = unArb k_
+       in notMember k . delete k $ (m :: TrieType)
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -94,4 +100,5 @@ tests = concat
    , $(makeTests mapsOnly "prop_isProperSubmapOf1")
    , $(makeTests mapsOnly "prop_singleton1")
    , $(makeTests mapsOnly "prop_insert1")
+   , $(makeTests allTries "prop_delete1")
    ]
