@@ -1031,10 +1031,12 @@ findMinMax _ _ tr_ | null tr_ = Nothing
 findMinMax f g tr_ = Just (go f g DL.empty tr_)
  where
    go isWanted mapView xs tr =
-      if isWanted tr
-         then (DL.toList xs, unwrap (tVal tr))
-         else let (k, tr') = fromJust . mapView . tMap $ tr
-               in go isWanted mapView (xs `DL.snoc` k) tr'
+      let (v,pre,m) = tParts tr
+          xs'       = xs `DL.append` DL.fromList pre
+       in if isWanted tr
+             then (DL.toList xs', unwrap v)
+             else let (k, tr') = fromJust . mapView $ m
+                   in go isWanted mapView (xs' `DL.snoc` k) tr'
 
 -- O(m)
 deleteMin :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
