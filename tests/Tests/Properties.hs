@@ -60,14 +60,13 @@ $(FUNC_MAPANDSET [("fromList",Just FROMLIST_T),("size",Nothing)] [d|
                                   in size (fromList l) <= length l
  |])
 
--- TODO: instance Arbitrary tries
--- $(FUNC_MAPANDSET [("toList",Just TOLIST_T),("size",Nothing)] [d|
---    prop_size2 toList size m = size m == length (toList m)
---  |])
+$(FUNC_MAPANDSET [("toList",Just TOLIST_T),("size",Nothing)] [d|
+   prop_size2 toList size m = size m == length (toList m)
+ |])
 
 #define TEST_MAPANDSET makeTests ALL
 
 tests = concat
    [ $(TEST_MAPANDSET "prop_size1" "size-1")
---   , $(TEST_MAPANDSET "prop_size2" "size-2")
+   , $(TEST_MAPANDSET "prop_size2" "size-2")
    ]
