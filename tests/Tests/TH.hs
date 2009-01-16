@@ -4,7 +4,7 @@
 
 module Tests.TH
    ( Module(..)
-   , ListElemType, TrieType
+   , TrieType
    , makeFunc, makeTests
    , setsOnly, mapsOnly, allTries
    ) where
@@ -24,9 +24,6 @@ moduleName :: Module -> String
 moduleName (SetModule m) = m
 moduleName (MapModule m) = m
 
---data KeyType
---data ElemType
-data ListElemType
 data TrieType
 
 keyType  = ''Char
@@ -35,14 +32,6 @@ elemType = ''Int
 replaceTypes :: Module -> Type -> Type
 replaceTypes m (ForallT names cxt t) = ForallT names cxt (replaceTypes m t)
 replaceTypes m (AppT t1 t2) = AppT (replaceTypes m t1) (replaceTypes m t2)
---replaceTypes _ (ConT t) | t == ''KeyType  = ConT keyType
---replaceTypes _ (ConT t) | t == ''ElemType = ConT elemType
-replaceTypes m (ConT t) | t == ''ListElemType =
-   case m of
-        SetModule _ -> ListT `AppT` ConT keyType
-        MapModule _ -> (TupleT 2 `AppT` (ListT `AppT` ConT keyType))
-                                 `AppT` (ConT elemType)
-
 replaceTypes m (ConT t) | t == ''TrieType =
    case m of
         SetModule m' -> ConT (mkName $ m' ++ ".TrieSet") `AppT` ConT keyType
