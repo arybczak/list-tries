@@ -1100,7 +1100,7 @@ findPredecessor tr_ xs_         = go tr_ xs_
                -- algorithm
                PostFix (Right (y:ys)) ->
                   let predecessor = Map.findPredecessor m y
-                   in first (prepend pre y) <$> (Map.lookup m y >>= flip go ys)
+                   in (first (prepend pre y)<$>(Map.lookup m y >>= flip go ys))
                       <|>
                       case predecessor of
                            Nothing         ->
@@ -1135,7 +1135,7 @@ findSuccessor tr_ xs_         = go tr_ xs_
                PostFix (Left _)       -> findMin tr
                PostFix (Right (y:ys)) ->
                   let successor = Map.findSuccessor m y
-                   in first (prepend pre y) <$> (Map.lookup m y >>= flip go ys)
+                   in (first (prepend pre y)<$>(Map.lookup m y >>= flip go ys))
                       <|>
                       (successor >>= \(best,btr) ->
                          first (prepend pre best) <$> findMin btr)
