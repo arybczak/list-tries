@@ -76,6 +76,12 @@ $(makeFunc mapsOnly ["lookup","singleton"] [d|
        in (fromJust . lookup k) (singleton k v :: TrieType) == v
  |])
 
+$(makeFunc mapsOnly ["lookup","insert"] [d|
+   prop_insert1 lookup insert m k_ v =
+      let k = unArb k_
+       in (fromJust . lookup k . insert k v) (m :: TrieType) == v
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -87,4 +93,5 @@ tests = concat
    , $(makeTests mapsOnly "prop_isSubmapOf1")
    , $(makeTests mapsOnly "prop_isProperSubmapOf1")
    , $(makeTests mapsOnly "prop_singleton1")
+   , $(makeTests mapsOnly "prop_insert1")
    ]
