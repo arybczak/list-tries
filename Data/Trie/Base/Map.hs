@@ -4,12 +4,21 @@
 
 module Data.Trie.Base.Map where
 
-import Control.Arrow ((***), first, second)
-import Data.Function (on)
-import Data.List     (foldl',foldl1', mapAccumL, nubBy, partition, sort,sortBy)
-import Data.Ord      (comparing)
+import Control.Applicative (pure, (<*>))
+import Control.Arrow       ((***), first, second)
+import Control.Monad       (liftM, liftM2)
+import Data.Foldable       (Foldable(..))
+import Data.Function       (on)
+import Data.List           ( foldl', foldl1'
+                           , mapAccumL, nubBy, partition
+                           , sort, sortBy
+                           )
+import Data.Ord            (comparing)
+import Data.Traversable    (Traversable(..))
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
+
+import Prelude hiding (foldl,foldl1,foldr,foldr1,mapM,sequence)
 
 import Data.Trie.Util (both, (.:))
 
@@ -181,6 +190,19 @@ instance (Eq k, Eq v) => Eq (AList k v) where
 
 instance (Ord k, Ord v) => Ord (AList k v) where
    compare (AL xs) (AL ys) = compare (sort xs) (sort ys)
+
+instance Functor (AList k)  where fmap f (AL xs) = AL (fmap (second f) xs)
+instance Foldable (AList k) where
+    fold        (AL xs) = fold        (Prelude.map snd xs)
+    foldMap f   (AL xs) = foldMap f   (Prelude.map snd xs)
+    foldl   f z (AL xs) = foldl   f z (Prelude.map snd xs)
+    foldl1  f   (AL xs) = foldl1  f   (Prelude.map snd xs)
+    foldr   f z (AL xs) = foldr   f z (Prelude.map snd xs)
+    foldr1  f   (AL xs) = foldr1  f   (Prelude.map snd xs)
+
+instance Traversable (AList k) where
+   traverse f (AL xs) =
+      fmap AL . traverse (liftM2 fmap ((,).fst) snd . second f) $ xs
 
 instance Eq k => Map AList k where
    eqCmp = const (==)
@@ -357,6 +379,26 @@ instance Ord k => OrdMap M.Map k where
    -- mapAccumDesc waiting on http://hackage.haskell.org/trac/ghc/ticket/2769
 
 newtype IMap k v = IMap (IM.IntMap v) deriving (Eq,Ord)
+
+instance Functor (IMap k) where fmap f (IMap m) = IMap (fmap f m)
+instance Foldable (IMap k) where
+    fold        (IMap m) = fold        m
+    foldMap f   (IMap m) = foldMap f   m
+    foldl   f z (IMap m) = foldl   f z m
+    foldl1  f   (IMap m) = foldl1  f   m
+    foldr   f z (IMap m) = foldr   f z m
+    foldr1  f   (IMap m) = foldr1  f   m
+
+-- Waiting on http://hackage.haskell.org/trac/ghc/ticket/2960... sigh
+instance Traversable (IMap k) where
+   traverse = undefined
+   sequenceA = undefined
+   mapM = undefined
+   sequence = undefined
+--   traverse f (IMap m) = pure IMap <*> traverse f m
+--   sequenceA (IMap m) = pure IMap <*> sequenceA m
+--   mapM f (IMap m) = liftM IMap (mapM f m)
+--   sequence (IMap m) = liftM IMap (sequence m)
 
 instance Enum k => Map IMap k where
    eqCmp = const ((==) `on` fromEnum)
