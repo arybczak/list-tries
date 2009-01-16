@@ -170,6 +170,11 @@ $(makeFunc allTries ["findSuccessor","findMax","null"] [d|
          isNothing.findSuccessor (m :: TrieType).getKey.fromJust.findMax $ m
  |])
 
+$(makeFunc allTries ["addPrefix","splitPrefix"] [d|
+   prop_prefixOps1 addPrefix splitPrefix m =
+      uncurry addPrefix (splitPrefix m) == (m :: TrieType)
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -199,4 +204,5 @@ tests = concat
    , $(makeTests allTries "prop_findSuccessor1")
    , $(makeTests allTries "prop_findPredecessor2")
    , $(makeTests allTries "prop_findSuccessor2")
+   , $(makeTests allTries "prop_prefixOps1")
    ]
