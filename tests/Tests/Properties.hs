@@ -4,9 +4,11 @@
 
 module Tests.Properties (tests) where
 
-import Control.Arrow ((&&&))
-import Data.Maybe    (fromJust, isNothing)
-import Data.Monoid   (mappend, mempty) 
+import Control.Arrow    ((&&&))
+import Data.Foldable    (foldMap)
+import Data.Maybe       (fromJust, isNothing)
+import Data.Monoid      (mappend, mempty)
+import Data.Traversable (fmapDefault, foldMapDefault)
 
 import Test.Framework.Providers.QuickCheck (testProperty)
 import Test.QuickCheck                     ((==>))
@@ -227,6 +229,18 @@ $(makeFunc allTries [] [d|
    prop_monoidLaw3 x = mappend x mempty == (x :: TrieType)
  |])
 
+-- The Traversable laws: fmap == fmapDefault, foldMap == foldMapDefault
+-- Both avoid #2956 again
+-- ... and are blocked on #2960
+$(makeFunc mapsOnly [] [d|
+   prop_traversableLaw1 x =
+      fmap ((+) 1) x == fmapDefault ((+) 1) (x :: TrieType1)
+ |])
+$(makeFunc mapsOnly [] [d|
+   prop_traversableLaw2 x =
+      foldMap (flip (:) []) x == foldMapDefault (flip (:) []) (x :: TrieType1)
+ |])
+
 tests = concat
    [ $(makeProps allTries "prop_size1")
    , $(makeProps allTries "prop_size2")
@@ -261,4 +275,6 @@ tests = concat
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")
+--   , $(makeProps mapsOnly "prop_traversableLaw1")
+--   , $(makeProps mapsOnly "prop_traversableLaw2")
    ]
