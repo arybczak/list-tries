@@ -10,7 +10,9 @@ module Tests.TH
    ) where
 
 import Control.Arrow ((***))
+import Data.Char     (isDigit)
 import Data.Maybe    (isJust)
+import Data.List     (break)
 import Language.Haskell.TH
    ( Exp(..), Lit(..), Stmt(..), Dec(..), Type(..), Clause(..), Pat(..)
    , Guard(..), Body(..), Match(..)
@@ -130,11 +132,14 @@ makeFunc modules expands =
    expandGuard modu (NormalG expr) = NormalG (expandE modu expr)
    expandGuard modu (PatG stmts)   = PatG (map (expandStmt modu) stmts)
 
-makeTests :: [Module] -> String -> String -> ExpQ
-makeTests modules test testName =
+makeTests :: [Module] -> String -> ExpQ
+makeTests modules test =
    return.ListE $
       map (\m -> let mn = moduleName m
                      n  = modularName test mn
+                     testName =
+                        let (a,b) = break isDigit.tail.dropWhile (/= '_')$ test
+                         in a ++ "-" ++ b
                   in VarE (mkName "testProperty") `AppE`
                      LitE (StringL (testName ++ "-" ++ lastPart mn)) `AppE`
                      VarE n)
