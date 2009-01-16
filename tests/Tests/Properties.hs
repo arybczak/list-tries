@@ -175,6 +175,12 @@ $(makeFunc allTries ["addPrefix","splitPrefix"] [d|
       uncurry addPrefix (splitPrefix m) == (m :: TrieType)
  |])
 
+$(makeFunc allTries ["addPrefix","splitPrefix","lookupPrefix"] [d|
+   prop_prefixOps2 addPrefix splitPrefix lookupPrefix m =
+      let (k,_) = splitPrefix (m :: TrieType)
+       in addPrefix k (lookupPrefix k m) == m
+   |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -205,4 +211,5 @@ tests = concat
    , $(makeTests allTries "prop_findPredecessor2")
    , $(makeTests allTries "prop_findSuccessor2")
    , $(makeTests allTries "prop_prefixOps1")
+   , $(makeTests allTries "prop_prefixOps2")
    ]
