@@ -26,5 +26,5 @@ $(makeFunc allTries ["null","empty"] [d|
  |])
 
 tests = concat
-   [ $(makeTests Case allTries "nullEmpty")
+   [ $(makeCases allTries "nullEmpty")
    ]

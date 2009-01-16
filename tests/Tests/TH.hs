@@ -4,9 +4,8 @@
 
 module Tests.TH
    ( Module(..)
-   , TestType(..)
    , TrieType, ListElemType
-   , makeFunc, makeTests
+   , makeFunc, makeCases, makeProps
    , setsOnly, mapsOnly, allTries
    ) where
 
@@ -151,6 +150,9 @@ makeTests typ modules test =
                      LitE (StringL (testName typ test mn)) `AppE`
                      VarE n)
           modules
+
+makeCases = makeTests Case
+makeProps = makeTests Property                           
 
 modularName :: String -> String -> Name
 modularName name modu =
