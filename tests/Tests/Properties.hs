@@ -164,6 +164,11 @@ $(makeFunc allTries ["findPredecessor","findMin","null"] [d|
       not (null m) ==>
          isNothing.findPredecessor (m :: TrieType).getKey.fromJust.findMin $ m
  |])
+$(makeFunc allTries ["findSuccessor","findMax","null"] [d|
+   prop_findSuccessor2 findSuccessor findMax null m =
+      not (null m) ==>
+         isNothing.findSuccessor (m :: TrieType).getKey.fromJust.findMax $ m
+ |])
 
 tests = concat
    [ $(makeTests allTries "prop_size1")
@@ -193,4 +198,5 @@ tests = concat
    , $(makeTests allTries "prop_findPredecessor1")
    , $(makeTests allTries "prop_findSuccessor1")
    , $(makeTests allTries "prop_findPredecessor2")
+   , $(makeTests allTries "prop_findSuccessor2")
    ]
