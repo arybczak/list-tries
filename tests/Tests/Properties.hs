@@ -101,6 +101,10 @@ $(makeFunc allTries ["union","empty"] [d|
    prop_union3 union empty m = union empty m == (m :: TrieType)
  |])
 
+$(makeFunc allTries ["null","difference"] [d|
+   prop_difference1 null difference m = null (difference m (m :: TrieType))
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -117,4 +121,5 @@ tests = concat
    , $(makeTests allTries "prop_union1")
    , $(makeTests allTries "prop_union2")
    , $(makeTests allTries "prop_union3")
+   , $(makeTests allTries "prop_difference1")
    ]
