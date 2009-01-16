@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances
            , FunctionalDependencies, FlexibleContexts #-}
 
-module Tests.Base (Str(..), alpha, unArb) where
+module Tests.Base (Str(..), alpha, unArb, getKey) where
 
 import Control.Arrow   (first)
 import Test.QuickCheck
@@ -34,10 +34,18 @@ instance (Map map Char, Arbitrary a) => Arbitrary (PBM.TrieMap map Char a)
  where
    arbitrary = fmap (PBM.fromList . map unArb) arbitrary
 
--- This is a bit of a hack to make life easy, so that we can use unArb always
--- instead of having to change it to first unArb for map types, which would be
--- a bit of a pain and add complexity to TH.
+--------- HACKS TO MAKE LIFE EASY
+
+-- Some classes that allow us to convert between Str and String for both Sets
+-- (where we're interested only in Str) and Maps (where it's (Str,value))
+-- without having to write the functions twice, adding complexity either to
+-- them or to TH.
+
 class UnArbitrary a b | b -> a where unArb :: a -> b
 
 instance UnArbitrary Str [Char] where unArb = unStr
 instance UnArbitrary (Str,c) ([Char],c) where unArb = first unStr
+
+class GetKey a where getKey :: a -> String
+instance GetKey [Char] where getKey = id
+instance GetKey ([Char],a) where getKey = fst

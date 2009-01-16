@@ -34,7 +34,15 @@ $(makeFunc allTries [("toList",Just toList_t),("size",Nothing)] [d|
    prop_size2 toList size m = size m == length (toList m)
  |])
 
+$(makeFunc allTries [("fromList",Just fromList_t),("member",Nothing)] [d|
+	-- using flip avoids GHC #2956
+	prop_member1 fromList member l_ = let l = map unArb l_
+	                                      m = fromList l
+	                                   in all (flip member m . getKey) l
+ |])
+
 tests = concat
-   [ $(makeTests allTries "prop_size1" "size-1")
-   , $(makeTests allTries "prop_size2" "size-2")
+   [ $(makeTests allTries "prop_size1"   "size-1")
+   , $(makeTests allTries "prop_size2"   "size-2")
+   , $(makeTests allTries "prop_member1" "member-1")
    ]
