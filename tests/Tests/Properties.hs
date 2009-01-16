@@ -148,8 +148,8 @@ $(makeFunc allTries ["intersection"] [d|
 
 -- Intersection with empty should result in the empty set
 $(makeFunc allTries ["intersection","null","empty"] [d|
-   prop_intersection2 intersection null empty =
-      null . intersection (empty :: TrieType)
+   prop_intersection2 intersection null empty m =
+      null $ intersection empty (m :: TrieType)
  |])
 
 -- The maximum of the left side of a split about k is the predecessor of k
@@ -260,8 +260,8 @@ tests = concat
    , $(makeProps allTries "prop_difference1")
    , $(makeProps allTries "prop_difference2")
    , $(makeProps allTries "prop_difference3")
---   , $(makeProps allTries "prop_intersection1")
---   , $(makeProps allTries "prop_intersection2")
+   , $(makeProps allTriesNotEnum "prop_intersection1")
+   , $(makeProps allTriesNotEnum "prop_intersection2")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
    , $(makeProps allTries "prop_minView1")
@@ -275,6 +275,6 @@ tests = concat
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")
---   , $(makeProps mapsOnly "prop_traversableLaw1")
---   , $(makeProps mapsOnly "prop_traversableLaw2")
+   , $(makeProps mapsOnlyNotEnum "prop_traversableLaw1")
+   , $(makeProps mapsOnlyNotEnum "prop_traversableLaw2")
    ]

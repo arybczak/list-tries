@@ -7,13 +7,13 @@ module Tests.TH
    , TrieType, TrieType1
    , ListElemType
    , makeFunc, makeCases, makeProps
-   , setsOnly, mapsOnly, allTries
+   , setsOnly, mapsOnly, allTries, mapsOnlyNotEnum, allTriesNotEnum
    ) where
 
 import Control.Arrow ((***))
 import Data.Char     (isDigit)
 import Data.Maybe    (isJust)
-import Data.List     (break)
+import Data.List     (break, isSuffixOf)
 import Language.Haskell.TH
    ( Exp(..), Lit(..), Stmt(..), Dec(..), Type(..), Clause(..), Pat(..)
    , Guard(..), Body(..), Match(..)
@@ -164,21 +164,21 @@ modularName name modu =
    mkName $ name ++ "_" ++ map (\c -> if c == '.' then '_' else c) modu
 
 testName :: TestType -> String -> String -> String
-testName Case test moduleName =
+testName Case test modName =
    concat [ test
           , "-"
-          , relevantPart moduleName
+          , relevantPart modName
           ]
-testName Property test moduleName =
+testName Property test modName =
    let (a,b) = break isDigit.tail.dropWhile (/= '_')$ test
     in concat
           [ a
-          , if null a
+          , if null b
                then ""
                else "-"
           , b
           , "-"
-          , relevantPart moduleName
+          , relevantPart modName
           ]
 
 relevantPart :: String -> String
@@ -200,3 +200,7 @@ mapsOnly = [MapModule "Data.Trie.Map.Eq"
            ,MapModule "Data.Trie.Patricia.Map.Enum"
            ]
 allTries = setsOnly ++ mapsOnly
+
+-- FIXME: remove these as soon as there are no more undefined in Base.Map
+mapsOnlyNotEnum = filter (not.isSuffixOf "Enum".moduleName) mapsOnly
+allTriesNotEnum = filter (not.isSuffixOf "Enum".moduleName) allTries
