@@ -1069,10 +1069,10 @@ minMaxView f g tr_ = first Just (go f g tr_)
    go isWanted mapView tr =
       let (v,pre,m) = tParts tr
        in if isWanted tr
-             then (([], unwrap v), mkTrie altEmpty pre m)
+             then ((pre, unwrap v), mkTrie altEmpty pre m)
              else let (k,      tr')  = fromJust (mapView m)
                       (minMax, tr'') = go isWanted mapView tr'
-                   in ( first (k:) minMax
+                   in ( first (prepend pre k) minMax
                       , mkTrie v pre $ if null tr''
                                           then Map.delete              m k
                                           else Map.adjust (const tr'') m k
