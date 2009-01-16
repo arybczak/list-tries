@@ -59,9 +59,10 @@ $(makeFunc mapsOnly ["fromList","lookup"] [d|
 
 -- lookupWithDefault should return the default if the key is not a member of
 -- the map
-$(makeFunc mapsOnly ["lookupWithDefault","empty"] [d|
-   prop_lookupWithDefault1 lookupWithDefault empty k v =
-      lookupWithDefault v (unArb k) (empty :: TrieType) == v
+$(makeFunc mapsOnly ["lookupWithDefault","notMember"] [d|
+   prop_lookupWithDefault1 lookupWithDefault notMember m k_ v =
+      let k = unArb k_
+       in notMember k (m :: TrieType) ==> lookupWithDefault v k m == v
  |])
 
 -- Sets/maps should be subsets/submaps of themselves
