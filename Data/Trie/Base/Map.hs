@@ -6,7 +6,7 @@ module Data.Trie.Base.Map where
 
 import Control.Arrow ((***), first, second)
 import Data.Function (on)
-import Data.List     (foldl', foldl1', mapAccumL, nubBy, partition, sortBy)
+import Data.List     (foldl',foldl1', mapAccumL, nubBy, partition, sort,sortBy)
 import Data.Ord      (comparing)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
@@ -168,7 +168,19 @@ difference = differenceWith (\_ _ -> Nothing)
 
 ------------- Instances
 
-newtype AList k v = AL [(k,v)] deriving (Eq,Ord)
+newtype AList k v = AL [(k,v)]
+
+-- AList has to be ordering-ignorant
+instance (Eq k, Eq v) => Eq (AList k v) where
+   AL []     == AL ys = Prelude.null ys
+   AL (x:xs) == AL ys =
+      let (my,ys') = deleteAndGetBy (==x) ys
+       in case my of
+               Nothing -> False
+               Just _  -> AL xs == AL ys'
+
+instance (Ord k, Ord v) => Ord (AList k v) where
+   compare (AL xs) (AL ys) = compare (sort xs) (sort ys)
 
 instance Eq k => Map AList k where
    eqCmp = const (==)
