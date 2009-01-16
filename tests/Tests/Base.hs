@@ -47,5 +47,5 @@ instance UnArbitrary Str [Char] where unArb = unStr
 instance UnArbitrary (Str,c) ([Char],c) where unArb = first unStr
 
 class GetKey a where getKey :: a -> String
-instance GetKey Str where getKey = unStr
-instance GetKey (Str,a) where getKey = unStr . fst
+instance GetKey [Char] where getKey = id
+instance GetKey ([Char],a) where getKey = fst

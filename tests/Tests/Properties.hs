@@ -40,7 +40,7 @@ $(makeFunc allTries ["fromList","member"] [d|
   prop_member1 fromList member l_ =
      let l = map unArb l_
          m = fromList l :: TrieType
-      in all (flip member m . getKey) l_
+      in all (flip member m . getKey) (l :: [ListElemType])
  |])
 
 $(makeFunc mapsOnly ["fromList","lookup"] [d|
@@ -88,6 +88,12 @@ $(makeFunc allTries ["notMember","delete"] [d|
        in notMember k . delete k $ (m :: TrieType)
  |])
 
+$(makeFunc allTries ["union","member","toList"] [d|
+   prop_union1 union member toList m n =
+      let u = union m (n :: TrieType)
+       in all (flip member u . getKey) (toList m ++ toList n)
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -101,4 +107,5 @@ tests = concat
    , $(makeTests mapsOnly "prop_singleton1")
    , $(makeTests mapsOnly "prop_insert1")
    , $(makeTests allTries "prop_delete1")
+   , $(makeTests allTries "prop_union1")
    ]

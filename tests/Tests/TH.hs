@@ -4,7 +4,7 @@
 
 module Tests.TH
    ( Module(..)
-   , TrieType
+   , TrieType, ListElemType
    , makeFunc, makeTests
    , setsOnly, mapsOnly, allTries
    ) where
@@ -26,6 +26,7 @@ moduleName :: Module -> String
 moduleName (SetModule m) = m
 moduleName (MapModule m) = m
 
+data ListElemType
 data TrieType
 
 keyType  = ''Char
@@ -39,6 +40,12 @@ replaceTypes m (ConT t) | t == ''TrieType =
         SetModule m' -> ConT (mkName $ m' ++ ".TrieSet") `AppT` ConT keyType
         MapModule m' -> ConT (mkName $ m' ++ ".TrieMap") `AppT` ConT keyType
                                                          `AppT` ConT elemType
+replaceTypes m (ConT t) | t == ''ListElemType =
+   case m of
+        SetModule _ -> ListT `AppT` ConT keyType
+        MapModule _ -> TupleT 2 `AppT` (ListT `AppT` ConT keyType)
+                                `AppT` (ConT elemType)
+                                       
 replaceTypes _ x = x
 
 -- Given, say:
