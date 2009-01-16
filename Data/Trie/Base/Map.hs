@@ -198,14 +198,14 @@ instance Eq k => Map AList k where
    delete (AL xs) k = AL$ deleteBy (\a (b,_) -> a == b) k xs
 
    unionWithKey f (AL xs) (AL ys) =
-      AL$ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (Just $ f k x y))
-                         (\x y -> fst x == fst y)
-                         xs ys
+      AL . uncurry (++) $ updateFirstsBy (\(k,x) (_,y) -> Just (k, f k x y))
+                                         ((==) `on` fst)
+                                         xs ys
 
    differenceWithKey f (AL xs) (AL ys) =
-      AL$ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (f k x y))
-                         (\x y -> fst x == fst y)
-                         xs ys
+      AL . fst $ updateFirstsBy (\(k,x) (_,y) -> fmap ((,) k) (f k x y))
+                                (\x y -> fst x == fst y)
+                                xs ys
 
    intersectionWithKey f_ (AL xs_) (AL ys_) = AL$ go f_ xs_ ys_
     where
@@ -272,16 +272,20 @@ deleteBy eq x (y:ys) = if x `eq` y then ys else y : deleteBy eq x ys
 deleteFirstsBy :: (a -> b -> Bool) -> [a] -> [b] -> [a]
 deleteFirstsBy = foldl' . flip . deleteBy . flip
 
-updateFirstsBy :: (a -> b -> Maybe a) -> (a -> b -> Bool) -> [a] -> [b] -> [a]
-updateFirstsBy _ _  []     _  = []
+updateFirstsBy :: (a -> b -> Maybe a)
+               -> (a -> b -> Bool)
+               -> [a]
+               -> [b]
+               -> ([a],[b])
+updateFirstsBy _ _  []     ys  = ([],ys)
 updateFirstsBy f eq (x:xs) ys =
    let (my,ys') = deleteAndGetBy (eq x) ys
     in case my of
-            Nothing -> x : updateFirstsBy f eq xs ys
+            Nothing -> first (x:) $ updateFirstsBy f eq xs ys
             Just y  ->
                case f x y of
-                    Just z  -> z : updateFirstsBy f eq xs ys'
-                    Nothing ->     updateFirstsBy f eq xs ys'
+                    Just z  -> first (z:) $ updateFirstsBy f eq xs ys'
+                    Nothing ->              updateFirstsBy f eq xs ys'
 
 instance Ord k => Map M.Map k where
    eqCmp = const (==)
