@@ -241,6 +241,11 @@ $(makeFunc mapsOnly [] [d|
       foldMap (flip (:) []) x == foldMapDefault (flip (:) []) (x :: TrieType1)
  |])
 
+-- (read.show) is the identity function
+$(makeFunc allTries [] [d|
+   prop_showRead1 x = (read.show) (x :: TrieType) == x
+ |])
+
 tests = concat
    [ $(makeProps allTries "prop_size1")
    , $(makeProps allTries "prop_size2")
@@ -277,4 +282,5 @@ tests = concat
    , $(makeProps allTries "prop_monoidLaw3")
    , $(makeProps mapsOnlyNotEnum "prop_traversableLaw1")
    , $(makeProps mapsOnlyNotEnum "prop_traversableLaw2")
+   , $(makeProps allTries "prop_showRead1")
    ]
