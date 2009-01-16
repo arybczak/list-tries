@@ -70,6 +70,12 @@ $(makeFunc mapsOnly ["isProperSubmapOf"] [d|
       not (isProperSubmapOf m (m :: TrieType))
  |])
 
+$(makeFunc mapsOnly ["lookup","singleton"] [d|
+   prop_singleton1 lookup singleton k_ v =
+      let k = unArb k_
+       in (fromJust . lookup k) (singleton k v :: TrieType) == v
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1"              "size-1")
    , $(makeTests allTries "prop_size2"              "size-2")
@@ -80,4 +86,5 @@ tests = concat
    , $(makeTests setsOnly "prop_isProperSubsetOf1"  "isProperSubsetOf-1")
    , $(makeTests mapsOnly "prop_isSubmapOf1"        "isSubmapOf-1")
    , $(makeTests mapsOnly "prop_isProperSubmapOf1"  "isProperSubmapOf-1")
+   , $(makeTests mapsOnly "prop_singleton1"         "singleton-1")
    ]
