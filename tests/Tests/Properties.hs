@@ -26,32 +26,38 @@ import Tests.TH
 -- List of tests is at the bottom because it doesn't work at the top: looks
 -- like a TH limitation
 
-$(makeFunc allTries [("fromList",Just fromList_t),("size",Nothing)] [d|
+$(makeFunc allTries [fromList_t,("size",Nothing)] [d|
    prop_size1 fromList size l_ = let l = map unArb l_
                                   in size (fromList l) <= length l
  |])
 
-$(makeFunc allTries [("toList",Just toList_t),("size",Nothing)] [d|
+$(makeFunc allTries [toList_t,("size",Nothing)] [d|
    prop_size2 toList size m = size m == length (toList m)
  |])
 
-$(makeFunc allTries [("fromList",Just fromList_t),("member",Nothing)] [d|
+$(makeFunc allTries [fromList_t,("member",Nothing)] [d|
    -- using flip avoids GHC #2956
    prop_member1 fromList member l_ = let l = map unArb l_
                                          m = fromList l
                                       in all (flip member m . getKey) l
  |])
 
-$(makeFunc mapsOnly [("fromList",Just fromList_t),("lookup",Nothing)] [d|
+$(makeFunc mapsOnly [fromList_t,("lookup",Nothing)] [d|
    prop_lookup1 fromList lookup l_ =
       let l = map unArb l_
           m = fromList l
        in all (\(k,v) -> fromJust (lookup k m) == v) l
  |])
 
+$(makeFunc mapsOnly [("lookupWithDefault",Nothing),empty_t] [d|
+   prop_lookupWithDefault1 lookupWithDefault empty k v =
+      lookupWithDefault v (unArb k) empty == v
+ |])
+
 tests = concat
-   [ $(makeTests allTries "prop_size1"   "size-1")
-   , $(makeTests allTries "prop_size2"   "size-2")
-   , $(makeTests allTries "prop_member1" "member-1")
-   , $(makeTests mapsOnly "prop_lookup1" "lookup-1")
+   [ $(makeTests allTries "prop_size1"              "size-1")
+   , $(makeTests allTries "prop_size2"              "size-2")
+   , $(makeTests allTries "prop_member1"            "member-1")
+   , $(makeTests mapsOnly "prop_lookup1"            "lookup-1")
+   , $(makeTests mapsOnly "prop_lookupWithDefault1" "lookupWithDefault-1")
    ]

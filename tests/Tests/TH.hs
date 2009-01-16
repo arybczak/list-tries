@@ -5,7 +5,7 @@
 module Tests.TH
    ( Module(..)
    , ListElemType, TrieType
-   , fromList_t, toList_t
+   , fromList_t, toList_t, empty_t
    , makeFunc, makeTests
    , setsOnly, mapsOnly, allTries
    ) where
@@ -33,12 +33,20 @@ data TrieType
 keyType  = ''Char
 elemType = ''Int
 
-fromList_t, toList_t :: Type
+fromList_t, toList_t, empty_t :: (String, Maybe Type)
 fromList_t =
-   ArrowT `AppT` (ListT `AppT` ConT ''ListElemType) `AppT` ConT ''TrieType
+   ( "fromList"
+   , Just$ ArrowT `AppT` (ListT `AppT` ConT ''ListElemType)
+                  `AppT` ConT ''TrieType
+   )
 
 toList_t =
-   ArrowT `AppT` ConT ''TrieType `AppT` (ListT `AppT` ConT ''ListElemType)
+   ( "toList"
+   , Just$ ArrowT `AppT` ConT ''TrieType
+                  `AppT` (ListT `AppT` ConT ''ListElemType)
+   )
+
+empty_t = ("empty", Just$ ConT ''TrieType)
 
 replaceTypes :: Module -> Type -> Type
 replaceTypes m (ForallT names cxt t) = ForallT names cxt (replaceTypes m t)
