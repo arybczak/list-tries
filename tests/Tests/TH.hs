@@ -4,6 +4,7 @@
 
 module Tests.TH
    ( Module(..)
+   , TestType(..)
    , TrieType, ListElemType
    , makeFunc, makeTests
    , setsOnly, mapsOnly, allTries
@@ -25,6 +26,8 @@ data Module = SetModule String | MapModule String
 moduleName :: Module -> String
 moduleName (SetModule m) = m
 moduleName (MapModule m) = m
+
+data TestType = Case | Property
 
 data ListElemType
 data TrieType
@@ -139,25 +142,41 @@ makeFunc modules expands =
    expandGuard modu (NormalG expr) = NormalG (expandE modu expr)
    expandGuard modu (PatG stmts)   = PatG (map (expandStmt modu) stmts)
 
-makeTests :: [Module] -> String -> ExpQ
-makeTests modules test =
+makeTests :: TestType -> [Module] -> String -> ExpQ
+makeTests typ modules test =
    return.ListE $
       map (\m -> let mn = moduleName m
                      n  = modularName test mn
-                     testName =
-                        let (a,b) = break isDigit.tail.dropWhile (/= '_')$ test
-                         in a ++ "-" ++ b
                   in VarE (mkName "testProperty") `AppE`
-                     LitE (StringL (testName ++ "-" ++ relevantPart mn)) `AppE`
+                     LitE (StringL (testName typ test mn)) `AppE`
                      VarE n)
           modules
- where
-   relevantPart = map (\c -> if c == '.' then '-' else c)
-                . drop (length "Data.Trie.")
 
 modularName :: String -> String -> Name
 modularName name modu =
    mkName $ name ++ "_" ++ map (\c -> if c == '.' then '_' else c) modu
+
+testName :: TestType -> String -> String -> String
+testName Case test moduleName =
+   concat [ test
+          , "-"
+          , relevantPart moduleName
+          ]
+testName Property test moduleName =
+   let (a,b) = break isDigit.tail.dropWhile (/= '_')$ test
+    in concat
+          [ a
+          , if null a
+               then ""
+               else "-"
+          , b
+          , "-"
+          , relevantPart moduleName
+          ]
+
+relevantPart :: String -> String
+relevantPart = map (\c -> if c == '.' then '-' else c)
+             . drop (length "Data.Trie.")
 
 setsOnly = [SetModule "Data.Trie.Set.Eq"
            ,SetModule "Data.Trie.Set.Ord"
