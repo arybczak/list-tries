@@ -123,6 +123,19 @@ $(makeFunc allTries ["intersection","null","empty"] [d|
       null . intersection (empty :: TrieType)
  |])
 
+$(makeFunc allTries ["split","findMax","findPredecessor"] [d|
+   prop_splitMaxPredecessor split findMax findPredecessor m k_ =
+      let k = unArb k_
+          (a,_) = split k (m :: TrieType)
+       in findMax a == findPredecessor m k
+ |])
+$(makeFunc allTries ["split","findMin","findSuccessor"] [d|
+   prop_splitMinSuccessor split findMin findSuccessor m k_ =
+      let k = unArb k_
+          (_,b) = split k (m :: TrieType)
+       in findMin b == findSuccessor m k
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -144,4 +157,6 @@ tests = concat
    , $(makeTests allTries "prop_difference3")
 --   , $(makeTests allTries "prop_intersection1")
 --   , $(makeTests allTries "prop_intersection2")
+   , $(makeTests allTries "prop_splitMaxPredecessor")
+   , $(makeTests allTries "prop_splitMinSuccessor")
    ]
