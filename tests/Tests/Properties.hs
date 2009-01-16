@@ -114,6 +114,15 @@ $(makeFunc allTries ["empty","difference","null"] [d|
       null $ difference empty (m :: TrieType)
  |])
 
+$(makeFunc allTries ["intersection"] [d|
+   prop_intersection1 intersection m = intersection m m == (m :: TrieType)
+ |])
+
+$(makeFunc allTries ["intersection","null","empty"] [d|
+   prop_intersection2 intersection null empty =
+      null . intersection (empty :: TrieType)
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -133,4 +142,6 @@ tests = concat
    , $(makeTests allTries "prop_difference1")
    , $(makeTests allTries "prop_difference2")
    , $(makeTests allTries "prop_difference3")
+--   , $(makeTests allTries "prop_intersection1")
+--   , $(makeTests allTries "prop_intersection2")
    ]
