@@ -250,10 +250,9 @@ instance Ord k => OrdMap AList k where
    toDescList = sortBy (flip $ comparing fst) . toList
 
    splitLookup (AL xs) k =
-      let (ls,gs) = partition ((< k).fst) xs
-       in case gs of
-               (k',x):gs' | k' == k -> (AL ls, Just x, AL gs')
-               _                    -> (AL ls, Nothing, AL gs)
+      let (ls,gs)  = partition ((< k).fst) xs
+          (mx,gs') = deleteAndGetBy ((== k).fst) gs
+       in (AL ls, fmap snd mx, AL gs')
 
 deleteAndGetBy :: (a -> Bool) -> [a] -> (Maybe a, [a])
 deleteAndGetBy = go []
