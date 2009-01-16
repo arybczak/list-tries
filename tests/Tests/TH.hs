@@ -148,11 +148,12 @@ makeTests modules test =
                         let (a,b) = break isDigit.tail.dropWhile (/= '_')$ test
                          in a ++ "-" ++ b
                   in VarE (mkName "testProperty") `AppE`
-                     LitE (StringL (testName ++ "-" ++ lastPart mn)) `AppE`
+                     LitE (StringL (testName ++ "-" ++ relevantPart mn)) `AppE`
                      VarE n)
           modules
  where
-   lastPart = until (notElem '.') (tail.dropWhile (/='.'))
+   relevantPart = map (\c -> if c == '.' then '-' else c)
+                . drop (length "Data.Trie.")
 
 modularName :: String -> String -> Name
 modularName name modu =
