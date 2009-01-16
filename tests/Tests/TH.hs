@@ -5,7 +5,6 @@
 module Tests.TH
    ( Module(..)
    , ListElemType, TrieType
-   , fromList_t, toList_t, empty_t
    , makeFunc, makeTests
    , setsOnly, mapsOnly, allTries
    ) where
@@ -32,21 +31,6 @@ data TrieType
 
 keyType  = ''Char
 elemType = ''Int
-
-fromList_t, toList_t, empty_t :: (String, Maybe Type)
-fromList_t =
-   ( "fromList"
-   , Just$ ArrowT `AppT` (ListT `AppT` ConT ''ListElemType)
-                  `AppT` ConT ''TrieType
-   )
-
-toList_t =
-   ( "toList"
-   , Just$ ArrowT `AppT` ConT ''TrieType
-                  `AppT` (ListT `AppT` ConT ''ListElemType)
-   )
-
-empty_t = ("empty", Just$ ConT ''TrieType)
 
 replaceTypes :: Module -> Type -> Type
 replaceTypes m (ForallT names cxt t) = ForallT names cxt (replaceTypes m t)
@@ -86,13 +70,12 @@ replaceTypes _ x = x
 -- Which is obviously very different in terms of semantics.
 --
 -- (Yes, this could be handled properly but I couldn't be bothered.)
-makeFunc :: [Module] -> [(String, Maybe Type)] -> Q [Dec] -> Q [Dec]
+makeFunc :: [Module] -> [String] -> Q [Dec] -> Q [Dec]
 makeFunc modules expands =
    let expandFuns = map expandTopDec modules
     in fmap (\decs -> concat [map f decs | f <- expandFuns])
  where
-   isExpandable n = nameBase n `elem` map fst expands
-   expandName n = nameBase n `lookup` expands
+   isExpandable n = nameBase n `elem` expands
 
    expandTopDec modu (FunD name clauses) =
       FunD (modularName (nameBase name) (moduleName modu))
@@ -121,8 +104,8 @@ makeFunc modules expands =
    expandBody modu (GuardedB guards) =
       GuardedB (map (expandGuard modu *** expandE modu) guards)
 
-   expandE m (VarE n) | Just t <- expandName n = qualify VarE m t n
-   expandE m (ConE n) | Just t <- expandName n = qualify ConE m t n
+   expandE m (VarE n) | isExpandable n = qualify VarE m n
+   expandE m (ConE n) | isExpandable n = qualify ConE m n
    expandE m (AppE e1 e2)         = AppE (expandE m e1) (expandE m e2)
    expandE m (InfixE me1 e me2)   = InfixE (fmap (expandE m) me1)
                                            (expandE m e)
@@ -142,11 +125,8 @@ makeFunc modules expands =
    expandE m (RecUpdE name fexps) = RecUpdE name (map (expandFieldExp m) fexps)
    expandE _ x = x
 
-   qualify expr modu mtyp name =
-      let expr' = expr $ mkName (moduleName modu ++ "." ++ nameBase name)
-       in case mtyp of
-               Just typ -> SigE expr' (replaceTypes modu typ)
-               Nothing  -> expr'
+   qualify expr modu name =
+      expr $ mkName (moduleName modu ++ "." ++ nameBase name)
 
    expandMatch modu (Match pat body decs) =
       Match pat (expandBody modu body) (map (expandDec modu) decs)

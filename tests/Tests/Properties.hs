@@ -26,46 +26,46 @@ import Tests.TH
 -- List of tests is at the bottom because it doesn't work at the top: looks
 -- like a TH limitation
 
-$(makeFunc allTries [fromList_t,("size",Nothing)] [d|
+$(makeFunc allTries ["fromList","size"] [d|
    prop_size1 fromList size l_ = let l = map unArb l_
-                                  in size (fromList l) <= length l_
+                                  in size (fromList l :: TrieType) <= length l_
  |])
 
-$(makeFunc allTries [toList_t,("size",Nothing)] [d|
-   prop_size2 toList size m = size m == length (toList m)
+$(makeFunc allTries ["toList","size"] [d|
+   prop_size2 toList size m = size (m :: TrieType) == length (toList m)
  |])
 
-$(makeFunc allTries [fromList_t,("member",Nothing)] [d|
+$(makeFunc allTries ["fromList","member"] [d|
   -- using flip avoids GHC #2956
   prop_member1 fromList member l_ =
      let l = map unArb l_
-         m = fromList l
+         m = fromList l :: TrieType
       in all (flip member m . getKey) l_
  |])
 
-$(makeFunc mapsOnly [fromList_t,("lookup",Nothing)] [d|
+$(makeFunc mapsOnly ["fromList","lookup"] [d|
    prop_lookup1 fromList lookup l_ =
       let l = map unArb l_
-          m = fromList l
+          m = fromList l :: TrieType
        in all (\(k,v) -> fromJust (lookup k m) == v) l
  |])
 
-$(makeFunc mapsOnly [("lookupWithDefault",Nothing),empty_t] [d|
+$(makeFunc mapsOnly ["lookupWithDefault","empty"] [d|
    prop_lookupWithDefault1 lookupWithDefault empty k v =
-      lookupWithDefault v (unArb k) empty == v
+      lookupWithDefault v (unArb k) (empty :: TrieType) == v
  |])
 
-$(makeFunc setsOnly [("isSubsetOf",Nothing)] [d|
+$(makeFunc setsOnly ["isSubsetOf"] [d|
    prop_isSubsetOf1 isSubsetOf m = isSubsetOf m (m :: TrieType)
  |])
-$(makeFunc setsOnly [("isProperSubsetOf",Nothing)] [d|
+$(makeFunc setsOnly ["isProperSubsetOf"] [d|
    prop_isProperSubsetOf1 isProperSubsetOf m =
       not (isProperSubsetOf m (m :: TrieType))
  |])
-$(makeFunc mapsOnly [("isSubmapOf",Nothing)] [d|
+$(makeFunc mapsOnly ["isSubmapOf"] [d|
    prop_isSubmapOf1 isSubmapOf m = isSubmapOf m (m :: TrieType)
  |])
-$(makeFunc mapsOnly [("isProperSubmapOf",Nothing)] [d|
+$(makeFunc mapsOnly ["isProperSubmapOf"] [d|
    prop_isProperSubmapOf1 isProperSubmapOf m =
       not (isProperSubmapOf m (m :: TrieType))
  |])
