@@ -4,6 +4,7 @@
 
 module Tests.Properties (tests) where
 
+import Data.Maybe                          (fromJust)
 import Test.Framework.Providers.QuickCheck (testProperty)
 
 import qualified Data.Trie.Set.Eq
@@ -35,14 +36,22 @@ $(makeFunc allTries [("toList",Just toList_t),("size",Nothing)] [d|
  |])
 
 $(makeFunc allTries [("fromList",Just fromList_t),("member",Nothing)] [d|
-	-- using flip avoids GHC #2956
-	prop_member1 fromList member l_ = let l = map unArb l_
-	                                      m = fromList l
-	                                   in all (flip member m . getKey) l
+   -- using flip avoids GHC #2956
+   prop_member1 fromList member l_ = let l = map unArb l_
+                                         m = fromList l
+                                      in all (flip member m . getKey) l
+ |])
+
+$(makeFunc mapsOnly [("fromList",Just fromList_t),("lookup",Nothing)] [d|
+   prop_lookup1 fromList lookup l_ =
+      let l = map unArb l_
+          m = fromList l
+       in all (\(k,v) -> fromJust (lookup k m) == v) l
  |])
 
 tests = concat
    [ $(makeTests allTries "prop_size1"   "size-1")
    , $(makeTests allTries "prop_size2"   "size-2")
    , $(makeTests allTries "prop_member1" "member-1")
+   , $(makeTests mapsOnly "prop_lookup1" "lookup-1")
    ]
