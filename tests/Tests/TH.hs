@@ -62,7 +62,8 @@ replaceTypes m (ConT t) | t == ''ListElemType =
 replaceTypes m (ConT t) | t == ''TrieType =
    case m of
         SetModule m' -> ConT (mkName $ m' ++ ".TrieSet") `AppT` ConT keyType
-        MapModule m' -> ConT (mkName $ m' ++ ".TrieMap") `AppT` ConT keyType `AppT` ConT elemType
+        MapModule m' -> ConT (mkName $ m' ++ ".TrieMap") `AppT` ConT keyType
+                                                         `AppT` ConT elemType
 replaceTypes _ x = x
 
 -- Given, say:
@@ -136,7 +137,7 @@ makeFunc modules expands =
                                           (map (expandMatch m) matches)
    expandE m (DoE stmts)          = DoE (map (expandStmt m) stmts)
    expandE m (CompE stmts)        = CompE (map (expandStmt m) stmts)
-   expandE m (SigE e t)           = SigE (expandE m e) t
+   expandE m (SigE e t)           = SigE (expandE m e) (replaceTypes m t)
    expandE m (RecConE name fexps) = RecConE name (map (expandFieldExp m) fexps)
    expandE m (RecUpdE name fexps) = RecUpdE name (map (expandFieldExp m) fexps)
    expandE _ x = x

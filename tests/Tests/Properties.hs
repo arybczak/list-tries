@@ -28,7 +28,7 @@ import Tests.TH
 
 $(makeFunc allTries [fromList_t,("size",Nothing)] [d|
    prop_size1 fromList size l_ = let l = map unArb l_
-                                  in size (fromList l) <= length l
+                                  in size (fromList l) <= length l_
  |])
 
 $(makeFunc allTries [toList_t,("size",Nothing)] [d|
@@ -36,10 +36,11 @@ $(makeFunc allTries [toList_t,("size",Nothing)] [d|
  |])
 
 $(makeFunc allTries [fromList_t,("member",Nothing)] [d|
-   -- using flip avoids GHC #2956
-   prop_member1 fromList member l_ = let l = map unArb l_
-                                         m = fromList l
-                                      in all (flip member m . getKey) l
+  -- using flip avoids GHC #2956
+  prop_member1 fromList member l_ =
+     let l = map unArb l_
+         m = fromList l
+      in all (flip member m . getKey) l_
  |])
 
 $(makeFunc mapsOnly [fromList_t,("lookup",Nothing)] [d|
@@ -54,10 +55,29 @@ $(makeFunc mapsOnly [("lookupWithDefault",Nothing),empty_t] [d|
       lookupWithDefault v (unArb k) empty == v
  |])
 
+$(makeFunc setsOnly [("isSubsetOf",Nothing)] [d|
+   prop_isSubsetOf1 isSubsetOf m = isSubsetOf m (m :: TrieType)
+ |])
+$(makeFunc setsOnly [("isProperSubsetOf",Nothing)] [d|
+   prop_isProperSubsetOf1 isProperSubsetOf m =
+      not (isProperSubsetOf m (m :: TrieType))
+ |])
+$(makeFunc mapsOnly [("isSubmapOf",Nothing)] [d|
+   prop_isSubmapOf1 isSubmapOf m = isSubmapOf m (m :: TrieType)
+ |])
+$(makeFunc mapsOnly [("isProperSubmapOf",Nothing)] [d|
+   prop_isProperSubmapOf1 isProperSubmapOf m =
+      not (isProperSubmapOf m (m :: TrieType))
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1"              "size-1")
    , $(makeTests allTries "prop_size2"              "size-2")
    , $(makeTests allTries "prop_member1"            "member-1")
    , $(makeTests mapsOnly "prop_lookup1"            "lookup-1")
    , $(makeTests mapsOnly "prop_lookupWithDefault1" "lookupWithDefault-1")
+   , $(makeTests setsOnly "prop_isSubsetOf1"        "isSubsetOf-1")
+   , $(makeTests setsOnly "prop_isProperSubsetOf1"  "isProperSubsetOf-1")
+   , $(makeTests mapsOnly "prop_isSubmapOf1"        "isSubmapOf-1")
+   , $(makeTests mapsOnly "prop_isProperSubmapOf1"  "isProperSubmapOf-1")
    ]
