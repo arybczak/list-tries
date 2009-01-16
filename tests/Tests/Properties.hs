@@ -4,8 +4,9 @@
 
 module Tests.Properties (tests) where
 
-import Control.Arrow                       ((&&&))
-import Data.Maybe                          (fromJust, isNothing)
+import Control.Arrow ((&&&))
+import Data.Maybe    (fromJust, isNothing)
+import Data.Monoid   (mappend, mempty) 
 
 import Test.Framework.Providers.QuickCheck (testProperty)
 import Test.QuickCheck                     ((==>))
@@ -212,7 +213,19 @@ $(makeFunc allTries ["addPrefix","splitPrefix","lookupPrefix"] [d|
    prop_prefixOps2 addPrefix splitPrefix lookupPrefix m =
       let (k,_) = splitPrefix (m :: TrieType)
        in addPrefix k (lookupPrefix k m) == m
-   |])
+ |])
+
+-- The monoid laws: associativity, left identity, right identity
+$(makeFunc allTries [] [d|
+   prop_monoidLaw1 x y z =
+      mappend x (mappend y z) == mappend (mappend x y) (z :: TrieType)
+ |])
+$(makeFunc allTries [] [d|
+   prop_monoidLaw2 x = mappend mempty x == (x :: TrieType)
+ |])
+$(makeFunc allTries [] [d|
+   prop_monoidLaw3 x = mappend x mempty == (x :: TrieType)
+ |])
 
 tests = concat
    [ $(makeProps allTries "prop_size1")
@@ -245,4 +258,7 @@ tests = concat
    , $(makeProps allTries "prop_findSuccessor2")
    , $(makeProps allTries "prop_prefixOps1")
    , $(makeProps allTries "prop_prefixOps2")
+   , $(makeProps allTries "prop_monoidLaw1")
+   , $(makeProps allTries "prop_monoidLaw2")
+   , $(makeProps allTries "prop_monoidLaw3")
    ]
