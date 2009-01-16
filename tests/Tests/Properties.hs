@@ -4,6 +4,7 @@
 
 module Tests.Properties (tests) where
 
+import Control.Arrow                       ((&&&))
 import Data.Maybe                          (fromJust)
 import Test.Framework.Providers.QuickCheck (testProperty)
 
@@ -136,6 +137,15 @@ $(makeFunc allTries ["split","findMin","findSuccessor"] [d|
        in findMin b == findSuccessor m k
  |])
 
+$(makeFunc allTries ["minView","findMin","deleteMin"] [d|
+   prop_minView1 minView findMin deleteMin m =
+      minView m == (findMin &&& deleteMin) (m :: TrieType)
+ |])
+$(makeFunc allTries ["maxView","findMax","deleteMax"] [d|
+   prop_maxView1 maxView findMax deleteMax m =
+      maxView m == (findMax &&& deleteMax) (m :: TrieType)
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -159,4 +169,6 @@ tests = concat
 --   , $(makeTests allTries "prop_intersection2")
    , $(makeTests allTries "prop_splitMaxPredecessor")
    , $(makeTests allTries "prop_splitMinSuccessor")
+   , $(makeTests allTries "prop_minView1")
+   , $(makeTests allTries "prop_maxView1")
    ]
