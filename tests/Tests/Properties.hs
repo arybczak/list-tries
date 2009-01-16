@@ -6,7 +6,9 @@ module Tests.Properties (tests) where
 
 import Control.Arrow                       ((&&&))
 import Data.Maybe                          (fromJust, isNothing)
+
 import Test.Framework.Providers.QuickCheck (testProperty)
+import Test.QuickCheck                     ((==>))
 
 import qualified Data.Trie.Set.Eq
 import qualified Data.Trie.Set.Ord
@@ -151,6 +153,12 @@ $(makeFunc allTries ["findPredecessor"] [d|
       isNothing (findPredecessor (m :: TrieType) [])
  |])
 
+$(makeFunc allTries ["findSuccessor","findMin","notMember","null"] [d|
+   prop_findSuccessor1 findSuccessor findMin notMember null m =
+      not (null m) && notMember [] m ==>
+         findSuccessor (m :: TrieType) [] == findMin m
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -177,4 +185,5 @@ tests = concat
    , $(makeTests allTries "prop_minView1")
    , $(makeTests allTries "prop_maxView1")
    , $(makeTests allTries "prop_findPredecessor1")
+   , $(makeTests allTries "prop_findSuccessor1")
    ]
