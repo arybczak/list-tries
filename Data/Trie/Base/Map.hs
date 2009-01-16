@@ -168,7 +168,7 @@ difference = differenceWith (\_ _ -> Nothing)
 
 ------------- Instances
 
-newtype AList k v = AL [(k,v)]
+newtype AList k v = AL [(k,v)] deriving (Eq,Ord)
 
 instance Eq k => Map AList k where
    eqCmp = const (==)
@@ -345,7 +345,7 @@ instance Ord k => OrdMap M.Map k where
 
    -- mapAccumDesc waiting on http://hackage.haskell.org/trac/ghc/ticket/2769
 
-newtype IMap k v = IMap (IM.IntMap v)
+newtype IMap k v = IMap (IM.IntMap v) deriving (Eq,Ord)
 
 instance Enum k => Map IMap k where
    eqCmp = const ((==) `on` fromEnum)

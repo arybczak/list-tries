@@ -94,6 +94,13 @@ $(makeFunc allTries ["union","member","toList"] [d|
        in all (flip member u . getKey) (toList m ++ toList n)
  |])
 
+$(makeFunc allTries ["union","empty"] [d|
+   prop_union2 union empty m = union m empty == (m :: TrieType)
+ |])
+$(makeFunc allTries ["union","empty"] [d|
+   prop_union3 union empty m = union empty m == (m :: TrieType)
+ |])
+
 tests = concat
    [ $(makeTests allTries "prop_size1")
    , $(makeTests allTries "prop_size2")
@@ -108,4 +115,6 @@ tests = concat
    , $(makeTests mapsOnly "prop_insert1")
    , $(makeTests allTries "prop_delete1")
    , $(makeTests allTries "prop_union1")
+   , $(makeTests allTries "prop_union2")
+   , $(makeTests allTries "prop_union3")
    ]
