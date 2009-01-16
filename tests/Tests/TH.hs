@@ -5,7 +5,9 @@
 module Tests.TH
    ( Module(..)
    , ListElemType, TrieType
+   , fromList_t, toList_t
    , makeFunc, makeTests
+   , setsOnly, mapsOnly, allTries
    ) where
 
 import Control.Arrow ((***))
@@ -30,6 +32,13 @@ data TrieType
 
 keyType  = ''Char
 elemType = ''Int
+
+fromList_t, toList_t :: Type
+fromList_t =
+   ArrowT `AppT` (ListT `AppT` ConT ''ListElemType) `AppT` ConT ''TrieType
+
+toList_t =
+   ArrowT `AppT` ConT ''TrieType `AppT` (ListT `AppT` ConT ''ListElemType)
 
 replaceTypes :: Module -> Type -> Type
 replaceTypes m (ForallT names cxt t) = ForallT names cxt (replaceTypes m t)
@@ -158,3 +167,19 @@ makeTests modules test testName =
 modularName :: String -> String -> Name
 modularName name modu =
    mkName $ name ++ "_" ++ map (\c -> if c == '.' then '_' else c) modu
+
+setsOnly = [SetModule "Data.Trie.Set.Eq"
+           ,SetModule "Data.Trie.Set.Ord"
+           ,SetModule "Data.Trie.Set.Enum"
+           ,SetModule "Data.Trie.Patricia.Set.Eq"
+           ,SetModule "Data.Trie.Patricia.Set.Ord"
+           ,SetModule "Data.Trie.Patricia.Set.Enum"
+           ]
+mapsOnly = [MapModule "Data.Trie.Map.Eq"
+           ,MapModule "Data.Trie.Map.Ord"
+           ,MapModule "Data.Trie.Map.Enum"
+           ,MapModule "Data.Trie.Patricia.Map.Eq"
+           ,MapModule "Data.Trie.Patricia.Map.Ord"
+           ,MapModule "Data.Trie.Patricia.Map.Enum"
+           ]
+allTries = setsOnly ++ mapsOnly
