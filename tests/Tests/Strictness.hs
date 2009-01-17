@@ -69,15 +69,18 @@ $(makeFunc mapsOnly ["size","singleton","adjust'"] [d|
 --
 -- Need to use more sophisticated testing here because now the value itself is
 -- ⊥, including whether it's Just or not; size wants that info.
+--
+-- And there's also the fact that Patricia's alter is lazy for only one case,
+-- so we test that case.
 $(makeFunc mapsOnly ["member","fromList","alter"] [d|
    alter member fromList alter =
-      not.isBottom.member "foo" . alter undefined [] $
-         (fromList [("foo",1)] :: TrieType)
+      not.isBottom.member "foob" . alter undefined "foo" $
+         (fromList [("foo",1),("foob",2)] :: TrieType)
  |])
 $(makeFunc mapsOnly ["member","fromList","alter'"] [d|
    alter' member fromList alter' =
-      isBottom.member "foo" . alter' undefined [] $
-         (fromList [("foo",1)] :: TrieType)
+      isBottom.member "foob" . alter' undefined "foo" $
+         (fromList [("foo",1),("foob",2)] :: TrieType)
  |])
 
 tests = testGroup "Strictness"
