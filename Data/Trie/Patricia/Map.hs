@@ -52,6 +52,12 @@ import Data.Trie.Base.Map     (Map, OrdMap)
 
 -- Invariant: any (Tr Nothing _ _) has at least two children, all of which are
 -- Just or have a Just descendant.
+--
+-- In order to avoid a lot of special casing it has to be the case that there's
+-- only one way to represent a given trie. The above property makes sure of
+-- that, so that, for instance, 'fromList [("foo",1)]' can only be 'Tr (Just 1)
+-- "foo" Map.empty', and not 'Tr Nothing "fo" (Map.fromList [('o',Tr (Just 1)
+-- "" Map.empty)])'. Base.tryCompress is a function which takes care of this.
 data TrieMap map k v = Tr (Maybe v) ![k] !(CMap map k v)
 
 type CMap map k v = map k (TrieMap map k v)

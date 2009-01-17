@@ -40,6 +40,12 @@ import Data.Trie.Util         ((.:), (.:.), both)
 -- Invariant: any (Tr False _ _) has at least two children, all of which are
 -- True or have a True descendant.
 --
+-- In order to avoid a lot of special casing it has to be the case that there's
+-- only one way to represent a given trie. The above property makes sure of
+-- that, so that, for instance, 'fromList ["foo"]' can only be 'Tr True "foo"
+-- Map.empty', and not 'Tr False "fo" (Map.fromList [('o',Tr True ""
+-- Map.empty)])'. Base.tryCompress is a function which takes care of this.
+--
 -- This Base stuff is needed just as in the non-Patricia version.
 data TrieSetBase map a bool = Tr !bool ![a] !(CMap map a bool)
 type CMap map a bool = map a (TrieSetBase map a bool)
