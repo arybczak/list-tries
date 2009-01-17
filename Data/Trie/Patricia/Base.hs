@@ -324,9 +324,17 @@ genericAlter seeq f k tr =
 
             PostFix (Right (x:xs)) ->
                mkTrie v prefix $
-                  Map.update (\t -> let new = genericAlter seeq f xs t
+                  Map.alter
+                     (\mt -> case mt of
+                                 Nothing ->
+                                    let v = f altEmpty
+                                     in if hasValue v
+                                           then Just (singleton xs (unwrap v))
+                                           else Nothing
+                                 Just t ->
+                                    let new = genericAlter seeq f xs t
                                      in if null new then Nothing else Just new)
-                             m x
+                     m x
 
             PostFix (Left (p:ps)) ->
                let v' = f altEmpty

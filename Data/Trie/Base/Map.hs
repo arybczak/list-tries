@@ -25,8 +25,7 @@ import Data.Trie.Util (both, (.:))
 -- Minimal complete implementation:
 -- * eqCmp
 -- * null, lookup
--- * insertWith
--- * update
+-- * alter
 -- * unionWithKey, differenceWithKey, intersectionWithKey
 -- * foldValues
 -- * toList, fromListWith
@@ -52,6 +51,8 @@ class Map m k where
    update :: (a -> Maybe a) -> m k a -> k -> m k a
    adjust :: (a -> a)       -> m k a -> k -> m k a
    delete ::                   m k a -> k -> m k a
+
+   alter :: (Maybe a -> Maybe a) -> m k a -> k -> m k a
 
    unionWith           ::      (a -> a -> a)       -> m k a -> m k a -> m k a
    differenceWith      ::      (a -> b -> Maybe a) -> m k a -> m k b -> m k a
@@ -79,10 +80,15 @@ class Map m k where
    singleton = insertWith const empty
    doubleton = insertWith const .: singleton
 
-   insert = insertWith const
+   insert             = insertWith const
+   insertWith f m k v = alter (\mold -> Just $ case mold of
+                                                    Nothing  -> v
+                                                    Just old -> f v old)
+                              m k
 
    adjust f = update (Just . f)
    delete   = update (const Nothing)
+   update f = alter  (f =<<)
 
    unionWith        = unionWithKey        . const
    differenceWith   = differenceWithKey   . const
@@ -214,20 +220,11 @@ instance Eq k => Map AList k where
    null (AL xs)       = Prelude.null xs
    lookup (AL xs) x   = Prelude.lookup x xs
 
-   insertWith f (AL xs) k v =
+   alter f (AL xs) k =
       let (old, ys) = deleteAndGetBy ((== k).fst) xs
-       in case old of
-               Just (_,v2) -> AL$ (k, f v v2) : ys
-               Nothing     -> AL$ (k,   v)    : xs
-
-   update f orig@(AL xs) k =
-      let (old, ys) = deleteAndGetBy ((== k).fst) xs
-       in case old of
-               Nothing    -> orig
-               Just (_,v) ->
-                  case f v of
-                       Nothing -> AL             ys
-                       Just v' -> AL $ (k, v') : ys
+       in case f (fmap snd old) of
+               Nothing -> AL ys
+               Just v  -> AL $ (k,v) : ys
 
    delete (AL xs) k = AL$ deleteBy (\a (b,_) -> a == b) k xs
 
@@ -335,6 +332,8 @@ instance Ord k => Map M.Map k where
    adjust = flip . M.adjust
    delete = flip   M.delete
 
+   alter = flip . M.alter
+
    unionWith           = M.unionWith
    differenceWith      = M.differenceWith
    intersectionWith    = M.intersectionWith
@@ -414,6 +413,8 @@ instance Enum k => Map IMap k where
    update f (IMap m) k = IMap$ IM.update f (fromEnum k) m
    adjust f (IMap m) k = IMap$ IM.adjust f (fromEnum k) m
    delete   (IMap m) k = IMap$ IM.delete   (fromEnum k) m
+
+   alter f (IMap m) k = IMap$ IM.alter f (fromEnum k) m
 
    unionWith        f (IMap x) (IMap y) = IMap$ IM.unionWith        f x y
    differenceWith   f (IMap x) (IMap y) = IMap$ IM.differenceWith   f x y

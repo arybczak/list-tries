@@ -249,16 +249,16 @@ updateLookup f (x:xs) orig =
 -- Lazy in exactly one case: the key is the prefix of another key in the trie.
 -- Otherwise we have to test whether the function removed a key or not, lest
 -- the trie fall into an invalid state.
-alter :: (Boolable (st a), Trie trie st map k)
+alter :: (Alt st a, Boolable (st a), Trie trie st map k)
       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter = genericAlter (flip const)
 
 -- O(m)
-alter' :: (Boolable (st a), Trie trie st map k)
+alter' :: (Alt st a, Boolable (st a), Trie trie st map k)
        => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter' = genericAlter seq
 
-genericAlter :: (Boolable (st a), Trie trie st map k)
+genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (st a -> trie map k a -> trie map k a)
              -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
 genericAlter seeq f []     tr =
@@ -267,8 +267,15 @@ genericAlter seeq f []     tr =
     in v' `seeq` mkTrie v' m
 
 genericAlter seeq f (x:xs) tr = mapMap tr $ \m ->
-   Map.update (\old -> let new = genericAlter seeq f xs old
-                        in if null new then Nothing else Just new)
+   Map.alter (\mold -> case mold of
+                            Nothing ->
+                               let v = f altEmpty
+                                in if hasValue v
+                                      then Just (singleton xs (unwrap v))
+                                      else Nothing
+                            Just old ->
+                               let new = genericAlter seeq f xs old
+                                in if null new then Nothing else Just new)
               m x
 
 -- * Combination
