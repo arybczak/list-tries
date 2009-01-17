@@ -17,7 +17,7 @@ main = do
       , args
       ]
 
-tests = concat
+tests =
    [ Cases.tests
    , Properties.tests
    , Strictness.tests

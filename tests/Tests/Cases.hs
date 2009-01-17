@@ -26,6 +26,6 @@ $(makeFunc allTries ["null","empty"] [d|
    nullEmpty null empty = null (empty :: TrieType)
  |])
 
-tests =
+tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
    ]

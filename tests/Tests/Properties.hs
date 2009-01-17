@@ -257,7 +257,7 @@ $(makeFunc allTries [] [d|
    prop_showRead1 x = (read.show) (x :: TrieType) == x
  |])
 
-tests =
+tests = testGroup "QuickCheck properties"
    [ $(makeProps allTries "prop_size1")
    , $(makeProps allTries "prop_size2")
    , $(makeProps allTries "prop_member1")

@@ -6,12 +6,4 @@ import Test.Framework
 import Test.Framework.Providers.HUnit
 import Test.HUnit.Base
 
-tests =
-   [ testGroup "Strictness" $
-        flip map testCases $ \(name,ass) ->
-           testCase name . assertBool "failed" $ ass
-   ]
-
-testCases =
-   [ -- TODO
-   ]
+tests = testGroup "Strictness" []
