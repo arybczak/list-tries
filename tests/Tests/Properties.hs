@@ -111,6 +111,25 @@ $(makeFunc allTries ["notMember","delete"] [d|
        in notMember k . delete k $ (m :: TrieType)
  |])
 
+-- Altering a value within a map and then looking it up is the same as first
+-- looking it up and then altering it: lookup k (alter f k m) == f (lookup k m)
+$(makeFunc mapsOnly ["alter","lookup"] [d|
+   prop_alter1 alter lookup k_ m =
+      let k = unArb k_
+       in lookup k (alter (const Nothing) k m :: TrieType) == Nothing
+ |])
+$(makeFunc mapsOnly ["alter","lookup"] [d|
+   prop_alter2 alter lookup k_ m =
+      let k = unArb k_
+       in lookup k (alter (const (Just 2)) k m :: TrieType) == Just 2
+ |])
+$(makeFunc mapsOnly ["alter","lookup"] [d|
+   prop_alter3 alter lookup k_ m =
+      let k = unArb k_
+       in lookup k (alter (fmap ((+) 1)) k m :: TrieType)
+          == fmap ((+) 1) (lookup k m)
+ |])
+
 -- A union should include all keys of the original sets
 $(makeFunc allTries ["union","member","toList"] [d|
    prop_union1 union member toList m n =
@@ -270,6 +289,9 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_singleton1")
    , $(makeProps mapsOnly "prop_insert1")
    , $(makeProps allTries "prop_delete1")
+   , $(makeProps mapsOnly "prop_alter1")
+   , $(makeProps mapsOnly "prop_alter2")
+   , $(makeProps mapsOnly "prop_alter3")
    , $(makeProps allTries "prop_union1")
    , $(makeProps allTries "prop_union2")
    , $(makeProps allTries "prop_union3")
