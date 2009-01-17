@@ -145,42 +145,39 @@ makeFunc modules expands =
 
 makeTests :: TestType -> [Module] -> String -> ExpQ
 makeTests typ modules test =
-   return.ListE $
-      map (\m -> let mn = moduleName m
-                     n  = modularName test mn
-                  in VarE (mkName "testProperty") `AppE`
-                     LitE (StringL (testName typ test mn)) `AppE`
-                     VarE n)
-          modules
+   return$
+      VarE (mkName "testGroup") `AppE`
+      LitE (StringL (testName typ test)) `AppE`
+      ListE (
+         map (\m -> let mn = moduleName m
+                        n  = modularName test mn
+                     in VarE (mkName "testProperty") `AppE`
+                        LitE (StringL (relevantPart mn)) `AppE`
+                        VarE n)
+             modules)
 
 makeCases = makeTests Case
 makeProps = makeTests Property                           
 
+-- Used to name the generated functions
 modularName :: String -> String -> Name
 modularName name modu =
    mkName $ name ++ "_" ++ map (\c -> if c == '.' then '_' else c) modu
 
-testName :: TestType -> String -> String -> String
-testName Case test modName =
-   concat [ test
-          , "-"
-          , relevantPart modName
-          ]
-testName Property test modName =
-   let (a,b) = break isDigit.tail.dropWhile (/= '_')$ test
+testName :: TestType -> String -> String
+testName Case test = test
+testName Property test =
+   let (s,num) = break isDigit.tail.dropWhile (/= '_') $ test
     in concat
-          [ a
-          , if null b
+          [ s
+          , if null num
                then ""
                else "-"
-          , b
-          , "-"
-          , relevantPart modName
+          , num
           ]
 
 relevantPart :: String -> String
-relevantPart = map (\c -> if c == '.' then '-' else c)
-             . drop (length "Data.Trie.")
+relevantPart = drop (length "Data.Trie.")
 
 setsOnly = [SetModule "Data.Trie.Set.Eq"
            ,SetModule "Data.Trie.Set.Ord"

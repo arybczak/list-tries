@@ -4,6 +4,7 @@
 
 module Tests.Cases (tests) where
 
+import Test.Framework                      (testGroup)
 import Test.Framework.Providers.QuickCheck (testProperty)
 
 import qualified Data.Trie.Set.Eq
@@ -25,6 +26,6 @@ $(makeFunc allTries ["null","empty"] [d|
    nullEmpty null empty = null (empty :: TrieType)
  |])
 
-tests = concat
+tests =
    [ $(makeCases allTries "nullEmpty")
    ]

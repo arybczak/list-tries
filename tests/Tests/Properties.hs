@@ -10,6 +10,7 @@ import Data.Maybe       (fromJust, isNothing)
 import Data.Monoid      (mappend, mempty)
 import Data.Traversable (fmapDefault, foldMapDefault)
 
+import Test.Framework                      (testGroup)
 import Test.Framework.Providers.QuickCheck (testProperty)
 import Test.QuickCheck                     ((==>))
 
@@ -256,7 +257,7 @@ $(makeFunc allTries [] [d|
    prop_showRead1 x = (read.show) (x :: TrieType) == x
  |])
 
-tests = concat
+tests =
    [ $(makeProps allTries "prop_size1")
    , $(makeProps allTries "prop_size2")
    , $(makeProps allTries "prop_member1")
