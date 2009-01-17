@@ -51,7 +51,7 @@ import Data.Trie.Base.Classes (fmap')
 import Data.Trie.Base.Map     (Map, OrdMap)
 
 -- Invariant: any (Tr Nothing _) has a Just descendant.
-data TrieMap map k v = Tr !(Maybe v) !(CMap map k v)
+data TrieMap map k v = Tr (Maybe v) !(CMap map k v)
 
 type CMap map k v = map k (TrieMap map k v)
 
