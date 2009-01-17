@@ -52,7 +52,7 @@ import Data.Trie.Base.Map     (Map, OrdMap)
 
 -- Invariant: any (Tr Nothing _ _) has at least two children, all of which are
 -- Just or have a Just descendant.
-data TrieMap map k v = Tr !(Maybe v) ![k] !(CMap map k v)
+data TrieMap map k v = Tr (Maybe v) ![k] !(CMap map k v)
 
 type CMap map k v = map k (TrieMap map k v)
 
