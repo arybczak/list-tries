@@ -12,6 +12,7 @@ tested:
 , test-framework            >= 0.2 && < 1
 , test-framework-hunit      >= 0.2 && < 1
 , test-framework-quickcheck >= 0.2 && < 1
+, ChasingBottoms            == 1.2.*
 
 In addition, unlike the library itself, no attempt has been made to make sure
 that the tests would work with anything other than GHC.
