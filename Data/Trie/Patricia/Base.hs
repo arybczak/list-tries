@@ -292,16 +292,25 @@ updateLookup f k tr =
             _ -> (altEmpty, tr)
 
 -- O(m)
-alter :: (Boolable (st a), Trie trie st map k)
+--
+-- This can be lazy in exactly one case: the key is the common prefix of the
+-- trie and the trie contained more than one key. In that case, we know that
+-- the resulting trie continues to contain those children.
+--
+-- In all other cases we have to check whether the function removed a key or
+-- not, in order to be able to keep the trie in an internally valid state.
+
+-- (I.e. we need to try to compress it.)
+alter :: (Alt st a, Boolable (st a), Trie trie st map k)
       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter = genericAlter (flip const)
 
 -- O(m)
-alter' :: (Boolable (st a), Trie trie st map k)
+alter' :: (Alt st a, Boolable (st a), Trie trie st map k)
        => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter' = genericAlter seq
 
-genericAlter :: (Boolable (st a), Trie trie st map k)
+genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (st a -> trie map k a -> trie map k a)
              -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
 genericAlter seeq f k tr =
@@ -309,13 +318,31 @@ genericAlter seeq f k tr =
     in case comparePrefixes (Map.eqCmp m) prefix k of
             Same                   ->
                let v' = f v
-                in v' `seeq` tryCompress (mkTrie v' prefix m)
+                in if Map.null m && not (hasValue v')
+                      then tryCompress (mkTrie altEmpty [] m)
+                      else v' `seeq` mkTrie v' prefix m
+
             PostFix (Right (x:xs)) ->
-               tryCompress . mkTrie v prefix $
+               mkTrie v prefix $
                   Map.update (\t -> let new = genericAlter seeq f xs t
                                      in if null new then Nothing else Just new)
                              m x
-            _ -> tr
+
+            PostFix (Left (p:ps)) ->
+               let v' = f altEmpty
+                in if hasValue v'
+                      then mkTrie v' k $ Map.singleton p (mkTrie v ps m)
+                      else tr
+
+            DifferedAt pr (p:ps) (x:xs) ->
+               let v' = f altEmpty
+                in if hasValue v'
+                      then mkTrie altEmpty pr $
+                              Map.doubleton p (mkTrie v  ps m)
+                                            x (mkTrie v' xs Map.empty)
+                      else tr
+
+            _ -> error "Data.Trie.Patricia.Base.genericAlter :: internal error"
 
 -- * Combination
 
