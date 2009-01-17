@@ -33,7 +33,7 @@ import Control.Exception   (assert)
 import qualified Data.DList as DL
 import Data.DList          (DList)
 import Data.List           (foldl', partition)
-import Data.Maybe          (fromJust)
+import Data.Maybe          (fromJust, isJust)
 import Prelude hiding      (lookup, filter, foldl, foldr, null, map)
 import qualified Prelude
 
@@ -69,9 +69,11 @@ tMap = (\(_,_,c) -> c) . tParts
 -----------------------
 
 -- O(1)
+--
+-- Test the strict field last for maximal laziness
 null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
 null tr = let (v,p,m) = tParts tr
-           in noValue v && Map.null m && assert (Prelude.null p) True
+           in Map.null m && noValue v && assert (Prelude.null p) True
 
 -- O(n)
 size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
@@ -293,9 +295,9 @@ updateLookup f k tr =
 
 -- O(m)
 --
--- This can be lazy in exactly one case: the key is the common prefix of the
--- trie and the trie contained more than one key. In that case, we know that
--- the resulting trie continues to contain those children.
+-- This can be lazy in exactly one case: the key is a prefix of more than one
+-- key in the trie. In that case, we know that the resulting trie continues to
+-- contain those children.
 --
 -- In all other cases we have to check whether the function removed a key or
 -- not, in order to be able to keep the trie in an internally valid state.
@@ -318,8 +320,11 @@ genericAlter seeq f k tr =
     in case comparePrefixes (Map.eqCmp m) prefix k of
             Same                   ->
                let v' = f v
-                in if Map.null m && not (hasValue v')
-                      then tryCompress (mkTrie altEmpty [] m)
+                in -- We need to compress if the map was empty or a singleton
+                   -- and the value was removed
+                   if    (Map.null m || isJust (Map.singletonView m))
+                      && not (hasValue v')
+                      then tryCompress (mkTrie v' prefix m)
                       else v' `seeq` mkTrie v' prefix m
 
             PostFix (Right (x:xs)) ->

@@ -72,19 +72,20 @@ $(makeFunc mapsOnly ["size","singleton","adjust'"] [d|
 --
 -- And there's also the following facts:
 --   - Patricia's alter is lazy for only one case: the key to be altered is the
---     key stored in the topmost node, and the trie contains other keys.
+--     prefix of more than one key in the trie.
 --   - Non-Patricia's alter is lazy for only one case: the key to be altered is
---     [].
--- So we are somewhat limited in the cases we can test.
+--     the prefix of at least one key in the trie.
+--
+-- So we have to be careful about the case we test.
 $(makeFunc mapsOnly ["member","fromList","alter"] [d|
    alter member fromList alter =
       not.isBottom.member "foob" . alter undefined "foo" $
-         (fromList [("foo",1),("foob",2)] :: TrieType)
+         (fromList [("foo",1),("foob",2),("fooz",3)] :: TrieType)
  |])
 $(makeFunc mapsOnly ["member","fromList","alter'"] [d|
    alter' member fromList alter' =
       isBottom.member "foob" . alter' undefined "foo" $
-         (fromList [("foo",1),("foob",2)] :: TrieType)
+         (fromList [("foo",1),("foob",2),("fooz",3)] :: TrieType)
  |])
 
 tests = testGroup "Strictness"
