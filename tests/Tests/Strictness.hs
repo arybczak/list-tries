@@ -65,6 +65,21 @@ $(makeFunc mapsOnly ["size","singleton","adjust'"] [d|
       IS_STRICT . adjust' undefined [] $ (singleton [] 0 :: TrieType)
  |])
 
+-- As above, but for alter and alter'.
+--
+-- Need to use more sophisticated testing here because now the value itself is
+-- ⊥, including whether it's Just or not; size wants that info.
+$(makeFunc mapsOnly ["member","fromList","alter"] [d|
+   alter member fromList alter =
+      not.isBottom.member "foo" . alter undefined [] $
+         (fromList [("foo",1)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["member","fromList","alter'"] [d|
+   alter' member fromList alter' =
+      isBottom.member "foo" . alter' undefined [] $
+         (fromList [("foo",1)] :: TrieType)
+ |])
+
 tests = testGroup "Strictness"
    [ $(makeCases mapsOnly "insertWith")
    , $(makeCases mapsOnly "insertWith'1")
@@ -72,4 +87,6 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "insertWith'3")
    , $(makeCases mapsOnly "adjust")
    , $(makeCases mapsOnly "adjust'")
+   , $(makeCases mapsOnly "alter")
+   , $(makeCases mapsOnly "alter'")
    ]
