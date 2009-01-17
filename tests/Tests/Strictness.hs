@@ -36,7 +36,7 @@ import Tests.TH
 -- called.
 $(makeFunc mapsOnly ["size","singleton","insertWith"] [d|
    insertWith size singleton insertWith =
-      IS_LAZY . insertWith undefined [] undefined $
+      IS_LAZY   . insertWith  undefined [] undefined $
          (singleton [] 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
@@ -46,11 +46,23 @@ $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
  |])
 $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
    insertWith'2 size singleton insertWith' =
-      IS_STRICT . insertWith' (+) [] undefined $ (singleton [] 0 :: TrieType)
+      IS_STRICT . insertWith' (+)       [] undefined $
+         (singleton [] 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
    insertWith'3 size singleton insertWith' =
-      IS_STRICT . insertWith' undefined [] 0 $ (singleton [] 0 :: TrieType)
+      IS_STRICT . insertWith' undefined [] 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+
+-- As above, but for adjust' and adjust.
+$(makeFunc mapsOnly ["size","singleton","adjust"] [d|
+   adjust size singleton adjust =
+      IS_LAZY   . adjust  undefined [] $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","adjust'"] [d|
+   adjust' size singleton adjust' =
+      IS_STRICT . adjust' undefined [] $ (singleton [] 0 :: TrieType)
  |])
 
 tests = testGroup "Strictness"
@@ -58,4 +70,6 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "insertWith'1")
    , $(makeCases mapsOnly "insertWith'2")
    , $(makeCases mapsOnly "insertWith'3")
+   , $(makeCases mapsOnly "adjust")
+   , $(makeCases mapsOnly "adjust'")
    ]
