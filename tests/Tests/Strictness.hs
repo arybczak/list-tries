@@ -70,8 +70,12 @@ $(makeFunc mapsOnly ["size","singleton","adjust'"] [d|
 -- Need to use more sophisticated testing here because now the value itself is
 -- ⊥, including whether it's Just or not; size wants that info.
 --
--- And there's also the fact that Patricia's alter is lazy for only one case,
--- so we test that case.
+-- And there's also the following facts:
+--   - Patricia's alter is lazy for only one case: the key to be altered is the
+--     key stored in the topmost node, and the trie contains other keys.
+--   - Non-Patricia's alter is lazy for only one case: the key to be altered is
+--     [].
+-- So we are somewhat limited in the cases we can test.
 $(makeFunc mapsOnly ["member","fromList","alter"] [d|
    alter member fromList alter =
       not.isBottom.member "foob" . alter undefined "foo" $
