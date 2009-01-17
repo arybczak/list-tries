@@ -234,11 +234,11 @@ $(makeFunc allTries [] [d|
 -- ... and are blocked on #2960
 $(makeFunc mapsOnly [] [d|
    prop_traversableLaw1 x =
-      fmap ((+) 1) x == fmapDefault ((+) 1) (x :: TrieType1)
+      fmap ((+) 1) x == fmapDefault ((+) 1) (x :: TrieType)
  |])
 $(makeFunc mapsOnly [] [d|
    prop_traversableLaw2 x =
-      foldMap (flip (:) []) x == foldMapDefault (flip (:) []) (x :: TrieType1)
+      foldMap (flip (:) []) x == foldMapDefault (flip (:) []) (x :: TrieType)
  |])
 
 -- (read.show) is the identity function
