@@ -229,6 +229,16 @@ $(makeFunc allTries [] [d|
    prop_monoidLaw3 x = mappend x mempty == (x :: TrieType)
  |])
 
+-- The functor laws: fmap id == id, fmap (f.g) == (fmap f . fmap g)
+$(makeFunc mapsOnly [] [d|
+   prop_functorLaw1 x = fmap id x == (x :: TrieType)
+ |])
+$(makeFunc mapsOnly [] [d|
+   prop_functorLaw2 x = fmap (f.g) x == (fmap f . fmap g) (x :: TrieType)
+    where
+      f = (+) 10; g = (*) 2;
+ |])
+
 -- The Traversable laws: fmap == fmapDefault, foldMap == foldMapDefault
 -- Both avoid #2956 again
 -- ... and are blocked on #2960
@@ -280,6 +290,8 @@ tests = concat
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")
+   , $(makeProps mapsOnly "prop_functorLaw1")
+   , $(makeProps mapsOnly "prop_functorLaw2")
    , $(makeProps mapsOnlyNotEnum "prop_traversableLaw1")
    , $(makeProps mapsOnlyNotEnum "prop_traversableLaw2")
    , $(makeProps allTries "prop_showRead1")
