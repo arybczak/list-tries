@@ -4,8 +4,9 @@
 
 module Tests.Cases (tests) where
 
-import Test.Framework                      (testGroup)
-import Test.Framework.Providers.QuickCheck (testProperty)
+import Test.Framework                 (testGroup)
+import Test.Framework.Providers.HUnit (testCase)
+import Test.HUnit                     (assert)
 
 import qualified Data.Trie.Set.Eq
 import qualified Data.Trie.Set.Ord

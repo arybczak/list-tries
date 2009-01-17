@@ -151,10 +151,20 @@ makeTests typ modules test =
       ListE (
          map (\m -> let mn = moduleName m
                         n  = modularName test mn
-                     in VarE (mkName "testProperty") `AppE`
+                     in VarE (mkName testType) `AppE`
                         LitE (StringL (relevantPart mn)) `AppE`
-                        VarE n)
+                        (VarE (mkName testMaker) `AppE`
+                         VarE n)
+                        )
              modules)
+ where
+   testType = case typ of
+                   Case     -> "testCase"
+                   Property -> "testProperty"
+
+   testMaker = case typ of
+                    Case     -> "assert"
+                    Property -> "id"
 
 makeCases = makeTests Case
 makeProps = makeTests Property                           
