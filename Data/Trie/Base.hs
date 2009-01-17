@@ -94,8 +94,10 @@ onMaps f a b = f (tMap a) (tMap b)
 -----------------------
 
 -- O(1)
+--
+-- Test the strict field last for maximal laziness
 null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
-null tr = (noValue.tVal $ tr) && Map.null (tMap tr)
+null tr = Map.null (tMap tr) && (noValue.tVal $ tr)
 
 -- O(n)
 size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
@@ -243,6 +245,10 @@ updateLookup f (x:xs) orig =
                    )
 
 -- O(m)
+--
+-- Lazy in exactly one case: the key is the prefix of another key in the trie.
+-- Otherwise we have to test whether the function removed a key or not, lest
+-- the trie fall into an invalid state.
 alter :: (Boolable (st a), Trie trie st map k)
       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
 alter = genericAlter (flip const)
