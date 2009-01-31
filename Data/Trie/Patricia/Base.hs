@@ -1109,7 +1109,10 @@ minMaxView f g tr_ = first Just (go f g tr_)
    go isWanted mapView tr =
       let (v,pre,m) = tParts tr
        in if isWanted tr
-             then ((pre, unwrap v), mkTrie altEmpty pre m)
+             then -- Take care not to put a prefix into an empty trie...
+                  let triePre = if Map.null m then [] else pre
+                   in ((pre, unwrap v), mkTrie altEmpty triePre m)
+
              else let (k,      tr')  = fromJust (mapView m)
                       (minMax, tr'') = go isWanted mapView tr'
                    in ( first (prepend pre k) minMax
