@@ -88,7 +88,7 @@ $(makeFunc mapsOnly ["member","fromList","alter'"] [d|
          (fromList [("foo",1),("foob",2),("fooz",3)] :: TrieType)
  |])
 
--- As above, but for union and union'.
+-- As above, but for the union family.
 $(makeFunc mapsOnly ["size","singleton","union"] [d|
    union size singleton union =
       IS_LAZY   $ union  (singleton "foo" undefined :: TrieType)
@@ -98,6 +98,26 @@ $(makeFunc mapsOnly ["size","singleton","union'"] [d|
    union' size singleton union' =
       IS_STRICT $ union' (singleton "foo" undefined :: TrieType)
                          (singleton "foo" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionWith"] [d|
+   unionWith size singleton unionWith =
+      IS_LAZY   $ unionWith undefined (singleton "foo" 1 :: TrieType)
+                                      (singleton "foo" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionWith'"] [d|
+   unionWith' size singleton unionWith' =
+      IS_STRICT $ unionWith' undefined (singleton "foo" 1 :: TrieType)
+                                       (singleton "foo" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionWithKey"] [d|
+   unionWithKey size singleton unionWithKey =
+      IS_LAZY   $ unionWithKey undefined (singleton "foo" 1 :: TrieType)
+                                         (singleton "foo" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionWithKey'"] [d|
+   unionWithKey' size singleton unionWithKey' =
+      IS_STRICT $ unionWithKey' undefined (singleton "foo" 1 :: TrieType)
+                                          (singleton "foo" 1)
  |])
 
 tests = testGroup "Strictness"
@@ -111,4 +131,8 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "alter'")
    , $(makeCases mapsOnly "union")
    , $(makeCases mapsOnly "union'")
+   , $(makeCases mapsOnly "unionWith")
+   , $(makeCases mapsOnly "unionWith'")
+   , $(makeCases mapsOnly "unionWithKey")
+   , $(makeCases mapsOnly "unionWithKey'")
    ]
