@@ -12,7 +12,7 @@ module Data.Trie.Patricia.Base
    , delete, adjust, adjust', updateLookup, alter, alter'
    , unionWith, unionWithKey, unionWith', unionWithKey'
    , unionsWith, unionsWithKey, unionsWith', unionsWithKey'
-   , differenceWith, differenceWithKey, differenceWith', differenceWithKey'
+   , differenceWith, differenceWithKey
    , intersectionWith,  intersectionWithKey
    , intersectionWith', intersectionWithKey'
    , filterWithKey, partitionWithKey
@@ -500,41 +500,23 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k a
                -> trie map k b
                -> trie map k a
-differenceWith = genericDifferenceWith (flip const)
-
--- O(min(n1,n2))
-differenceWith' :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
-                => (a -> b -> Maybe a)
-                -> trie map k a
-                -> trie map k b
-                -> trie map k a
-differenceWith' = genericDifferenceWith seq
-
-genericDifferenceWith :: ( Boolable (st a), Differentiable st a b
-                         , Trie trie st map k
-                         )
-                      => (st a -> trie map k a -> trie map k a)
-                      -> (a -> b -> Maybe a)
-                      -> trie map k a
-                      -> trie map k b
-                      -> trie map k a
-genericDifferenceWith seeq_ j_ tr1 tr2 =
+differenceWith j_ tr1 tr2 =
    let (v1,pre1,m1) = tParts tr1
        (v2,pre2,m2) = tParts tr2
     in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
             DifferedAt _ _ _   -> tr1
-            Same               -> mk seeq_ j_ v1 v2 pre1 m1 m2
-            PostFix (Left  xs) -> goRight seeq_ j_ tr1 m2  xs
-            PostFix (Right xs) -> goLeft  seeq_ j_ tr1 tr2 xs
+            Same               -> mk j_ v1 v2 pre1 m1 m2
+            PostFix (Left  xs) -> goRight j_ tr1 m2  xs
+            PostFix (Right xs) -> goLeft  j_ tr1 tr2 xs
  where
-   mapDifference seeq j = Map.differenceWith (dw seeq j)
-   dw seeq j a b =
-      let c = genericDifferenceWith seeq j a b
+   mapDifference j = Map.differenceWith (dw j)
+   dw j a b =
+      let c = differenceWith j a b
        in if null c then Nothing else Just c
 
-   mk seeq j v v' p m m' =
+   mk j v v' p m m' =
       let vd = differenceVals j v v'
-       in vd `seeq` (tryCompress.mkTrie vd p $ mapDifference seeq j m m')
+       in tryCompress.mkTrie vd p $ mapDifference j m m'
 
    -- See the comment in 'intersection' for a longish example of the idea
    -- behind this, which is basically that if we see two prefixes like "foo"
@@ -544,7 +526,7 @@ genericDifferenceWith seeq_ j_ tr1 tr2 =
    --
    -- We have two functions for the two tries because set difference is a
    -- noncommutative operation.
-   goRight seeq j left rightMap (x:xs) =
+   goRight j left rightMap (x:xs) =
       let (v,pre,m) = tParts left
        in case Map.lookup rightMap x of
                Nothing     -> left
@@ -552,13 +534,13 @@ genericDifferenceWith seeq_ j_ tr1 tr2 =
                   let (v',pre',m') = tParts right'
                    in case comparePrefixes (Map.eqCmp m) xs pre' of
                            DifferedAt _ _ _   -> left
-                           Same               -> mk seeq j v v' pre m m'
-                           PostFix (Left  ys) -> goRight seeq j left m'     ys
-                           PostFix (Right ys) -> goLeft  seeq j left right' ys
+                           Same               -> mk j v v' pre m m'
+                           PostFix (Left  ys) -> goRight j left m'     ys
+                           PostFix (Right ys) -> goLeft  j left right' ys
 
-   goRight _ _ _ _ [] = can'tHappen
+   goRight _ _ _ [] = can'tHappen
 
-   goLeft seeq j left right (x:xs) =
+   goLeft j left right (x:xs) =
       tryCompress . mkTrie vl prel $ Map.adjust f ml x
     where
       (vl,prel,ml) = tParts left
@@ -568,11 +550,11 @@ genericDifferenceWith seeq_ j_ tr1 tr2 =
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
                   DifferedAt _ _ _   -> left'
-                  Same               -> mk seeq j v vr pre m mr
-                  PostFix (Left  ys) -> goRight seeq j left' mr    ys
-                  PostFix (Right ys) -> goLeft  seeq j left' right ys
+                  Same               -> mk j v vr pre m mr
+                  PostFix (Left  ys) -> goRight j left' mr    ys
+                  PostFix (Right ys) -> goLeft  j left' right ys
 
-   goLeft _ _ _ _ [] = can'tHappen
+   goLeft _ _ _ [] = can'tHappen
 
    can'tHappen =
       error "Data.Trie.Patricia.Base.differenceWith :: internal error"
@@ -585,50 +567,30 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
                   -> trie map k a
                   -> trie map k b
                   -> trie map k a
-differenceWithKey = genericDifferenceWithKey (flip const)
-
--- O(min(n1,n2))
-differenceWithKey' :: ( Boolable (st a), Differentiable st a b
-                      , Trie trie st map k
-                      )
-                   => ([k] -> a -> b -> Maybe a)
-                   -> trie map k a
-                   -> trie map k b
-                   -> trie map k a
-differenceWithKey' = genericDifferenceWithKey seq
-
-genericDifferenceWithKey :: ( Boolable (st a), Differentiable st a b
-                            , Trie trie st map k
-                            )
-                         => (st a -> trie map k a -> trie map k a)
-                         -> ([k] -> a -> b -> Maybe a)
-                         -> trie map k a
-                         -> trie map k b
-                         -> trie map k a
-genericDifferenceWithKey = go DL.empty
+differenceWithKey = go DL.empty
  where
-   go k seeq_ j_ tr1 tr2 =
+   go k j_ tr1 tr2 =
       let (v1,pre1,m1) = tParts tr1
           (v2,pre2,m2) = tParts tr2
        in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
                DifferedAt _ _ _   -> tr1
-               Same               -> mk seeq_ j_ k v1 v2 pre1 m1 m2
-               PostFix (Left  xs) -> goRight k seeq_ j_ tr1 m2  xs
-               PostFix (Right xs) -> goLeft  k seeq_ j_ tr1 tr2 xs
+               Same               -> mk j_ k v1 v2 pre1 m1 m2
+               PostFix (Left  xs) -> goRight k j_ tr1 m2  xs
+               PostFix (Right xs) -> goLeft  k j_ tr1 tr2 xs
 
-   mapDifference k seeq j =
-      Map.differenceWithKey (\x -> dw (k `DL.snoc` x) seeq j)
+   mapDifference k j =
+      Map.differenceWithKey (\x -> dw (k `DL.snoc` x) j)
 
-   dw k seeq j a b =
-      let c = go k seeq j a b
+   dw k j a b =
+      let c = go k j a b
        in if null c then Nothing else Just c
 
-   mk seeq j k v v' p m m' =
+   mk j k v v' p m m' =
       let k' = k `DL.append` DL.fromList p
           vd = differenceVals (j $ DL.toList k') v v'
-       in vd `seeq` (tryCompress.mkTrie vd p $ mapDifference k' seeq j m m')
+       in tryCompress.mkTrie vd p $ mapDifference k' j m m'
 
-   goRight k seeq j left rightMap (x:xs) =
+   goRight k j left rightMap (x:xs) =
       let (v,pre,m) = tParts left
        in case Map.lookup rightMap x of
                Nothing    -> left
@@ -636,13 +598,13 @@ genericDifferenceWithKey = go DL.empty
                   let (v',pre',m') = tParts right
                    in case comparePrefixes (Map.eqCmp m) xs pre' of
                            DifferedAt _ _ _   -> left
-                           Same               -> mk seeq j k v v' pre m m'
-                           PostFix (Left  ys) -> goRight k seeq j left m'    ys
-                           PostFix (Right ys) -> goLeft  k seeq j left right ys
+                           Same               -> mk j k v v' pre m m'
+                           PostFix (Left  ys) -> goRight k j left m'    ys
+                           PostFix (Right ys) -> goLeft  k j left right ys
 
-   goRight _ _ _ _ _ [] = can'tHappen
+   goRight _ _ _ _ [] = can'tHappen
 
-   goLeft k seeq j left right (x:xs) =
+   goLeft k j left right (x:xs) =
       tryCompress . mkTrie vl prel $ Map.adjust f ml x
     where
       (vl,prel,ml) = tParts left
@@ -652,11 +614,11 @@ genericDifferenceWithKey = go DL.empty
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
                   DifferedAt _ _ _   -> left'
-                  Same               -> mk seeq j k v vr pre m mr
-                  PostFix (Left  ys) -> goRight k seeq j left' mr    ys
-                  PostFix (Right ys) -> goLeft  k seeq j left' right ys
+                  Same               -> mk j k v vr pre m mr
+                  PostFix (Left  ys) -> goRight k j left' mr    ys
+                  PostFix (Right ys) -> goLeft  k j left' right ys
 
-   goLeft _ _ _ _ _ [] = can'tHappen
+   goLeft _ _ _ _ [] = can'tHappen
 
    can'tHappen =
       error "Data.Trie.Patricia.Base.differenceWithKey :: internal error"

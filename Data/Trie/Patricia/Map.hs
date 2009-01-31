@@ -282,11 +282,6 @@ difference :: Map map k
 difference = differenceWith (\_ _ -> Nothing)
 
 -- O(min(n1,n2))
-difference' :: Map map k
-            => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
-difference' = differenceWith' (\_ _ -> Nothing)
-
--- O(min(n1,n2))
 differenceWith :: Map map k => (a -> b -> Maybe a)
                             -> TrieMap map k a
                             -> TrieMap map k b
@@ -294,25 +289,11 @@ differenceWith :: Map map k => (a -> b -> Maybe a)
 differenceWith = Base.differenceWith
 
 -- O(min(n1,n2))
-differenceWith' :: Map map k => (a -> b -> Maybe a)
-                             -> TrieMap map k a
-                             -> TrieMap map k b
-                             -> TrieMap map k a
-differenceWith' = Base.differenceWith'
-
--- O(min(n1,n2))
 differenceWithKey :: Map map k => ([k] -> a -> b -> Maybe a)
                                -> TrieMap map k a
                                -> TrieMap map k b
                                -> TrieMap map k a
 differenceWithKey = Base.differenceWithKey
-
--- O(min(n1,n2))
-differenceWithKey' :: Map map k => ([k] -> a -> b -> Maybe a)
-                                -> TrieMap map k a
-                                -> TrieMap map k b
-                                -> TrieMap map k a
-differenceWithKey' = Base.differenceWithKey'
 
 -- O(min(n1,n2))
 intersection :: Map map k

@@ -12,7 +12,7 @@ module Data.Trie.Base
    , delete, adjust, adjust', updateLookup, alter, alter'
    , unionWith, unionWithKey, unionWith', unionWithKey'
    , unionsWith, unionsWithKey, unionsWith', unionsWithKey'
-   , differenceWith, differenceWithKey, differenceWith', differenceWithKey'
+   , differenceWith, differenceWithKey
    , intersectionWith,  intersectionWithKey
    , intersectionWith', intersectionWithKey'
    , filterWithKey, partitionWithKey
@@ -356,30 +356,17 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k a
                -> trie map k b
                -> trie map k a
-differenceWith = genericDifferenceWith (flip const)
-
--- O(min(m1,m2))
-differenceWith' :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
-                => (a -> b -> Maybe a)
-                -> trie map k a
-                -> trie map k b
-                -> trie map k a
-differenceWith' = genericDifferenceWith seq
-
-genericDifferenceWith :: ( Boolable (st a), Differentiable st a b
-                         , Trie trie st map k
-                         )
-                      => (st a -> trie map k a -> trie map k a)
-                      -> (a -> b -> Maybe a)
-                      -> trie map k a
-                      -> trie map k b
-                      -> trie map k a
-genericDifferenceWith seeq f tr1 tr2 =
+differenceWith f tr1 tr2 =
    let v = onVals (differenceVals f) tr1 tr2
-    in v `seeq` (mkTrie v $ onMaps (Map.differenceWith (g seeq f)) tr1 tr2)
+
+       -- This would be lazy only in the case where the differing keys were at
+       -- []. (And even then most operations on the trie would force the
+       -- value.) For consistency with other keys and Patricia, just seq it for
+       -- that case as well.
+    in v `seq` mkTrie v $ onMaps (Map.differenceWith (g f)) tr1 tr2
  where
-   g seeq' f' t1 t2 = let t' = genericDifferenceWith seeq' f' t1 t2
-                       in if null t' then Nothing else Just t'
+   g f' t1 t2 = let t' = differenceWith f' t1 t2
+                 in if null t' then Nothing else Just t'
 
 -- O(min(m1,m2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
@@ -389,34 +376,15 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
                   -> trie map k a
                   -> trie map k b
                   -> trie map k a
-differenceWithKey = genericDifferenceWithKey (flip const)
-
--- O(min(m1,m2))
-differenceWithKey' :: ( Boolable (st a), Differentiable st a b
-                      , Trie trie st map k
-                      )
-                   => ([k] -> a -> b -> Maybe a)
-                   -> trie map k a
-                   -> trie map k b
-                   -> trie map k a
-differenceWithKey' = genericDifferenceWithKey seq
-
-genericDifferenceWithKey :: ( Boolable (st a), Differentiable st a b
-                            , Trie trie st map k
-                            )
-                         => (st a -> trie map k a -> trie map k a)
-                         -> ([k] -> a -> b -> Maybe a)
-                         -> trie map k a
-                         -> trie map k b
-                         -> trie map k a
-genericDifferenceWithKey = go DL.empty
+differenceWithKey = go DL.empty
  where
-   go k seeq f tr1 tr2 =
+   go k f tr1 tr2 =
       let v = onVals (differenceVals (f $ DL.toList k)) tr1 tr2
-       in v `seeq` (mkTrie v $
-                       onMaps (Map.differenceWithKey (g k seeq f)) tr1 tr2)
 
-   g k seeq f x t1 t2 = let t' = go (k `DL.snoc` x) seeq f t1 t2
+          -- see comment in differenceWith for seq explanation
+       in v `seq` mkTrie v $ onMaps (Map.differenceWithKey (g k f)) tr1 tr2
+
+   g k f x t1 t2 = let t' = go (k `DL.snoc` x) f t1 t2
                          in if null t' then Nothing else Just t'
 
 -- O(min(m1,m2))

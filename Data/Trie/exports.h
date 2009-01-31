@@ -38,9 +38,7 @@
 	union', unions', \
 	unionWith,  unionWithKey,  unionsWith,  unionsWithKey, \
 	unionWith', unionWithKey', unionsWith', unionsWithKey', \
-	difference', \
 	differenceWith,  differenceWithKey, \
-	differenceWith', differenceWithKey', \
 	intersection', \
 	intersectionWith,  intersectionWithKey, \
 	intersectionWith', intersectionWithKey', \
