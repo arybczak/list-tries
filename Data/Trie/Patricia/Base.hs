@@ -332,9 +332,9 @@ genericAlter seeq f k tr =
                   Map.alter
                      (\mt -> case mt of
                                  Nothing ->
-                                    let v = f altEmpty
-                                     in if hasValue v
-                                           then Just (singleton xs (unwrap v))
+                                    let v' = f altEmpty
+                                     in if hasValue v'
+                                           then Just (singleton xs (unwrap v'))
                                            else Nothing
                                  Just t ->
                                     let new = genericAlter seeq f xs t
