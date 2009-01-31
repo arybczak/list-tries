@@ -42,7 +42,7 @@ import Prelude hiding      (filter, foldr, lookup, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
-import Text.Read (readPrec, lexP, parens, prec, Lexeme(Ident), pfail)
+import Text.Read (readPrec, lexP, parens, prec, Lexeme(Ident))
 #endif
 
 import qualified Data.Trie.Base     as Base
@@ -82,23 +82,18 @@ instance (Map map k, Traversable (map k)) => Traversable (TrieMap map k) where
 
 instance (Map map k, Show k, Show a) => Show (TrieMap map k a) where
    showsPrec p s = showParen (p > 10) $
-      showString "fromList " . shows (toList s)
+      showString "fromList " . showsPrec (p+1) (toList s)
 
 instance (Map map k, Read k, Read a) => Read (TrieMap map k a) where
 #if __GLASGOW_HASKELL__
    readPrec = parens $ prec 10 $ do
-      text <- lexP
-      if text == Ident "fromList"
-         then fmap fromList readPrec
-         else pfail
+      Ident "fromList" <- lexP
+      fmap fromList readPrec
 #else
    readsPrec p = readParen (p > 10) $ \r -> do
-      (text, list) <- lex r
-      if text == "fromList"
-         then do
-            (xs, rest) <- reads list
-            [(fromList xs, rest)]
-         else []
+      ("fromList", list) <- lex r
+      (xs, rest) <- readsPrec (p+1) list
+      [(fromList xs, rest)]
 #endif
 
 -- * Querying
