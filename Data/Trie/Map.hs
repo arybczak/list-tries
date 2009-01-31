@@ -82,7 +82,7 @@ instance (Map map k, Traversable (map k)) => Traversable (TrieMap map k) where
 
 instance (Map map k, Show k, Show a) => Show (TrieMap map k a) where
    showsPrec p s = showParen (p > 10) $
-      showString "fromList " . showsPrec (p+1) (toList s)
+      showString "fromList " . shows (toList s)
 
 instance (Map map k, Read k, Read a) => Read (TrieMap map k a) where
 #if __GLASGOW_HASKELL__

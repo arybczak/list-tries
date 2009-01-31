@@ -76,7 +76,7 @@ instance Map map a => Monoid (TrieSet map a) where
 
 instance (Map map a, Show a) => Show (TrieSet map a) where
    showsPrec p s = showParen (p > 10) $
-      showString "fromList " . showsPrec (p+1) (toList s)
+      showString "fromList " . shows (toList s)
 
 instance (Map map a, Read a) => Read (TrieSet map a) where
 #if __GLASGOW_HASKELL__
