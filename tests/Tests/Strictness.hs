@@ -101,8 +101,8 @@ $(makeFunc mapsOnly ["size","singleton","union'"] [d|
  |])
 $(makeFunc mapsOnly ["size","singleton","unionWith"] [d|
    unionWith size singleton unionWith =
-      IS_LAZY   $ unionWith undefined (singleton "foo" 1 :: TrieType)
-                                      (singleton "foo" 1)
+      IS_LAZY   $ unionWith undefined  (singleton "foo" 1 :: TrieType)
+                                       (singleton "foo" 1)
  |])
 $(makeFunc mapsOnly ["size","singleton","unionWith'"] [d|
    unionWith' size singleton unionWith' =
@@ -111,13 +111,51 @@ $(makeFunc mapsOnly ["size","singleton","unionWith'"] [d|
  |])
 $(makeFunc mapsOnly ["size","singleton","unionWithKey"] [d|
    unionWithKey size singleton unionWithKey =
-      IS_LAZY   $ unionWithKey undefined (singleton "foo" 1 :: TrieType)
-                                         (singleton "foo" 1)
+      IS_LAZY   $ unionWithKey undefined  (singleton "foo" 1 :: TrieType)
+                                          (singleton "foo" 1)
  |])
 $(makeFunc mapsOnly ["size","singleton","unionWithKey'"] [d|
    unionWithKey' size singleton unionWithKey' =
       IS_STRICT $ unionWithKey' undefined (singleton "foo" 1 :: TrieType)
                                           (singleton "foo" 1)
+ |])
+
+-- As above, but for the unions family.
+$(makeFunc mapsOnly ["size","singleton","unions"] [d|
+   unions size singleton unions =
+      IS_LAZY   $ unions  [singleton "foo" undefined :: TrieType
+                          ,singleton "foo" 1
+                          ]
+ |])
+$(makeFunc mapsOnly ["size","singleton","unions'"] [d|
+   unions' size singleton unions' =
+      IS_STRICT $ unions' [singleton "foo" undefined :: TrieType
+                          ,singleton "foo" 1
+                          ]
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionsWith"] [d|
+   unionsWith size singleton unionsWith =
+      IS_LAZY   $ unionsWith undefined  [singleton "foo" 1 :: TrieType
+                                        ,singleton "foo" 1
+                                        ]
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionsWith'"] [d|
+   unionsWith' size singleton unionsWith' =
+      IS_STRICT $ unionsWith' undefined [singleton "foo" 1 :: TrieType
+                                        ,singleton "foo" 1
+                                        ]
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionsWithKey"] [d|
+   unionsWithKey size singleton unionsWithKey =
+      IS_LAZY   $ unionsWithKey undefined  [singleton "foo" 1 :: TrieType
+                                           ,singleton "foo" 1
+                                           ]
+ |])
+$(makeFunc mapsOnly ["size","singleton","unionsWithKey'"] [d|
+   unionsWithKey' size singleton unionsWithKey' =
+      IS_STRICT $ unionsWithKey' undefined [singleton "foo" 1 :: TrieType
+                                           ,singleton "foo" 1
+                                           ]
  |])
 
 tests = testGroup "Strictness"
@@ -135,4 +173,10 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "unionWith'")
    , $(makeCases mapsOnly "unionWithKey")
    , $(makeCases mapsOnly "unionWithKey'")
+   , $(makeCases mapsOnly "unions")
+   , $(makeCases mapsOnly "unions'")
+   , $(makeCases mapsOnly "unionsWith")
+   , $(makeCases mapsOnly "unionsWith'")
+   , $(makeCases mapsOnly "unionsWithKey")
+   , $(makeCases mapsOnly "unionsWithKey'")
    ]

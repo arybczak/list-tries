@@ -125,6 +125,7 @@ makeFunc modules expands =
    expandE m (SigE e t)           = SigE (expandE m e) (replaceTypes m t)
    expandE m (RecConE name fexps) = RecConE name (map (expandFieldExp m) fexps)
    expandE m (RecUpdE name fexps) = RecUpdE name (map (expandFieldExp m) fexps)
+   expandE m (ListE exps)         = ListE (map (expandE m) exps)
    expandE _ x = x
 
    qualify expr modu name =
