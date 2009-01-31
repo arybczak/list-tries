@@ -88,6 +88,18 @@ $(makeFunc mapsOnly ["member","fromList","alter'"] [d|
          (fromList [("foo",1),("foob",2),("fooz",3)] :: TrieType)
  |])
 
+-- As above, but for union and union'.
+$(makeFunc mapsOnly ["size","singleton","union"] [d|
+   union size singleton union =
+      IS_LAZY   $ union  (singleton "foo" undefined :: TrieType)
+                         (singleton "foo" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","union'"] [d|
+   union' size singleton union' =
+      IS_STRICT $ union' (singleton "foo" undefined :: TrieType)
+                         (singleton "foo" 1)
+ |])
+
 tests = testGroup "Strictness"
    [ $(makeCases mapsOnly "insertWith")
    , $(makeCases mapsOnly "insertWith'1")
@@ -97,4 +109,6 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "adjust'")
    , $(makeCases mapsOnly "alter")
    , $(makeCases mapsOnly "alter'")
+   , $(makeCases mapsOnly "union")
+   , $(makeCases mapsOnly "union'")
    ]
