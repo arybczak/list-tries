@@ -49,7 +49,7 @@ replaceTypes m (ConT t) | t == ''ListElemType =
         SetModule _ -> ListT `AppT` ConT keyType
         MapModule _ -> TupleT 2 `AppT` (ListT `AppT` ConT keyType)
                                 `AppT` (ConT elemType)
-                                       
+
 replaceTypes _ x = x
 
 -- Given, say:
@@ -168,7 +168,7 @@ makeTests typ modules test =
                     Property -> "id"
 
 makeCases = makeTests Case
-makeProps = makeTests Property                           
+makeProps = makeTests Property
 
 -- Used to name the generated functions
 modularName :: String -> String -> Name

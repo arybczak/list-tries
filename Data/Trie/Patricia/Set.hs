@@ -11,7 +11,7 @@
 -- complexity depends on the underlying operation, which is visible only in the
 -- source code and thus can be changed whilst affecting the complexity only for
 -- certain Map types, this "b factor" is not shown explicitly.
--- 
+--
 -- Disclaimer: the complexities have not been proven.
 
 {-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances
