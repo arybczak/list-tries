@@ -266,6 +266,24 @@ $(makeFunc mapsOnly ["size","singleton","mapAccumDescWithKey'"] [d|
          (singleton [] 0 :: TrieType)
  |])
 
+-- As above, but for the fromListWith family.
+$(makeFunc mapsOnly ["size","fromListWith"] [d|
+   fromListWith size fromListWith =
+      IS_LAZY   (fromListWith  undefined [("a",1),("a",2)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","fromListWith'"] [d|
+   fromListWith' size fromListWith' =
+      IS_STRICT (fromListWith' undefined [("a",1),("a",2)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","fromListWithKey"] [d|
+   fromListWithKey size fromListWithKey =
+      IS_LAZY   (fromListWithKey  undefined [("a",1),("a",2)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","fromListWithKey'"] [d|
+   fromListWithKey' size fromListWithKey' =
+      IS_STRICT (fromListWithKey' undefined [("a",1),("a",2)] :: TrieType)
+ |])
+
 tests = testGroup "Strictness"
    [ $(makeCases mapsOnly "insertWith")
    , $(makeCases mapsOnly "insertWith'1")
@@ -309,4 +327,8 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "mapAccumDesc'")
    , $(makeCases mapsOnly "mapAccumDescWithKey")
    , $(makeCases mapsOnly "mapAccumDescWithKey'")
+   , $(makeCases mapsOnly "fromListWith")
+   , $(makeCases mapsOnly "fromListWith'")
+   , $(makeCases mapsOnly "fromListWithKey")
+   , $(makeCases mapsOnly "fromListWithKey'")
    ]
