@@ -606,29 +606,29 @@ foldrDescWithKey = Base.foldrDescWithKey
 
 -- O(n)
 foldl' :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldl' f = foldl'WithKey (const f)
+foldl' f = foldlWithKey' (const f)
 
 -- O(n)
-foldl'WithKey :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
-foldl'WithKey = Base.foldl'WithKey
+foldlWithKey' :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldlWithKey' = Base.foldlWithKey'
 
 -- O(n)
-foldl'Asc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldl'Asc f = foldl'AscWithKey (const f)
+foldlAsc' :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldlAsc' f = foldlAscWithKey' (const f)
 
 -- O(n)
-foldl'AscWithKey :: OrdMap map k
+foldlAscWithKey' :: OrdMap map k
                  => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
-foldl'AscWithKey = Base.foldl'AscWithKey
+foldlAscWithKey' = Base.foldlAscWithKey'
 
 -- O(n)
-foldl'Desc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldl'Desc f = foldl'DescWithKey (const f)
+foldlDesc' :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldlDesc' f = foldlDescWithKey' (const f)
 
 -- O(n)
-foldl'DescWithKey :: OrdMap map k
+foldlDescWithKey' :: OrdMap map k
                   => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
-foldl'DescWithKey = Base.foldl'DescWithKey
+foldlDescWithKey' = Base.foldlDescWithKey'
 
 -- * Conversion between lists
 

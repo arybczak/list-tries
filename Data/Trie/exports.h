@@ -24,7 +24,7 @@
 	map, map', \
 	\
 	foldr, foldrAsc, foldrDesc, \
-	foldl', foldl'Asc, foldl'Desc
+	foldl', foldlAsc', foldlDesc'
 
 #define MAP_EXPORTS TrieMap, COMMON_EXPORTS, \
 	lookup, lookupWithDefault, \
@@ -59,9 +59,9 @@
 	foldr, foldrWithKey, \
 	foldrAsc, foldrAscWithKey, \
 	foldrDesc, foldrDescWithKey, \
-	foldl', foldl'WithKey, \
-	foldl'Asc, foldl'AscWithKey, \
-	foldl'Desc, foldl'DescWithKey, \
+	foldl', foldlWithKey', \
+	foldlAsc', foldlAscWithKey', \
+	foldlDesc', foldlDescWithKey', \
 	\
 	fromListWith,  fromListWithKey, \
 	fromListWith', fromListWithKey'

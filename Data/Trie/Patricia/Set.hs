@@ -215,15 +215,15 @@ foldrDesc f = Base.foldrDescWithKey (\k _ -> f k) .:. unTS
 
 -- O(n)
 foldl' :: Map map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
-foldl' f = Base.foldl'WithKey (\k _ -> f k) .:. unTS
+foldl' f = Base.foldlWithKey' (\k _ -> f k) .:. unTS
 
 -- O(n)
-foldl'Asc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
-foldl'Asc f = Base.foldl'AscWithKey (\k _ -> f k) .:. unTS
+foldlAsc' :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldlAsc' f = Base.foldlAscWithKey' (\k _ -> f k) .:. unTS
 
 -- O(n)
-foldl'Desc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
-foldl'Desc f = Base.foldl'DescWithKey (\k _ -> f k) .:. unTS
+foldlDesc' :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldlDesc' f = Base.foldlDescWithKey' (\k _ -> f k) .:. unTS
 
 -- * Conversion between lists
 

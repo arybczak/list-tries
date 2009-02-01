@@ -19,7 +19,7 @@ module Data.Trie.Base
    , split, splitLookup
    , mapKeysWith, mapKeys'With
    , foldrWithKey, foldrAscWithKey, foldrDescWithKey
-   , foldl'WithKey, foldl'AscWithKey, foldl'DescWithKey
+   , foldlWithKey', foldlAscWithKey', foldlDescWithKey'
    , toList, toAscList, toDescList
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
@@ -33,7 +33,7 @@ import qualified Data.DList as DL
 import Data.DList          (DList)
 import Data.List           (foldl', partition)
 import Data.Maybe          (fromJust)
-import Prelude hiding      (lookup, filter, foldl, foldr, null, map)
+import Prelude hiding      (lookup, filter, foldr, null, map)
 import qualified Prelude
 
 import qualified Data.Trie.Base.Map as Map
@@ -543,19 +543,19 @@ foldrDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
 foldrDescWithKey f x = Prelude.foldr (uncurry f) x . toDescList
 
 -- O(n)
-foldl'WithKey :: (Boolable (st a), Trie trie st map k)
+foldlWithKey' :: (Boolable (st a), Trie trie st map k)
               => ([k] -> a -> b -> b) -> b -> trie map k a -> b
-foldl'WithKey f x = foldl' (flip $ uncurry f) x . toList
+foldlWithKey' f x = foldl' (flip $ uncurry f) x . toList
 
 -- O(n)
-foldl'AscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+foldlAscWithKey' :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                  => ([k] -> a -> b -> b) -> b -> trie map k a -> b
-foldl'AscWithKey f x = foldl' (flip $ uncurry f) x . toAscList
+foldlAscWithKey' f x = foldl' (flip $ uncurry f) x . toAscList
 
 -- O(n)
-foldl'DescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+foldlDescWithKey' :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                   => ([k] -> a -> b -> b) -> b -> trie map k a -> b
-foldl'DescWithKey f x = foldl' (flip $ uncurry f) x . toDescList
+foldlDescWithKey' f x = foldl' (flip $ uncurry f) x . toDescList
 
 -- * Conversion between lists
 
