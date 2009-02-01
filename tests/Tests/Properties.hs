@@ -261,7 +261,6 @@ $(makeFunc mapsOnly [] [d|
 
 -- The Traversable laws: fmap == fmapDefault, foldMap == foldMapDefault
 -- Both avoid #2956 again
--- ... and are blocked on #2960
 $(makeFunc mapsOnly [] [d|
    prop_traversableLaw1 x =
       fmap ((+) 1) x == fmapDefault ((+) 1) (x :: TrieType)
@@ -298,8 +297,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_difference1")
    , $(makeProps allTries "prop_difference2")
    , $(makeProps allTries "prop_difference3")
-   , $(makeProps allTriesNotEnum "prop_intersection1")
-   , $(makeProps allTriesNotEnum "prop_intersection2")
+   , $(makeProps allTries "prop_intersection1")
+   , $(makeProps allTries "prop_intersection2")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
    , $(makeProps allTries "prop_minView1")
@@ -315,7 +314,7 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_monoidLaw3")
    , $(makeProps mapsOnly "prop_functorLaw1")
    , $(makeProps mapsOnly "prop_functorLaw2")
-   , $(makeProps mapsOnlyNotEnum "prop_traversableLaw1")
-   , $(makeProps mapsOnlyNotEnum "prop_traversableLaw2")
+   , $(makeProps mapsOnly "prop_traversableLaw1")
+   , $(makeProps mapsOnly "prop_traversableLaw2")
    , $(makeProps allTries "prop_showRead1")
    ]

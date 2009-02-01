@@ -14,7 +14,7 @@ import Data.List           ( foldl', foldl1'
                            , sort, sortBy
                            )
 import Data.Ord            (comparing)
-import Data.Traversable    (Traversable(..))
+import Data.Traversable    (Traversable(..), mapAccumR)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
@@ -372,10 +372,10 @@ instance Ord k => OrdMap M.Map k where
    minViewWithKey m = maybe (Nothing, m) (first Just) (M.minViewWithKey m)
    maxViewWithKey m = maybe (Nothing, m) (first Just) (M.maxViewWithKey m)
 
-   mapAccumAsc        = M.mapAccum
-   mapAccumAscWithKey = M.mapAccumWithKey
-
-   -- mapAccumDesc waiting on http://hackage.haskell.org/trac/ghc/ticket/2769
+   mapAccumAsc         = M.mapAccum
+   mapAccumAscWithKey  = M.mapAccumWithKey
+   mapAccumDesc        = mapAccumR
+   mapAccumDescWithKey = M.mapAccumRWithKey
 
 newtype IMap k v = IMap (IM.IntMap v) deriving (Eq,Ord)
 
@@ -388,16 +388,11 @@ instance Foldable (IMap k) where
     foldr   f z (IMap m) = foldr   f z m
     foldr1  f   (IMap m) = foldr1  f   m
 
--- Waiting on http://hackage.haskell.org/trac/ghc/ticket/2960... sigh
 instance Traversable (IMap k) where
-   traverse = undefined
-   sequenceA = undefined
-   mapM = undefined
-   sequence = undefined
---   traverse f (IMap m) = pure IMap <*> traverse f m
---   sequenceA (IMap m) = pure IMap <*> sequenceA m
---   mapM f (IMap m) = liftM IMap (mapM f m)
---   sequence (IMap m) = liftM IMap (sequence m)
+   traverse f (IMap m) = pure IMap <*> traverse f m
+   sequenceA (IMap m) = pure IMap <*> sequenceA m
+   mapM f (IMap m) = liftM IMap (mapM f m)
+   sequence (IMap m) = liftM IMap (sequence m)
 
 instance Enum k => Map IMap k where
    eqCmp = const ((==) `on` fromEnum)
@@ -418,20 +413,14 @@ instance Enum k => Map IMap k where
 
    unionWith        f (IMap x) (IMap y) = IMap$ IM.unionWith        f x y
    differenceWith   f (IMap x) (IMap y) = IMap$ IM.differenceWith   f x y
-
-   -- http://hackage.haskell.org/trac/ghc/ticket/2644
-   --intersectionWith f (IMap x) (IMap y) = IMap$ IM.intersectionWith f x y
-   intersectionWith = undefined
+   intersectionWith f (IMap x) (IMap y) = IMap$ IM.intersectionWith f x y
 
    unionWithKey      f (IMap x) (IMap y) =
       IMap$ IM.unionWithKey (f . toEnum) x y
    differenceWithKey f (IMap x) (IMap y) =
       IMap$ IM.differenceWithKey (f . toEnum) x y
-
-   -- http://hackage.haskell.org/trac/ghc/ticket/2644
-   --intersectionWithKey f (IMap x) (IMap y) =
-   --   IMap$ IM.intersectionWithKey (f . toEnum) x y
-   intersectionWithKey = undefined
+   intersectionWithKey f (IMap x) (IMap y) =
+      IMap$ IM.intersectionWithKey (f . toEnum) x y
 
    map             f   (IMap x) = IMap$ IM.map f x
    mapWithKey      f   (IMap x) = IMap$ IM.mapWithKey (f . toEnum) x
@@ -470,8 +459,9 @@ instance Enum k => OrdMap IMap k where
    maxViewWithKey o@(IMap m) =
       maybe (Nothing, o) (Just . first toEnum *** IMap) (IM.maxViewWithKey m)
 
-   mapAccumAsc        f z (IMap m) = second IMap $ IM.mapAccum f z m
-   mapAccumAscWithKey f z (IMap m) =
+   mapAccumAsc         f z (IMap m) = second IMap $ IM.mapAccum f z m
+   mapAccumAscWithKey  f z (IMap m) =
       second IMap $ IM.mapAccumWithKey (\a k -> f a (toEnum k)) z m
-
-   -- mapAccumDesc waiting on http://hackage.haskell.org/trac/ghc/ticket/2769
+   mapAccumDesc        f z (IMap m) = second IMap $ mapAccumR f z m
+   mapAccumDescWithKey f z (IMap m) =
+      second IMap $ IM.mapAccumRWithKey (\a k -> f a (toEnum k)) z m

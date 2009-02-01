@@ -6,7 +6,7 @@ module Tests.TH
    ( Module(..)
    , TrieType, ListElemType
    , makeFunc, makeCases, makeProps
-   , setsOnly, mapsOnly, allTries, mapsOnlyNotEnum, allTriesNotEnum
+   , setsOnly, mapsOnly, allTries
    ) where
 
 import Control.Arrow ((***))
@@ -205,7 +205,3 @@ mapsOnly = [MapModule "Data.Trie.Map.Eq"
            ,MapModule "Data.Trie.Patricia.Map.Enum"
            ]
 allTries = setsOnly ++ mapsOnly
-
--- FIXME: remove these as soon as there are no more undefined in Base.Map
-mapsOnlyNotEnum = filter (not.isSuffixOf "Enum".moduleName) mapsOnly
-allTriesNotEnum = filter (not.isSuffixOf "Enum".moduleName) allTries
