@@ -208,6 +208,64 @@ $(makeFunc mapsOnly ["size","singleton","mapWithKey'"] [d|
       IS_STRICT . mapWithKey' undefined $ (singleton [] 0 :: TrieType)
  |])
 
+-- As above, but for the mapAccum family.
+$(makeFunc mapsOnly ["size","singleton","mapAccum"] [d|
+   mapAccum size singleton mapAccum =
+      IS_LAZY   . snd . mapAccum  undefined 0 $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccum'"] [d|
+   mapAccum' size singleton mapAccum' =
+      IS_STRICT . snd . mapAccum' undefined 0 $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumWithKey"] [d|
+   mapAccumWithKey size singleton mapAccumWithKey =
+      IS_LAZY   . snd . mapAccumWithKey  undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumWithKey'"] [d|
+   mapAccumWithKey' size singleton mapAccumWithKey' =
+      IS_STRICT . snd . mapAccumWithKey' undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumAsc"] [d|
+   mapAccumAsc size singleton mapAccumAsc =
+      IS_LAZY   . snd . mapAccumAsc  undefined 0 $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumAsc'"] [d|
+   mapAccumAsc' size singleton mapAccumAsc' =
+      IS_STRICT . snd . mapAccumAsc' undefined 0 $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumAscWithKey"] [d|
+   mapAccumAscWithKey size singleton mapAccumAscWithKey =
+      IS_LAZY   . snd . mapAccumAscWithKey  undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumAscWithKey'"] [d|
+   mapAccumAscWithKey' size singleton mapAccumAscWithKey' =
+      IS_STRICT . snd . mapAccumAscWithKey' undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumDesc"] [d|
+   mapAccumDesc size singleton mapAccumDesc =
+      IS_LAZY   . snd . mapAccumDesc  undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumDesc'"] [d|
+   mapAccumDesc' size singleton mapAccumDesc' =
+      IS_STRICT . snd . mapAccumDesc' undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumDescWithKey"] [d|
+   mapAccumDescWithKey size singleton mapAccumDescWithKey =
+      IS_LAZY   . snd . mapAccumDescWithKey  undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapAccumDescWithKey'"] [d|
+   mapAccumDescWithKey' size singleton mapAccumDescWithKey' =
+      IS_STRICT . snd . mapAccumDescWithKey' undefined 0 $
+         (singleton [] 0 :: TrieType)
+ |])
+
 tests = testGroup "Strictness"
    [ $(makeCases mapsOnly "insertWith")
    , $(makeCases mapsOnly "insertWith'1")
@@ -239,4 +297,16 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "map'")
    , $(makeCases mapsOnly "mapWithKey")
    , $(makeCases mapsOnly "mapWithKey'")
+   , $(makeCases mapsOnly "mapAccum")
+   , $(makeCases mapsOnly "mapAccum'")
+   , $(makeCases mapsOnly "mapAccumWithKey")
+   , $(makeCases mapsOnly "mapAccumWithKey'")
+   , $(makeCases mapsOnly "mapAccumAsc")
+   , $(makeCases mapsOnly "mapAccumAsc'")
+   , $(makeCases mapsOnly "mapAccumAscWithKey")
+   , $(makeCases mapsOnly "mapAccumAscWithKey'")
+   , $(makeCases mapsOnly "mapAccumDesc")
+   , $(makeCases mapsOnly "mapAccumDesc'")
+   , $(makeCases mapsOnly "mapAccumDescWithKey")
+   , $(makeCases mapsOnly "mapAccumDescWithKey'")
    ]
