@@ -190,7 +190,7 @@ $(makeFunc mapsOnly ["size","singleton","intersectionWithKey'"] [d|
                                                  (singleton "a" 1)
  |])
 
--- As above, but for map and map'.
+-- As above, but for the map family.
 $(makeFunc mapsOnly ["size","singleton","map"] [d|
    map size singleton map =
       IS_LAZY   . map  undefined $ (singleton [] 0 :: TrieType)
@@ -198,6 +198,14 @@ $(makeFunc mapsOnly ["size","singleton","map"] [d|
 $(makeFunc mapsOnly ["size","singleton","map'"] [d|
    map' size singleton map' =
       IS_STRICT . map' undefined $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapWithKey"] [d|
+   mapWithKey size singleton mapWithKey =
+      IS_LAZY   . mapWithKey  undefined $ (singleton [] 0 :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","singleton","mapWithKey'"] [d|
+   mapWithKey' size singleton mapWithKey' =
+      IS_STRICT . mapWithKey' undefined $ (singleton [] 0 :: TrieType)
  |])
 
 tests = testGroup "Strictness"
@@ -229,4 +237,6 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "intersectionWithKey'")
    , $(makeCases mapsOnly "map")
    , $(makeCases mapsOnly "map'")
+   , $(makeCases mapsOnly "mapWithKey")
+   , $(makeCases mapsOnly "mapWithKey'")
    ]
