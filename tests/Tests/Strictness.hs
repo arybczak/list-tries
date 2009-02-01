@@ -158,6 +158,38 @@ $(makeFunc mapsOnly ["size","singleton","unionsWithKey'"] [d|
                                            ]
  |])
 
+-- As above, but for the intersection family.
+$(makeFunc mapsOnly ["size","singleton","intersection"] [d|
+   intersection size singleton intersection =
+      IS_LAZY   $ intersection  (singleton "a" undefined :: TrieType)
+                                (singleton "a" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","intersection'"] [d|
+   intersection' size singleton intersection' =
+      IS_STRICT $ intersection' (singleton "a" undefined :: TrieType)
+                                (singleton "a" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","intersectionWith"] [d|
+   intersectionWith size singleton intersectionWith =
+      IS_LAZY   $ intersectionWith undefined  (singleton "a" 1 :: TrieType)
+                                              (singleton "a" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","intersectionWith'"] [d|
+   intersectionWith' size singleton intersectionWith' =
+      IS_STRICT $ intersectionWith' undefined (singleton "a" 1 :: TrieType)
+                                              (singleton "a" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","intersectionWithKey"] [d|
+   intersectionWithKey size singleton intersectionWithKey =
+      IS_LAZY   $ intersectionWithKey undefined  (singleton "a" 1 :: TrieType)
+                                                 (singleton "a" 1)
+ |])
+$(makeFunc mapsOnly ["size","singleton","intersectionWithKey'"] [d|
+   intersectionWithKey' size singleton intersectionWithKey' =
+      IS_STRICT $ intersectionWithKey' undefined (singleton "a" 1 :: TrieType)
+                                                 (singleton "a" 1)
+ |])
+
 tests = testGroup "Strictness"
    [ $(makeCases mapsOnly "insertWith")
    , $(makeCases mapsOnly "insertWith'1")
@@ -179,4 +211,10 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "unionsWith'")
    , $(makeCases mapsOnly "unionsWithKey")
    , $(makeCases mapsOnly "unionsWithKey'")
+   , $(makeCases mapsOnly "intersection")
+   , $(makeCases mapsOnly "intersection'")
+   , $(makeCases mapsOnly "intersectionWith")
+   , $(makeCases mapsOnly "intersectionWith'")
+   , $(makeCases mapsOnly "intersectionWithKey")
+   , $(makeCases mapsOnly "intersectionWithKey'")
    ]
