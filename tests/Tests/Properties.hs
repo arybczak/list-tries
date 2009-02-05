@@ -1,11 +1,13 @@
 -- File created: 2009-01-06 12:59:53
 
-{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell, NoMonomorphismRestriction #-}
 
 module Tests.Properties (tests) where
 
-import Control.Arrow    ((&&&))
+import Control.Arrow    ((&&&), first)
 import Data.Foldable    (foldMap)
+import Data.Function    (on)
+import Data.List        (nubBy)
 import Data.Maybe       (fromJust, isNothing)
 import Data.Monoid      (mappend, mempty)
 import Data.Traversable (fmapDefault, foldMapDefault)
@@ -29,6 +31,8 @@ import qualified Data.Trie.Patricia.Map.Enum
 
 import Tests.Base
 import Tests.TH
+
+keyNub = nubBy ((==) `on` getKey)
 
 -- List of tests is at the bottom because it doesn't work at the top: looks
 -- like a TH limitation.
@@ -105,15 +109,15 @@ $(makeFunc mapsOnly ["lookup","insert"] [d|
  |])
 
 -- Inserting into empty is the same thing as a singleton
-$(makeFunc mapsOnly ["empty","insert","singleton"] [d|
-   prop_insert2_m empty insert singleton k_ v =
-      let k = unArb k_
-       in insert k v empty == (singleton k v :: TrieType)
- |])
 $(makeFunc setsOnly ["empty","insert","singleton"] [d|
    prop_insert2_s empty insert singleton k_ =
       let k = unArb k_
        in insert k empty == (singleton k :: TrieType)
+ |])
+$(makeFunc mapsOnly ["empty","insert","singleton"] [d|
+   prop_insert2_m empty insert singleton k_ v =
+      let k = unArb k_
+       in insert k v empty == (singleton k v :: TrieType)
  |])
 
 -- Deleting a key means it should no longer be in the set
@@ -155,7 +159,6 @@ $(makeFunc mapsOnly ["updateLookup","lookup","delete","toList","null"] [d|
          updateLookup (const Nothing) k (m :: TrieType)
             == (lookup k &&& delete k) m
  |])
-
 -- updateLookup (Just . f) is equivalent to lookup &&& adjust f
 --
 -- Run on head.toList as well to make sure that the key's actually in there
@@ -225,6 +228,21 @@ $(makeFunc allTries ["split","findMin","findSuccessor"] [d|
       let k = unArb k_
           (_,b) = split k (m :: TrieType)
        in findMin b == findSuccessor m k
+ |])
+
+-- toList (map trie) should be equivalent to map (toList trie)
+--
+-- #2956 avoidance
+$(makeFunc setsOnly ["map","toList"] [d|
+    prop_map1_s map toList m =
+       toList (map f (m :: TrieType)) == keyNub (Prelude.map f (toList m))
+     where f = (:) 'x'
+ |])
+$(makeFunc mapsOnly ["mapKeys","toList"] [d|
+    prop_map1_m mapKeys toList m =
+       toList (mapKeys f (m :: TrieType)) ==
+          keyNub (Prelude.map (first f) (toList m))
+     where f = (:) 'x'
  |])
 
 -- min/maxView should be equivalent to separately finding and deleting the
@@ -327,8 +345,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_isProperSubmapOf1")
    , $(makeProps mapsOnly "prop_singleton1")
    , $(makeProps mapsOnly "prop_insert1")
-   , $(makeProps mapsOnly "prop_insert2_m")
    , $(makeProps setsOnly "prop_insert2_s")
+   , $(makeProps mapsOnly "prop_insert2_m")
    , $(makeProps allTries "prop_delete1")
    , $(makeProps mapsOnly "prop_alter1")
    , $(makeProps mapsOnly "prop_alter2")
@@ -345,6 +363,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_intersection2")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
+   , $(makeProps setsOnly "prop_map1_s")
+   , $(makeProps mapsOnly "prop_map1_m")
    , $(makeProps allTries "prop_minView1")
    , $(makeProps allTries "prop_maxView1")
    , $(makeProps allTries "prop_findPredecessor1")

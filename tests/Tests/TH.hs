@@ -11,13 +11,13 @@ module Tests.TH
 
 import Control.Arrow ((***))
 import Data.Char     (isDigit)
-import Data.Maybe    (isJust)
-import Data.List     (break, isSuffixOf)
+import Data.Maybe    (isJust, fromMaybe)
+import Data.List     (break, isPrefixOf, isSuffixOf)
 import Language.Haskell.TH
    ( Exp(..), Lit(..), Stmt(..), Dec(..), Type(..), Clause(..), Pat(..)
    , Guard(..), Body(..), Match(..)
    , Q, ExpQ
-   , Name, nameBase, mkName
+   , Name, nameBase, nameModule, mkName
    )
 
 data Module = SetModule String | MapModule String
@@ -78,6 +78,8 @@ makeFunc modules expands =
     in fmap (\decs -> concat [map f decs | f <- expandFuns])
  where
    isExpandable n = nameBase n `elem` expands
+                 && fromMaybe True
+                       (fmap ("Data.Trie." `isPrefixOf`) (nameModule n))
 
    expandTopDec modu (FunD name clauses) =
       FunD (modularName (nameBase name) (moduleName modu))
