@@ -195,9 +195,8 @@ map :: (Map map a, Map map b) => ([a] -> [b]) -> TrieSet map a -> TrieSet map b
 map = inTS . Base.mapKeysWith Base.fromList
 
 -- O(n)
--- needs a name!
-map' :: (Map map a, Map map b) => (a -> b) -> TrieSet map a -> TrieSet map b
-map' = inTS . Base.mapKeys'With defaultUnion
+mapIn :: (Map map a, Map map b) => (a -> b) -> TrieSet map a -> TrieSet map b
+mapIn = inTS . Base.mapInKeysWith defaultUnion
 
 -- * Folding
 

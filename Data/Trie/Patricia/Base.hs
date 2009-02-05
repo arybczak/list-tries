@@ -17,7 +17,7 @@ module Data.Trie.Patricia.Base
    , intersectionWith', intersectionWithKey'
    , filterWithKey, partitionWithKey
    , split, splitLookup
-   , mapKeysWith, mapKeys'With
+   , mapKeysWith, mapInKeysWith
    , foldrWithKey, foldrAscWithKey, foldrDescWithKey
    , foldlWithKey', foldlAscWithKey', foldlDescWithKey'
    , toList, toAscList, toDescList
@@ -906,19 +906,18 @@ mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
 mapKeysWith fromlist f = fromlist . Prelude.map (first f) . toList
 
 -- O(n)
--- TODO: needs a name!
-mapKeys'With :: ( Alt st a, Boolable (st a), Unionable st a
+mapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
                 , Trie trie st map k1, Trie trie st map k2
                 )
              => (a -> a -> a)
              -> (k1 -> k2)
              -> trie map k1 a
              -> trie map k2 a
-mapKeys'With j f tr =
+mapInKeysWith j f tr =
    let (v,p,m) = tParts tr
     in mkTrie v (Prelude.map f p) $
           Map.fromListWith (unionWith j) .
-             Prelude.map (f *** mapKeys'With j f) .
+             Prelude.map (f *** mapInKeysWith j f) .
           Map.toList $ m
 
 -- * Folding

@@ -562,19 +562,17 @@ mapKeysWith :: (Map map k1, Map map k2) => (a -> a -> a)
 mapKeysWith j = Base.mapKeysWith (fromListWith j)
 
 -- O(n)
--- TODO: needs a name!
-mapKeys' :: (Map map k1, Map map k2)
+mapInKeys :: (Map map k1, Map map k2)
          => (k1 -> k2) -> TrieMap map k1 a -> TrieMap map k2 a
-mapKeys' = mapKeys'With defaultUnion
+mapInKeys = mapInKeysWith defaultUnion
 
 -- O(n)
--- TODO: needs a name!
-mapKeys'With :: (Map map k1, Map map k2)
+mapInKeysWith :: (Map map k1, Map map k2)
              => (a -> a -> a)
              -> (k1 -> k2)
              -> TrieMap map k1 a
              -> TrieMap map k2 a
-mapKeys'With = Base.mapKeys'With
+mapInKeysWith = Base.mapInKeysWith
 
 -- * Folding
 

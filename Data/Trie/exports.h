@@ -21,7 +21,7 @@
 	\
 	splitMember, \
 	\
-	map, map', \
+	map, mapIn, \
 	\
 	foldr, foldrAsc, foldrDesc, \
 	foldl', foldlAsc', foldlDesc'
@@ -54,7 +54,7 @@
 	mapAccumAsc',  mapAccumAscWithKey', \
 	mapAccumDesc,  mapAccumDescWithKey, \
 	mapAccumDesc', mapAccumDescWithKey', \
-	mapKeys, mapKeysWith, mapKeys', mapKeys'With, \
+	mapKeys, mapKeysWith, mapInKeys, mapInKeysWith, \
 	\
 	foldr, foldrWithKey, \
 	foldrAsc, foldrAscWithKey, \
