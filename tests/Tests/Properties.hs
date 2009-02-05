@@ -231,18 +231,32 @@ $(makeFunc allTries ["split","findMin","findSuccessor"] [d|
  |])
 
 -- toList (map trie) should be equivalent to map (toList trie)
+-- modulo ordering, hence toAscList
 --
 -- #2956 avoidance
-$(makeFunc setsOnly ["map","toList"] [d|
-    prop_map1_s map toList m =
-       toList (map f (m :: TrieType)) == keyNub (Prelude.map f (toList m))
+$(makeFunc setsOnly ["map","toAscList"] [d|
+    prop_mapKeys1_s map toAscList m =
+       toAscList (map f (m :: TrieType)) ==
+          keyNub (Prelude.map f $ toAscList m)
      where f = (:) 'x'
  |])
-$(makeFunc mapsOnly ["mapKeys","toList"] [d|
-    prop_map1_m mapKeys toList m =
-       toList (mapKeys f (m :: TrieType)) ==
-          keyNub (Prelude.map (first f) (toList m))
+$(makeFunc mapsOnly ["mapKeys","toAscList"] [d|
+    prop_mapKeys1_m mapKeys toAscList m =
+       toAscList (mapKeys f (m :: TrieType)) ==
+          keyNub (Prelude.map (first f) $ toAscList m)
      where f = (:) 'x'
+ |])
+$(makeFunc setsOnly ["mapIn","toAscList"] [d|
+    prop_mapInKeys1_s mapIn toAscList m =
+       toAscList (mapIn f (m :: TrieType)) ==
+          keyNub (map (map f) $ toAscList m)
+     where f = toEnum . (+) 1 . fromEnum :: Char -> Char
+ |])
+$(makeFunc mapsOnly ["mapInKeys","toAscList"] [d|
+    prop_mapInKeys1_m mapInKeys toAscList m =
+       toAscList (mapInKeys f (m :: TrieType)) ==
+          keyNub (map (first (map f)) $ toAscList m)
+     where f = toEnum . (+) 1 . fromEnum :: Char -> Char
  |])
 
 -- min/maxView should be equivalent to separately finding and deleting the
@@ -363,8 +377,10 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_intersection2")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
-   , $(makeProps setsOnly "prop_map1_s")
-   , $(makeProps mapsOnly "prop_map1_m")
+   , $(makeProps setsOnly "prop_mapKeys1_s")
+   , $(makeProps mapsOnly "prop_mapKeys1_m")
+   , $(makeProps setsOnly "prop_mapInKeys1_s")
+   , $(makeProps mapsOnly "prop_mapInKeys1_m")
    , $(makeProps allTries "prop_minView1")
    , $(makeProps allTries "prop_maxView1")
    , $(makeProps allTries "prop_findPredecessor1")
