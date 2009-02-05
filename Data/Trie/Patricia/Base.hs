@@ -279,7 +279,7 @@ updateLookup f k tr =
             Same                   -> let v' = if hasValue v
                                                   then f (unwrap v)
                                                   else v
-                                       in (v' <|> v, safeMkTrie v' prefix m)
+                                       in (v, safeMkTrie v' prefix m)
             PostFix (Right (x:xs)) ->
                case Map.lookup m x of
                     Nothing  -> (altEmpty, tr)

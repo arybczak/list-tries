@@ -229,7 +229,7 @@ updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
 updateLookup f [] tr =
    let (v,m) = tParts tr
        v'    = if hasValue v then f (unwrap v) else v
-    in (v' <|> v, mkTrie v' m)
+    in (v, mkTrie v' m)
 
 updateLookup f (x:xs) orig =
    let m   = tMap orig
