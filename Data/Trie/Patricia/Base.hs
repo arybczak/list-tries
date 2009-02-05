@@ -279,14 +279,14 @@ updateLookup f k tr =
             Same                   -> let v' = if hasValue v
                                                   then f (unwrap v)
                                                   else v
-                                       in (v' <|> v, mkTrie v' prefix m)
+                                       in (v' <|> v, safeMkTrie v' prefix m)
             PostFix (Right (x:xs)) ->
                case Map.lookup m x of
                     Nothing  -> (altEmpty, tr)
                     Just tr' ->
                        let (ret, upd) = updateLookup f xs tr'
                         in ( ret
-                           , mkTrie v prefix $
+                           , safeMkTrie v prefix $
                                 if null upd
                                    then Map.delete m x
                                    else Map.adjust (const upd) m x
@@ -1071,9 +1071,7 @@ minMaxView f g tr_ = first Just (go f g tr_)
    go isWanted mapView tr =
       let (v,pre,m) = tParts tr
        in if isWanted tr
-             then -- Take care not to put a prefix into an empty trie...
-                  let triePre = if Map.null m then [] else pre
-                   in ((pre, unwrap v), mkTrie altEmpty triePre m)
+             then ((pre, unwrap v), safeMkTrie altEmpty pre m)
 
              else let (k,      tr')  = fromJust (mapView m)
                       (minMax, tr'') = go isWanted mapView tr'
@@ -1183,6 +1181,14 @@ lookupPrefix xs tr =
             _ -> error "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
 
 -- helpers
+
+-- mkTrie, but makes sure that empty tries don't have nonempty prefixes
+safeMkTrie :: (Alt st a, Boolable (st a), Trie trie st map k)
+           => st a -> [k] -> CMap trie map k a -> trie map k a
+safeMkTrie v p m =
+   if noValue v && Map.null m
+      then empty
+      else mkTrie v p m
 
 prepend :: [a] -> a -> [a] -> [a]
 prepend prefix key = (prefix++) . (key:)
