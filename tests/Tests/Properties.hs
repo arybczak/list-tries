@@ -143,21 +143,31 @@ $(makeFunc mapsOnly ["alter","lookup"] [d|
  |])
 
 -- updateLookup (const Nothing) is equivalent to lookup &&& delete
-$(makeFunc mapsOnly ["updateLookup","lookup","delete"] [d|
-   prop_updateLookup1 updateLookup lookup delete k_ m =
-      let k = unArb k_
-       in updateLookup (const Nothing) k (m :: TrieType)
-          == (lookup k &&& delete k) m
+--
+-- Run on head.toList as well to make sure that the key's actually in there
+--
+-- Avoids #2956
+$(makeFunc mapsOnly ["updateLookup","lookup","delete","toList","null"] [d|
+   prop_updateLookup1 updateLookup lookup delete toList null k_ m =
+      check (unArb k_) && (null m || check (getKey.head.toList $ m))
+    where
+      check k =
+         updateLookup (const Nothing) k (m :: TrieType)
+            == (lookup k &&& delete k) m
  |])
 
 -- updateLookup (Just . f) is equivalent to lookup &&& adjust f
 --
+-- Run on head.toList as well to make sure that the key's actually in there
+--
 -- Avoids #2956
-$(makeFunc mapsOnly ["updateLookup","lookup","adjust"] [d|
-   prop_updateLookup2 updateLookup lookup adjust k_ m =
-      let k = unArb k_
-       in updateLookup (Just . (+) 1) k (m :: TrieType)
-          == (lookup k &&& adjust ((+) 1) k) m
+$(makeFunc mapsOnly ["updateLookup","lookup","adjust","toList","null"] [d|
+   prop_updateLookup2 updateLookup lookup adjust toList null k_ m =
+      check (unArb k_) && (null m || check (getKey.head.toList $ m))
+    where
+      check k =
+         updateLookup (Just . (+) 1) k (m :: TrieType)
+            == (lookup k &&& adjust ((+) 1) k) m
  |])
 
 -- A union should include all keys of the original sets
