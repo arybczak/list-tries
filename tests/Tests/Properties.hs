@@ -104,6 +104,18 @@ $(makeFunc mapsOnly ["lookup","insert"] [d|
        in (fromJust . lookup k . insert k v) (m :: TrieType) == v
  |])
 
+-- Inserting into empty is the same thing as a singleton
+$(makeFunc mapsOnly ["empty","insert","singleton"] [d|
+   prop_insert2_m empty insert singleton k_ v =
+      let k = unArb k_
+       in insert k v empty == (singleton k v :: TrieType)
+ |])
+$(makeFunc setsOnly ["empty","insert","singleton"] [d|
+   prop_insert2_s empty insert singleton k_ =
+      let k = unArb k_
+       in insert k empty == (singleton k :: TrieType)
+ |])
+
 -- Deleting a key means it should no longer be in the set
 $(makeFunc allTries ["notMember","delete"] [d|
    prop_delete1 notMember delete k_ m =
@@ -305,6 +317,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_isProperSubmapOf1")
    , $(makeProps mapsOnly "prop_singleton1")
    , $(makeProps mapsOnly "prop_insert1")
+   , $(makeProps mapsOnly "prop_insert2_m")
+   , $(makeProps setsOnly "prop_insert2_s")
    , $(makeProps allTries "prop_delete1")
    , $(makeProps mapsOnly "prop_alter1")
    , $(makeProps mapsOnly "prop_alter2")
