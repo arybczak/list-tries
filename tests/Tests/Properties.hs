@@ -130,6 +130,24 @@ $(makeFunc mapsOnly ["alter","lookup"] [d|
           == fmap ((+) 1) (lookup k m)
  |])
 
+-- updateLookup (const Nothing) is equivalent to lookup &&& delete
+$(makeFunc mapsOnly ["updateLookup","lookup","delete"] [d|
+   prop_updateLookup1 updateLookup lookup delete k_ m =
+      let k = unArb k_
+       in updateLookup (const Nothing) k (m :: TrieType)
+          == (lookup k &&& delete k) m
+ |])
+
+-- updateLookup (Just . f) is equivalent to lookup &&& adjust f
+--
+-- Avoids #2956
+$(makeFunc mapsOnly ["updateLookup","lookup","adjust"] [d|
+   prop_updateLookup2 updateLookup lookup adjust k_ m =
+      let k = unArb k_
+       in updateLookup (Just . (+) 1) k (m :: TrieType)
+          == (lookup k &&& adjust ((+) 1) k) m
+ |])
+
 -- A union should include all keys of the original sets
 $(makeFunc allTries ["union","member","toList"] [d|
    prop_union1 union member toList m n =
@@ -291,6 +309,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_alter1")
    , $(makeProps mapsOnly "prop_alter2")
    , $(makeProps mapsOnly "prop_alter3")
+   , $(makeProps mapsOnly "prop_updateLookup1")
+   , $(makeProps mapsOnly "prop_updateLookup2")
    , $(makeProps allTries "prop_union1")
    , $(makeProps allTries "prop_union2")
    , $(makeProps allTries "prop_union3")
