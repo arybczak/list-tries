@@ -16,11 +16,11 @@ import qualified Data.Trie.Patricia.Map as PBM
 
 newtype Str = Str { unStr :: String } deriving Show
 
-alpha = ('a','z')
+alpha = ('0','9')
 
 instance Arbitrary Str where
    arbitrary = sized $ \size -> do
-      s <- mapM (const $ choose alpha) [0..size]
+      s <- mapM (const $ choose alpha) [0..size `mod` 6]
       return (Str s)
 
 instance Map map Char => Arbitrary ( BS.TrieSet map Char) where
