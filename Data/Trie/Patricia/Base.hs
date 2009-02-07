@@ -541,7 +541,7 @@ differenceWith j_ tr1 tr2 =
    goRight _ _ _ [] = can'tHappen
 
    goLeft j left right (x:xs) =
-      tryCompress . mkTrie vl prel $ Map.adjust f ml x
+      tryCompress . mkTrie vl prel $ Map.update f ml x
     where
       (vl,prel,ml) = tParts left
       (vr,   _,mr) = tParts right
@@ -549,10 +549,12 @@ differenceWith j_ tr1 tr2 =
       f left' =
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
-                  DifferedAt _ _ _   -> left'
-                  Same               -> mk j v vr pre m mr
-                  PostFix (Left  ys) -> goRight j left' mr    ys
-                  PostFix (Right ys) -> goLeft  j left' right ys
+                  DifferedAt _ _ _   -> Just left'
+                  Same               -> tryNull $ mk j v vr pre m mr
+                  PostFix (Left  ys) -> tryNull $ goRight j left' mr    ys
+                  PostFix (Right ys) -> tryNull $ goLeft  j left' right ys
+
+      tryNull t = if null t then Nothing else Just t
 
    goLeft _ _ _ [] = can'tHappen
 
@@ -605,7 +607,7 @@ differenceWithKey = go DL.empty
    goRight _ _ _ _ [] = can'tHappen
 
    goLeft k j left right (x:xs) =
-      tryCompress . mkTrie vl prel $ Map.adjust f ml x
+      tryCompress . mkTrie vl prel $ Map.update f ml x
     where
       (vl,prel,ml) = tParts left
       (vr,   _,mr) = tParts right
@@ -613,10 +615,12 @@ differenceWithKey = go DL.empty
       f left' =
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
-                  DifferedAt _ _ _   -> left'
-                  Same               -> mk j k v vr pre m mr
-                  PostFix (Left  ys) -> goRight k j left' mr    ys
-                  PostFix (Right ys) -> goLeft  k j left' right ys
+                  DifferedAt _ _ _   -> Just left'
+                  Same               -> tryNull $ mk j k v vr pre m mr
+                  PostFix (Left  ys) -> tryNull $ goRight k j left' mr    ys
+                  PostFix (Right ys) -> tryNull $ goLeft  k j left' right ys
+
+      tryNull t = if null t then Nothing else Just t
 
    goLeft _ _ _ _ [] = can'tHappen
 
