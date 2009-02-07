@@ -58,11 +58,13 @@ $(makeFunc allTries ["fromList","member"] [d|
  |])
 
 -- A map built from a list should have the same key/value pairs as the list
+-- Of course the list needs to be nubbed; and in case of duplicates the last
+-- value is preferred, so reversed
 $(makeFunc mapsOnly ["fromList","lookup"] [d|
    prop_lookup1 fromList lookup l_ =
       let l = map unArb l_
           m = fromList l :: TrieType
-       in all (\(k,v) -> fromJust (lookup k m) == v) l
+       in all (\(k,v) -> fromJust (lookup k m) == v) (keyNub . reverse $ l)
  |])
 
 -- lookupWithDefault should return the default if the key is not a member of
