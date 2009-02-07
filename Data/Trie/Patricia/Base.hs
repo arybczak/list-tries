@@ -385,10 +385,14 @@ genericUnionWith valUnion seeq tr1 tr2 =
     in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
             Same ->
                let v = valUnion v1 v2
+
+                   -- safeMkTrie not needed: if pre1 is not null then m1 or v
+                   -- won't be and hence the union won't be.
                 in v `seeq` (tryCompress.mkTrie v pre1 $
                                             mapUnion valUnion seeq m1 m2)
 
             PostFix remainder ->
+               -- As above, mkTrie is fine
                tryCompress $
                   either
                      (mkTrie v2 pre2 . mapUnion valUnion seeq m2 .
@@ -398,6 +402,7 @@ genericUnionWith valUnion seeq tr1 tr2 =
                      remainder
 
             DifferedAt pr (x:xs) (y:ys) ->
+               -- As above, mkTrie is fine
                mkTrie altEmpty pr $ Map.doubleton x (mkTrie v1 xs m1)
                                                   y (mkTrie v2 ys m2)
 
