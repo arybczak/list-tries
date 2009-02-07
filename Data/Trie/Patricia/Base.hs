@@ -672,9 +672,10 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
                       (go (flip valIsect_) seeq_ ml vr mr (DL.fromList prer))
                       remainder
  where
-   -- Can't pointlessify due to the monomorphism restriction
-   mapIntersect valIsect seeq =
-      Map.intersectionWith (genericIntersectionWith valIsect seeq)
+   mapIntersect valIsect seeq m1 m2 =
+      Map.filter (not.null) $
+         Map.intersectionWith (genericIntersectionWith valIsect seeq)
+                              m1 m2
 
    mk valIsect seeq v v' p m m' =
       let vi = valIsect v v'

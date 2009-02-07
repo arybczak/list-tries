@@ -45,7 +45,7 @@ import Data.Trie.Base.Classes
    , fmap', (<$!>)
    )
 import Data.Trie.Base.Map (Map, OrdMap)
-import Data.Trie.Util     (both)
+import Data.Trie.Util     ((.:), both)
 
 class (Map map k, Functor st, Unwrappable st)
    => Trie trie st map k | trie -> st where
@@ -416,8 +416,9 @@ genericIntersectionWith :: (Boolable (st c), Trie trie st map k)
 genericIntersectionWith valIntersection seeq tr1 tr2 =
    tr seeq
       (onVals valIntersection tr1 tr2)
-      (onMaps (Map.intersectionWith
-                 (genericIntersectionWith valIntersection seeq))
+      (onMaps (Map.filter (not.null) .:
+                  Map.intersectionWith
+                     (genericIntersectionWith valIntersection seeq))
               tr1 tr2)
  where
    tr seeq' v m =

@@ -31,8 +31,8 @@ import Data.Trie.Util (both, (.:))
 -- * toList, fromListWith
 -- * isSubmapOfBy
 --
--- For decent performance, supplying 'mapAccumWithKey' as well is probably a
--- good idea.
+-- For decent performance, supplying 'mapAccumWithKey' and 'filter' as well is
+-- probably a good idea.
 class Map m k where
    -- Like an Eq instance over k, but should compare on the same type as 'm'
    -- does. In most cases this can be defined just as 'const (==)'.
@@ -65,6 +65,8 @@ class Map m k where
    mapWithKey      :: (k -> a -> b) -> m k a -> m k b
    mapAccum        :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
    mapAccumWithKey :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
+
+   filter :: (a -> Bool) -> m k a -> m k a
 
    foldValues :: (a -> b -> b) -> b -> m k a -> b
 
@@ -101,6 +103,8 @@ class Map m k where
       second fromList .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
       toList
+
+   filter p = fromList . Prelude.filter (p . snd) . toList
 
    fromList = fromListWith const
 
@@ -346,6 +350,8 @@ instance Ord k => Map M.Map k where
    mapAccum        = M.mapAccum
    mapAccumWithKey = M.mapAccumWithKey
 
+   filter = M.filter
+
    foldValues = M.fold
 
    toList       = M.toList
@@ -427,6 +433,8 @@ instance Enum k => Map IMap k where
    mapAccum        f z (IMap x) = second IMap$ IM.mapAccum f z x
    mapAccumWithKey f z (IMap x) =
       second IMap$ IM.mapAccumWithKey (\a -> f a . toEnum) z x
+
+   filter p (IMap x) = IMap $ IM.filter p x
 
    foldValues f z (IMap m) = IM.fold f z m
 
