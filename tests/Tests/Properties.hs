@@ -93,6 +93,19 @@ $(makeFunc mapsOnly ["isProperSubmapOf"] [d|
       not (isProperSubmapOf m (m :: TrieType))
  |])
 
+$(makeFunc setsOnly ["isSubsetOf", "isProperSubsetOf"] [d|
+   prop_isProperSubsetOf2 isSubsetOf isProperSubsetOf m n =
+      if isProperSubsetOf m n
+         then isSubsetOf m (n :: TrieType)
+         else True
+ |])
+$(makeFunc mapsOnly ["isSubmapOf", "isProperSubmapOf"] [d|
+   prop_isProperSubmapOf2 isSubmapOf isProperSubmapOf m n =
+      if isProperSubmapOf m n
+         then isSubmapOf (m :: TrieType) (n :: TrieType)
+         else True
+ |])
+
 -- Looking up a singleton's key in a singleton should return the singleton's
 -- value
 $(makeFunc mapsOnly ["lookup","singleton"] [d|
@@ -375,6 +388,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps setsOnly "prop_isProperSubsetOf1")
    , $(makeProps mapsOnly "prop_isSubmapOf1")
    , $(makeProps mapsOnly "prop_isProperSubmapOf1")
+   , $(makeProps setsOnly "prop_isProperSubsetOf2")
+   , $(makeProps mapsOnly "prop_isProperSubmapOf2")
    , $(makeProps mapsOnly "prop_singleton1")
    , $(makeProps mapsOnly "prop_insert1")
    , $(makeProps setsOnly "prop_insert2_s")
