@@ -91,7 +91,7 @@ makeFunc modules expands =
       FunD name (map (expandClause modu) clauses)
    expandDec modu (ValD pat body decs) =
       ValD pat (expandBody modu body) (map (expandDec modu) decs)
-   expandDec _ x@(SigD _ _) = x
+   expandDec modu (SigD name typ) = SigD name (replaceTypes modu typ)
    expandDec _ _ =
       error "expandDec :: shouldn't ever see this declaration type"
 

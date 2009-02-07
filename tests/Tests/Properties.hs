@@ -215,6 +215,22 @@ $(makeFunc allTries ["intersection","null","empty"] [d|
       null $ intersection empty (m :: TrieType)
  |])
 
+-- De Morgan's laws: union and intersection interchange under complementation
+$(makeFunc allTries ["union","difference","intersection"] [d|
+   prop_deMorgan1 union difference intersection a b c =
+      complement (intersection a b) == union (complement a) (complement b)
+    where
+      complement :: TrieType -> TrieType
+      complement = difference c
+ |])
+$(makeFunc allTries ["union","difference","intersection"] [d|
+   prop_deMorgan2 union difference intersection a b c =
+      complement (union a b) == intersection (complement a) (complement b)
+    where
+      complement :: TrieType -> TrieType
+      complement = difference c
+ |])
+
 -- The maximum of the left side of a split about k is the predecessor of k
 $(makeFunc allTries ["split","findMax","findPredecessor"] [d|
    prop_splitMaxPredecessor split findMax findPredecessor m k_ =
@@ -375,6 +391,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_difference3")
    , $(makeProps allTries "prop_intersection1")
    , $(makeProps allTries "prop_intersection2")
+   , $(makeProps allTries "prop_deMorgan1")
+   , $(makeProps allTries "prop_deMorgan2")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
    , $(makeProps setsOnly "prop_mapKeys1_s")
