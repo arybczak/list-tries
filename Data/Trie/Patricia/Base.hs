@@ -393,11 +393,13 @@ genericUnionWith valUnion seeq tr1 tr2 =
 
             PostFix remainder ->
                -- As above, mkTrie is fine
+               --
+               -- The flip is important to retain left-biasedness
                tryCompress $
                   either
-                     (mkTrie v2 pre2 . mapUnion valUnion seeq m2 .
+                     (mkTrie v2 pre2 . mapUnion (flip valUnion) seeq m2 .
                         decompress m1 v1)
-                     (mkTrie v1 pre1 . mapUnion valUnion seeq m1 .
+                     (mkTrie v1 pre1 . mapUnion       valUnion  seeq m1 .
                         decompress m2 v2)
                      remainder
 
@@ -456,10 +458,10 @@ genericUnionWithKey = go DL.empty
                PostFix remainder ->
                   tryCompress $
                      either
-                        (mk v2 pre2 . mapUnion valUnion seeq j k pre2 m2 .
-                           decompress m1 v1)
-                        (mk v1 pre1 . mapUnion valUnion seeq j k pre1 m1 .
-                           decompress m2 v2)
+                        (mk v2 pre2 . mapUnion (flip.valUnion) seeq j k pre2 m2
+                           . decompress m1 v1)
+                        (mk v1 pre1 . mapUnion       valUnion  seeq j k pre1 m1
+                           . decompress m2 v2)
                         remainder
 
                DifferedAt pr (x:xs) (y:ys) ->
