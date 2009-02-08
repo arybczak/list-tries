@@ -166,8 +166,8 @@ class Map m k => OrdMap m k where
            []     -> (Nothing, m)
            (x:xs) -> (Just x, fromDistinctDescList xs)
 
-   findPredecessor m x = fst . maxViewWithKey . fst . split m $ x
-   findSuccessor   m x = fst . minViewWithKey . snd . split m $ x
+   findPredecessor m = fst . maxViewWithKey . fst . split m
+   findSuccessor   m = fst . minViewWithKey . snd . split m
 
    mapAccumAsc  f = mapAccumAscWithKey  (const . f)
    mapAccumDesc f = mapAccumDescWithKey (const . f)
@@ -217,12 +217,12 @@ instance Traversable (AList k) where
 instance Eq k => Map AList k where
    eqCmp = const (==)
 
-   empty              = AL []
-   singleton k v      = AL [(k,v)]
-   doubleton a b p q  = AL [(a,b),(p,q)]
+   empty             = AL []
+   singleton k v     = AL [(k,v)]
+   doubleton a b p q = AL [(a,b),(p,q)]
 
-   null (AL xs)       = Prelude.null xs
-   lookup (AL xs) x   = Prelude.lookup x xs
+   null (AL xs)     = Prelude.null xs
+   lookup (AL xs) x = Prelude.lookup x xs
 
    alter f (AL xs) k =
       let (old, ys) = deleteAndGetBy ((== k).fst) xs
@@ -324,11 +324,11 @@ updateFirstsBy f eq (x:xs) ys =
 instance Ord k => Map M.Map k where
    eqCmp = const (==)
 
-   empty        = M.empty
-   singleton    = M.singleton
+   empty     = M.empty
+   singleton = M.singleton
 
-   null         = M.null
-   lookup       = flip M.lookup
+   null   = M.null
+   lookup = flip M.lookup
 
    insertWith f m k v = M.insertWith' f k v m
 
@@ -403,11 +403,11 @@ instance Traversable (IMap k) where
 instance Enum k => Map IMap k where
    eqCmp = const ((==) `on` fromEnum)
 
-   empty               = IMap IM.empty
-   singleton k v       = IMap$ IM.singleton (fromEnum k) v
+   empty       = IMap IM.empty
+   singleton k = IMap . IM.singleton (fromEnum k)
 
-   null (IMap m)       = IM.null m
-   lookup (IMap m) k   = IM.lookup (fromEnum k) m
+   null (IMap m)     = IM.null m
+   lookup (IMap m) k = IM.lookup (fromEnum k) m
 
    insertWith f (IMap m) k v = IMap$ IM.insertWith f (fromEnum k) v m
 

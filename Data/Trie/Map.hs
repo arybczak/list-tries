@@ -181,7 +181,7 @@ adjust' = Base.adjust'
 -- O(m)
 update :: Map map k
        => (a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
-update f k t = snd (updateLookup f k t)
+update f k = snd . updateLookup f k
 
 -- O(m)
 updateLookup :: Map map k => (a -> Maybe a)
@@ -324,7 +324,7 @@ intersectionWithKey' = Base.intersectionWithKey'
 
 -- O(n m)
 filter :: Map map k => (a -> Bool) -> TrieMap map k a -> TrieMap map k a
-filter p = filterWithKey (const p)
+filter = filterWithKey . const
 
 -- O(n m)
 filterWithKey :: Map map k
@@ -335,7 +335,7 @@ filterWithKey = Base.filterWithKey
 partition :: Map map k => (a -> Bool)
                        -> TrieMap map k a
                        -> (TrieMap map k a, TrieMap map k a)
-partition p = partitionWithKey (const p)
+partition = partitionWithKey . const
 
 -- O(n m)
 partitionWithKey :: Map map k => ([k] -> a -> Bool)
@@ -357,7 +357,7 @@ splitLookup = Base.splitLookup
 -- O(n)
 mapMaybe :: Map map k
          => (a -> Maybe b) -> TrieMap map k a -> TrieMap map k b
-mapMaybe f = mapMaybeWithKey (const f)
+mapMaybe = mapMaybeWithKey . const
 
 -- O(n)
 mapMaybeWithKey :: Map map k
@@ -369,7 +369,7 @@ mapMaybeWithKey f =
 mapEither :: Map map k => (a -> Either b c)
                        -> TrieMap map k a
                        -> (TrieMap map k b, TrieMap map k c)
-mapEither f = mapEitherWithKey (const f)
+mapEither = mapEitherWithKey . const
 
 -- O(n)
 mapEitherWithKey :: Map map k => ([k] -> a -> Either b c)
@@ -558,7 +558,7 @@ mapKeysWith :: (Map map k1, Map map k2) => (a -> a -> a)
                                         -> ([k1] -> [k2])
                                         -> TrieMap map k1 a
                                         -> TrieMap map k2 a
-mapKeysWith j = Base.mapKeysWith (fromListWith j)
+mapKeysWith = Base.mapKeysWith . fromListWith
 
 -- O(n)
 mapInKeys :: (Map map k1, Map map k2)
@@ -577,7 +577,7 @@ mapInKeysWith = Base.mapInKeysWith
 
 -- O(n)
 foldr :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldr f = foldrWithKey (const f)
+foldr = foldrWithKey . const
 
 -- O(n)
 foldrWithKey :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
@@ -585,7 +585,7 @@ foldrWithKey = Base.foldrWithKey
 
 -- O(n)
 foldrAsc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldrAsc f = foldrAscWithKey (const f)
+foldrAsc = foldrAscWithKey . const
 
 -- O(n)
 foldrAscWithKey :: OrdMap map k
@@ -594,7 +594,7 @@ foldrAscWithKey = Base.foldrAscWithKey
 
 -- O(n)
 foldrDesc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldrDesc f = foldrDescWithKey (const f)
+foldrDesc = foldrDescWithKey . const
 
 -- O(n)
 foldrDescWithKey :: OrdMap map k
@@ -603,7 +603,7 @@ foldrDescWithKey = Base.foldrDescWithKey
 
 -- O(n)
 foldl' :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldl' f = foldlWithKey' (const f)
+foldl' = foldlWithKey' . const
 
 -- O(n)
 foldlWithKey' :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
@@ -611,7 +611,7 @@ foldlWithKey' = Base.foldlWithKey'
 
 -- O(n)
 foldlAsc' :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldlAsc' f = foldlAscWithKey' (const f)
+foldlAsc' = foldlAscWithKey' . const
 
 -- O(n)
 foldlAscWithKey' :: OrdMap map k
@@ -620,7 +620,7 @@ foldlAscWithKey' = Base.foldlAscWithKey'
 
 -- O(n)
 foldlDesc' :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
-foldlDesc' f = foldlDescWithKey' (const f)
+foldlDesc' = foldlDescWithKey' . const
 
 -- O(n)
 foldlDescWithKey' :: OrdMap map k

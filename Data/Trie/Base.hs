@@ -106,12 +106,12 @@ size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 -- O(m)
 member :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
-member k tr = hasValue (lookup k tr)
+member = hasValue .: lookup
 
 -- O(m)
 notMember :: (Alt st a, Boolable (st a), Trie trie st map k)
-       => [k] -> trie map k a -> Bool
-notMember k tr = not (member k tr)
+          => [k] -> trie map k a -> Bool
+notMember = not .: member
 
 -- O(m)
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a

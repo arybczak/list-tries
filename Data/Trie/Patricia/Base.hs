@@ -46,7 +46,7 @@ import Data.Trie.Base.Classes
    , fmap', (<$!>)
    )
 import Data.Trie.Base.Map (Map, OrdMap)
-import Data.Trie.Util     (both)
+import Data.Trie.Util     ((.:), both)
 
 class (Map map k, Functor st, Unwrappable st)
    => Trie trie st map k | trie -> st where
@@ -82,12 +82,12 @@ size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 -- O(m)
 member :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
-member k tr = hasValue (lookup k tr)
+member = hasValue .: lookup
 
 -- O(m)
 notMember :: (Alt st a, Boolable (st a), Trie trie st map k)
-       => [k] -> trie map k a -> Bool
-notMember k tr = not (member k tr)
+          => [k] -> trie map k a -> Bool
+notMember = not .: member
 
 -- O(m)
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
@@ -414,7 +414,7 @@ genericUnionWith valUnion seeq tr1 tr2 =
 
             _ -> can'tHappen
  where
-   mapUnion vu s = Map.unionWith (genericUnionWith vu s)
+   mapUnion = Map.unionWith .: genericUnionWith
 
    decompress m v (x:xs) = Map.singleton x (mkTrie v xs m)
    decompress _ _ []     = can'tHappen
@@ -520,7 +520,7 @@ differenceWith j_ tr1 tr2 =
             PostFix (Left  xs) -> goRight j_ tr1 m2  xs
             PostFix (Right xs) -> goLeft  j_ tr1 tr2 xs
  where
-   mapDifference j = Map.differenceWith (dw j)
+   mapDifference = Map.differenceWith . dw
    dw j a b =
       let c = differenceWith j a b
        in if null c then Nothing else Just c
@@ -683,10 +683,9 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
                       (go (flip valIsect_) seeq_ ml vr mr (DL.fromList prer))
                       remainder
  where
-   mapIntersect valIsect seeq m1 m2 =
-      Map.filter (not.null) $
+   mapIntersect valIsect seeq =
+      Map.filter (not.null) .:
          Map.intersectionWith (genericIntersectionWith valIsect seeq)
-                              m1 m2
 
    mk valIsect seeq v v' p m m' =
       let vi = valIsect v v'
@@ -826,7 +825,7 @@ genericIntersectionWithKey = main DL.empty
 
    flipp :: ((x -> y -> z) -> st x -> st y -> st z)
          -> ((y -> x -> z) -> st y -> st x -> st z)
-   flipp f g = flip $ f (flip g)
+   flipp f = flip . f . flip
 
    -- See intersectionWith: this explicit type is necessary
    go :: (Alt st z, Boolable (st z))
@@ -908,7 +907,7 @@ splitLookup xs tr =
                             in (mk v pre ml', v', mk altEmpty pre mg')
             _ -> can'tHappen
  where
-   mk v pre m = tryCompress (mkTrie v pre m)
+   mk v pre = tryCompress . mkTrie v pre
    can'tHappen = error "Data.Trie.Patricia.Base.splitLookup :: internal error"
 
 -- * Mapping
