@@ -105,11 +105,8 @@ lookupWithDefault :: (Alt st a, Trie trie st map k)
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
 -- O(min(n1,n2))
-isSubmapOfBy :: ( Boolable (st a), Boolable (st b)
-                , Alt st Bool
-                , Trie trie st map k
-                )
-             => (st a -> st b -> st Bool)
+isSubmapOfBy :: (Boolable (st a), Boolable (st b) , Trie trie st map k)
+             => (st a -> st b -> Bool)
              -> trie map k a
              -> trie map k b
              -> Bool
@@ -122,8 +119,8 @@ isSubmapOfBy f_ trl trr =
             -- Special case here: if the left trie is empty we return True.
             PostFix (Right _) -> null trl
             PostFix (Left xs) -> go f_ mr vl ml xs
-            Same              -> (unwrap $ f_ vl vr <|> pure True)
-                              && Map.isSubmapOfBy (isSubmapOfBy f_) ml mr
+            Same              ->
+               f_ vl vr && Map.isSubmapOfBy (isSubmapOfBy f_) ml mr
  where
    go f mr vl ml (x:xs) =
       case Map.lookup mr x of
@@ -135,18 +132,14 @@ isSubmapOfBy f_ trl trr =
                      PostFix (Right _) -> False
                      PostFix (Left ys) -> go f mr' vl ml ys
                      Same              ->
-                        (unwrap $ f vl vr <|> pure True) &&
-                        Map.isSubmapOfBy (isSubmapOfBy f) ml mr'
+                        f vl vr && Map.isSubmapOfBy (isSubmapOfBy f) ml mr'
 
    go _ _ _ _ [] =
       error "Data.Trie.Patricia.Base.isSubmapOfBy :: internal error"
 
 -- O(min(n1,n2))
-isProperSubmapOfBy :: ( Boolable (st a), Boolable (st b)
-                      , Alt st Bool
-                      , Trie trie st map k
-                      )
-                   => (st a -> st b -> st Bool)
+isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
+                   => (st a -> st b -> Bool)
                    -> trie map k a
                    -> trie map k b
                    -> Bool
@@ -187,10 +180,9 @@ isProperSubmapOfBy = f False
                        , noValue vl && hasValue vr
                        , not (Map.null $ Map.difference mr ml)
                        ]
-       in (unwrap $ g vl vr <|> pure True) &&
-          if Map.null ml
-             then proper'
-             else Map.isSubmapOfBy (f proper' g) ml mr
+       in g vl vr && if Map.null ml
+                        then proper'
+                        else Map.isSubmapOfBy (f proper' g) ml mr
 
 -- * Construction
 
