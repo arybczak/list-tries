@@ -135,8 +135,8 @@ isSubmapOfBy f_ trl trr =
                      PostFix (Right _) -> False
                      PostFix (Left ys) -> go f mr' vl ml ys
                      Same              ->
-                        (unwrap $ f vl vr <|> pure True)
-                     && Map.isSubmapOfBy (isSubmapOfBy f) ml mr'
+                        (unwrap $ f vl vr <|> pure True) &&
+                        Map.isSubmapOfBy (isSubmapOfBy f) ml mr'
 
    go _ _ _ _ [] =
       error "Data.Trie.Patricia.Base.isSubmapOfBy :: internal error"
