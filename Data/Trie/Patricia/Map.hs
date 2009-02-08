@@ -29,9 +29,8 @@
 
 module Data.Trie.Patricia.Map (MAP_EXPORTS) where
 
-import Control.Applicative ((<*>),(<$>),(<|>))
+import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
-import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
 import qualified Data.Foldable as F
@@ -141,8 +140,7 @@ isSubmapOf = isSubmapOfBy (==)
 -- O(min(n1,n2))
 isSubmapOfBy :: Map map k
              => (a -> b -> Bool) -> TrieMap map k a -> TrieMap map k b -> Bool
-isSubmapOfBy f = Base.isSubmapOfBy
-                    (\a b -> Maybe.fromJust $ liftM2 f a b <|> Just True)
+isSubmapOfBy = Base.isSubmapOfBy
 
 -- O(min(n1,n2))
 isProperSubmapOf :: (Map map k, Eq a)
@@ -154,8 +152,7 @@ isProperSubmapOfBy :: Map map k => (a -> b -> Bool)
                                 -> TrieMap map k a
                                 -> TrieMap map k b
                                 -> Bool
-isProperSubmapOfBy f = Base.isProperSubmapOfBy
-                          (\a b -> Maybe.fromJust $ liftM2 f a b <|> Just True)
+isProperSubmapOfBy = Base.isProperSubmapOfBy
 
 -- * Construction
 

@@ -120,12 +120,11 @@ notMember = Base.notMember .:. unTS
 
 -- O(min(n1,n2))
 isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
-isSubsetOf = Base.isSubmapOfBy (\(Id l) (Id r) -> not (l && not r)) `on` unTS
+isSubsetOf = Base.isSubmapOfBy (&&) `on` unTS
 
 -- O(min(n1,n2))
 isProperSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
-isProperSubsetOf = Base.isProperSubmapOfBy (\(Id l) (Id r) -> not (l && not r))
-                   `on` unTS
+isProperSubsetOf = Base.isProperSubmapOfBy (&&) `on` unTS
 
 -- * Construction
 

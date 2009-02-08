@@ -106,7 +106,7 @@ lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
 -- O(min(n1,n2))
 isSubmapOfBy :: (Boolable (st a), Boolable (st b) , Trie trie st map k)
-             => (st a -> st b -> Bool)
+             => (a -> b -> Bool)
              -> trie map k a
              -> trie map k b
              -> Bool
@@ -119,8 +119,7 @@ isSubmapOfBy f_ trl trr =
             -- Special case here: if the left trie is empty we return True.
             PostFix (Right _) -> null trl
             PostFix (Left xs) -> go f_ mr vl ml xs
-            Same              ->
-               f_ vl vr && Map.isSubmapOfBy (isSubmapOfBy f_) ml mr
+            Same              -> same f_ vl vr ml mr
  where
    go f mr vl ml (x:xs) =
       case Map.lookup mr x of
@@ -131,15 +130,22 @@ isSubmapOfBy f_ trl trr =
                      DifferedAt _ _ _  -> False
                      PostFix (Right _) -> False
                      PostFix (Left ys) -> go f mr' vl ml ys
-                     Same              ->
-                        f vl vr && Map.isSubmapOfBy (isSubmapOfBy f) ml mr'
+                     Same              -> same f vl vr ml mr'
 
    go _ _ _ _ [] =
       error "Data.Trie.Patricia.Base.isSubmapOfBy :: internal error"
 
+   same f vl vr ml mr =
+      let hvl = hasValue vl
+          hvr = hasValue vr
+       in and [ not (hvl && not hvr)
+              , (not hvl && not hvr) || f_ (unwrap vl) (unwrap vr)
+              , Map.isSubmapOfBy (isSubmapOfBy f) ml mr
+              ]
+
 -- O(min(n1,n2))
 isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
-                   => (st a -> st b -> Bool)
+                   => (a -> b -> Bool)
                    -> trie map k a
                    -> trie map k b
                    -> Bool
@@ -173,16 +179,22 @@ isProperSubmapOfBy = f False
    go _ _ _ _ _ [] =
       error "Data.Trie.Patricia.Base.isProperSubmapOfBy :: internal error"
 
-   same _      _ vl vr _  _  | hasValue vl && noValue vr = False
    same proper g vl vr ml mr =
-      -- As the non-Patricia version, so does this seem suboptimal.
-      let proper' = or [ proper
-                       , noValue vl && hasValue vr
+      let hvl = hasValue vl
+          hvr = hasValue vr
+
+          -- As the non-Patricia version, so does this seem suboptimal.
+          proper' = or [ proper
+                       , not hvl && hvr
                        , not (Map.null $ Map.difference mr ml)
                        ]
-       in g vl vr && if Map.null ml
-                        then proper'
-                        else Map.isSubmapOfBy (f proper' g) ml mr
+
+       in and [ not (hvl && not hvr)
+              , (not hvl && not hvr) || g (unwrap vl) (unwrap vr)
+              , if Map.null ml
+                   then proper'
+                   else Map.isSubmapOfBy (f proper' g) ml mr
+              ]
 
 -- * Construction
 
