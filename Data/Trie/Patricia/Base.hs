@@ -105,7 +105,7 @@ lookupWithDefault :: (Alt st a, Trie trie st map k)
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
 -- O(min(n1,n2))
-isSubmapOfBy :: (Boolable (st a), Boolable (st b) , Trie trie st map k)
+isSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
              => (a -> b -> Bool)
              -> trie map k a
              -> trie map k b

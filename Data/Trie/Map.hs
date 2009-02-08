@@ -31,7 +31,6 @@ module Data.Trie.Map (MAP_EXPORTS) where
 
 import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
-import Control.Monad       (liftM2)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
 import qualified Data.Foldable as F
@@ -129,7 +128,7 @@ isSubmapOf = isSubmapOfBy (==)
 -- O(min(n1,n2))
 isSubmapOfBy :: Map map k
              => (a -> b -> Bool) -> TrieMap map k a -> TrieMap map k b -> Bool
-isSubmapOfBy f = Base.isSubmapOfBy (liftM2 f)
+isSubmapOfBy = Base.isSubmapOfBy
 
 -- O(min(n1,n2))
 isProperSubmapOf :: (Map map k, Eq a)
@@ -141,7 +140,7 @@ isProperSubmapOfBy :: Map map k => (a -> b -> Bool)
                                 -> TrieMap map k a
                                 -> TrieMap map k b
                                 -> Bool
-isProperSubmapOfBy f = Base.isProperSubmapOfBy (liftM2 f)
+isProperSubmapOfBy = Base.isProperSubmapOfBy
 
 -- * Construction
 

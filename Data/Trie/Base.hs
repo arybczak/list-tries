@@ -124,28 +124,24 @@ lookupWithDefault :: (Alt st a, Trie trie st map k)
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
 -- O(min(n1,n2))
-isSubmapOfBy :: ( Boolable (st a), Boolable (st b)
-                , Alt st Bool
-                , Trie trie st map k
-                )
-             => (st a -> st b -> st Bool)
+isSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
+             => (a -> b -> Bool)
              -> trie map k a
              -> trie map k b
              -> Bool
 isSubmapOfBy f tr1 tr2 =
    let (v1,m1) = tParts tr1
        (v2,m2) = tParts tr2
-    in and [ not (hasValue v1 && noValue v2)
-           , unwrap $ f v1 v2 <|> pure True
+       hv1     = hasValue v1
+       hv2     = hasValue v2
+    in and [ not (hv1 && not hv2)
+           , (not hv1 && not hv2) || f (unwrap v1) (unwrap v2)
            , Map.isSubmapOfBy (isSubmapOfBy f) m1 m2
            ]
 
 -- O(min(n1,n2))
-isProperSubmapOfBy :: ( Boolable (st a), Boolable (st b)
-                      , Alt st Bool
-                      , Trie trie st map k
-                      )
-                   => (st a -> st b -> st Bool)
+isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
+                   => (a -> b -> Bool)
                    -> trie map k a
                    -> trie map k b
                    -> Bool
@@ -154,13 +150,15 @@ isProperSubmapOfBy = go False
    go proper f tr1 tr2 =
       let (v1,m1) = tParts tr1
           (v2,m2) = tParts tr2
+          hv1     = hasValue v1
+          hv2     = hasValue v2
           -- This seems suboptimal but I can't think of anything better
           proper' = or [ proper
                        , noValue v1 && hasValue v2
                        , not (Map.null $ Map.difference m2 m1)
                        ]
-       in and [ not (hasValue v1 && noValue v2)
-              , unwrap $ f v1 v2 <|> pure True
+       in and [ not (hv1 && not hv2)
+              , (not hv1 && not hv2) || f (unwrap v1) (unwrap v2)
               , if Map.null m1
                    then proper'
                    else Map.isSubmapOfBy (go proper' f) m1 m2
