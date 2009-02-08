@@ -27,6 +27,14 @@ $(makeFunc allTries ["null","empty"] [d|
    nullEmpty null empty = null (empty :: TrieType)
  |])
 
+$(makeFunc setsOnly ["fromList","isSubsetOf"] [d|
+   isSubsetOf1 fromList isSubsetOf =
+      (fromList ["cameroon","camera"] :: TrieType)
+      `isSubsetOf`
+      fromList ["cameroon","camera","camel","camouflage","cat"]
+ |])
+
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
+   , $(makeCases setsOnly "isSubsetOf1")
    ]
