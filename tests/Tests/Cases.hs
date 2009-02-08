@@ -40,9 +40,17 @@ $(makeFunc setsOnly ["fromList","isSubsetOf"] [d|
          `isSubsetOf`
          fromList ["cameroon","camera","camel","camouflage","cat"]
  |])
+$(makeFunc mapsOnly ["fromList","isSubmapOf"] [d|
+   isSubmapOf1 fromList isSubmapOf =
+      not $
+         (fromList (zip ["cameroon","camera","came"] [0..]) :: TrieType)
+         `isSubmapOf`
+         fromList (zip ["cameroon","camera","camel","camouflage","cat"] [0..])
+ |])
 
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
    , $(makeCases setsOnly "isSubsetOf1")
    , $(makeCases setsOnly "isSubsetOf2")
+   , $(makeCases mapsOnly "isSubmapOf1")
    ]
