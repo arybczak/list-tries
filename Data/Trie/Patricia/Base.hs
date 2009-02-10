@@ -589,11 +589,13 @@ differenceWithKey = go DL.empty
        in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
                DifferedAt _ _ _   -> tr1
                Same               -> mk j_ k v1 v2 pre1 m1 m2
-               PostFix (Left  xs) -> goRight k j_ tr1 m2  xs
-               PostFix (Right xs) -> goLeft  k j_ tr1 tr2 xs
+               PostFix (Left  xs) -> goRight (key k pre2) j_ tr1 m2  xs
+               PostFix (Right xs) -> goLeft  (key k pre1) j_ tr1 tr2 xs
 
    mapDifference k j =
       Map.differenceWithKey (\x -> dw (k `DL.snoc` x) j)
+
+   key k p = k `DL.append` DL.fromList p
 
    dw k j a b =
       let c = go k j a b
@@ -605,16 +607,19 @@ differenceWithKey = go DL.empty
        in tryCompress.mkTrie vd p $ mapDifference k' j m m'
 
    goRight k j left rightMap (x:xs) =
-      let (v,pre,m) = tParts left
+      let (vl,_,ml) = tParts left
        in case Map.lookup rightMap x of
                Nothing    -> left
                Just right ->
-                  let (v',pre',m') = tParts right
-                   in case comparePrefixes (Map.eqCmp m) xs pre' of
+                  let (vr,pre,mr) = tParts right
+                      k'          = k `DL.snoc` x
+                   in case comparePrefixes (Map.eqCmp ml) xs pre of
                            DifferedAt _ _ _   -> left
-                           Same               -> mk j k v v' pre m m'
-                           PostFix (Left  ys) -> goRight k j left m'    ys
-                           PostFix (Right ys) -> goLeft  k j left right ys
+                           Same               -> mk j k' vl vr pre ml mr
+                           PostFix (Left  ys) -> goRight (key k' pre)
+                                                         j left mr    ys
+                           PostFix (Right ys) -> goLeft  (key k' xs)
+                                                         j left right ys
 
    goRight _ _ _ _ [] = can'tHappen
 
@@ -624,13 +629,17 @@ differenceWithKey = go DL.empty
       (vl,prel,ml) = tParts left
       (vr,   _,mr) = tParts right
 
+      k' = k `DL.snoc` x
+
       f left' =
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
                   DifferedAt _ _ _   -> Just left'
-                  Same               -> tryNull $ mk j k v vr pre m mr
-                  PostFix (Left  ys) -> tryNull $ goRight k j left' mr    ys
-                  PostFix (Right ys) -> tryNull $ goLeft  k j left' right ys
+                  Same               -> tryNull $ mk j k' v vr pre m mr
+                  PostFix (Left  ys) -> tryNull $ goRight (key k' xs)
+                                                          j left' mr    ys
+                  PostFix (Right ys) -> tryNull $ goLeft  (key k' pre)
+                                                          j left' right ys
 
       tryNull t = if null t then Nothing else Just t
 
