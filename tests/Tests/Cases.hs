@@ -59,6 +59,18 @@ $(makeFunc mapsOnly ["fromList","alter"] [d|
        in alter id "x" x == x
  |])
 
+-- A couple of simple sanity tests for the *WithKey set operations since they
+-- don't have properties at all
+$(makeFunc mapsOnly ["fromList","unionWithKey"] [d|
+   unionWithKey1 fromList unionWithKey =
+      let al = ["tom","tome","tomatoes","fork"]
+          bl = ["tom","tomb","tomes","tomato","fark"]
+          a = fromList $ zip al [1..] :: TrieType
+          b = fromList $ zip bl [length al..]
+       in unionWithKey (\k vl vr -> vl + vr + length k) a b
+          == fromList (("tom",3+1+length al) : zip (tail al ++ tail bl) [2..])
+ |])
+
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
    , $(makeCases setsOnly "isSubsetOf1")
@@ -66,4 +78,5 @@ tests = testGroup "Individual cases"
    , $(makeCases mapsOnly "isSubmapOf1")
    , $(makeCases mapsOnly "alter1")
    , $(makeCases mapsOnly "alter2")
+   , $(makeCases mapsOnly "unionWithKey1")
    ]
