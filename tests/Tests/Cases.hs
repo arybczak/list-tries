@@ -48,9 +48,22 @@ $(makeFunc mapsOnly ["fromList","isSubmapOf"] [d|
          fromList (zip ["cameroon","camera","camel","camouflage","cat"] [0..])
  |])
 
+$(makeFunc mapsOnly ["fromList","alter"] [d|
+   alter1 fromList alter =
+      alter (\Nothing -> Just 42) "foo" (fromList [("foobar",0)] :: TrieType)
+      == fromList [("foo",42),("foobar",0)]
+ |])
+$(makeFunc mapsOnly ["fromList","alter"] [d|
+   alter2 fromList alter =
+      let x = fromList [("xxx",0)] :: TrieType
+       in alter id "x" x == x
+ |])
+
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
    , $(makeCases setsOnly "isSubsetOf1")
    , $(makeCases setsOnly "isSubsetOf2")
    , $(makeCases mapsOnly "isSubmapOf1")
+   , $(makeCases mapsOnly "alter1")
+   , $(makeCases mapsOnly "alter2")
    ]
