@@ -14,7 +14,9 @@
 	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
 	findPredecessor, findSuccessor, \
 	\
-	addPrefix, splitPrefix, lookupPrefix
+	addPrefix, splitPrefix, lookupPrefix, \
+	\
+	showTrie
 
 #define SET_EXPORTS TrieSet, COMMON_EXPORTS, \
 	isSubsetOf, isProperSubsetOf, \
@@ -64,4 +66,6 @@
 	foldlDesc', foldlDescWithKey', \
 	\
 	fromListWith,  fromListWithKey, \
-	fromListWith', fromListWithKey'
+	fromListWith', fromListWithKey', \
+	\
+	showTrieWith

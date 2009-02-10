@@ -710,3 +710,14 @@ splitPrefix = Base.splitPrefix
 -- O(m)
 lookupPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 lookupPrefix = Base.lookupPrefix
+
+-- * Visualization
+
+showTrie :: (Show k, Show a, Map map k) => TrieMap map k a -> ShowS
+showTrie = Base.showTrieWith $ \mv -> case mv of
+                                           Nothing -> showChar ' '
+                                           Just v  -> showsPrec 11 v
+
+showTrieWith :: (Show k, Map map k)
+             => (Maybe a -> ShowS) -> TrieMap map k a -> ShowS
+showTrieWith = Base.showTrieWith

@@ -281,3 +281,9 @@ splitPrefix = second TS . Base.splitPrefix . unTS
 -- O(m)
 lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 lookupPrefix = TS .: Base.lookupPrefix .:. unTS
+
+-- * Visualization
+
+showTrie :: (Show a, Map map a) => TrieSet map a -> ShowS
+showTrie = Base.showTrieWith (\(Id b) -> showChar $ if b then 'X' else ' ')
+         . unTS

@@ -25,6 +25,7 @@ module Data.Trie.Patricia.Base
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
    , addPrefix, splitPrefix, lookupPrefix
+   , showTrieWith
    ) where
 
 import Control.Applicative (Applicative(..), (<$>))
@@ -34,7 +35,7 @@ import qualified Data.DList as DL
 import Data.DList          (DList)
 import Data.List           (foldl', partition)
 import Data.Maybe          (fromJust, isJust)
-import Prelude hiding      (lookup, filter, foldr, null, map)
+import Prelude hiding      (lookup, filter, null)
 import qualified Prelude
 
 import qualified Data.Trie.Base.Map as Map
@@ -918,7 +919,7 @@ mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
             -> ([k1] -> [k2])
             -> trie map k1 a
             -> trie map k2 a
-mapKeysWith fromlist f = fromlist . Prelude.map (first f) . toList
+mapKeysWith fromlist f = fromlist . map (first f) . toList
 
 -- O(n)
 mapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
@@ -930,9 +931,9 @@ mapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
              -> trie map k2 a
 mapInKeysWith j f tr =
    let (v,p,m) = tParts tr
-    in mkTrie v (Prelude.map f p) $
+    in mkTrie v (map f p) $
           Map.fromListWith (unionWith j) .
-             Prelude.map (f *** mapInKeysWith j f) .
+             map (f *** mapInKeysWith j f) .
           Map.toList $ m
 
 -- * Folding
@@ -940,17 +941,17 @@ mapInKeysWith j f tr =
 -- O(n)
 foldrWithKey :: (Boolable (st a), Trie trie st map k)
             => ([k] -> a -> b -> b) -> b -> trie map k a -> b
-foldrWithKey f x = Prelude.foldr (uncurry f) x . toList
+foldrWithKey f x = foldr (uncurry f) x . toList
 
 -- O(n)
 foldrAscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                => ([k] -> a -> b -> b) -> b -> trie map k a -> b
-foldrAscWithKey f x = Prelude.foldr (uncurry f) x . toAscList
+foldrAscWithKey f x = foldr (uncurry f) x . toAscList
 
 -- O(n)
 foldrDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
-foldrDescWithKey f x = Prelude.foldr (uncurry f) x . toDescList
+foldrDescWithKey f x = foldr (uncurry f) x . toDescList
 
 -- O(n)
 foldlWithKey' :: (Boolable (st a), Trie trie st map k)
@@ -995,7 +996,7 @@ genericToList f_ g_ = DL.toList . go DL.empty f_ g_
           l'      = l `DL.append` DL.fromList p
           xs      =
              DL.concat .
-             Prelude.map (\(x,t) -> go (l' `DL.snoc` x) tolist add t) .
+             map (\(x,t) -> go (l' `DL.snoc` x) tolist add t) .
              tolist $ m
        in if hasValue v
              then add (DL.toList l', unwrap v) xs
@@ -1193,6 +1194,33 @@ lookupPrefix xs tr =
                     Just tr' -> lookupPrefix ys tr'
 
             _ -> error "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
+
+-- * Visualization
+
+showTrieWith :: (Show k, Trie trie st map k)
+             => (st a -> ShowS) -> trie map k a -> ShowS
+showTrieWith = go 0
+ where
+   go indent f tr =
+      let (v,pre,m) = tParts tr
+          spre      = shows pre
+          lpre      = length (spre [])
+          sv        = f v
+          lv        = length (sv [])
+       in spre . showChar ' '
+        . sv . showChar ' '
+        . (foldr (.) id . zipWith (flip ($)) (False : repeat True) $
+              map (\(k,t) -> \b -> let sk = shows k
+                                       lk = length (sk [])
+                                       i  = indent + lpre + lv + 2
+                                    in (if b
+                                           then showChar '\n'
+                                              . showString (replicate i ' ')
+                                           else id)
+                                     . showString "-> "
+                                     . sk . showChar ' '
+                                     . go (i + lk + 4) f t)
+                  (Map.toList m))
 
 -- helpers
 
