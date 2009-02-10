@@ -88,6 +88,15 @@ $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
        in differenceWithKey (\k vl vr -> Just $ vl + vr + length k) a b
           == fromList (("shiner",6+1+length al) : zip (tail al) [2..])
  |])
+$(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
+   differenceWithKey3 fromList differenceWithKey =
+      let al = ["mar","marks","marksman","marksman's bow"]
+          bl = ["mark","marksman's","marksman's bow"]
+          a = fromList $ zip al [1..] :: TrieType
+          b = fromList $ zip bl [length al..]
+       in differenceWithKey (\_ _ _ -> Nothing) a b
+          == fromList (zip (init al) [1..])
+ |])
 
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
@@ -99,4 +108,5 @@ tests = testGroup "Individual cases"
    , $(makeCases mapsOnly "unionWithKey1")
    , $(makeCases mapsOnly "differenceWithKey1")
    , $(makeCases mapsOnly "differenceWithKey2")
+   , $(makeCases mapsOnly "differenceWithKey3")
    ]
