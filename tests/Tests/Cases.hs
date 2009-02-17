@@ -4,6 +4,7 @@
 
 module Tests.Cases (tests) where
 
+import Control.Monad                  (join)
 import Test.Framework                 (testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.HUnit                     (assert)
@@ -20,6 +21,8 @@ import qualified Data.Trie.Patricia.Set.Enum
 import qualified Data.Trie.Patricia.Map.Eq
 import qualified Data.Trie.Patricia.Map.Ord
 import qualified Data.Trie.Patricia.Map.Enum
+
+import Data.Trie.Util
 
 import Tests.TH
 
@@ -97,6 +100,16 @@ $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
        in differenceWithKey (\_ _ _ -> Nothing) a b
           == fromList (zip (init al) [1..])
  |])
+$(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
+   intersectionWithKey1 fromList intersectionWithKey =
+      let al = ["cat","caterers","caterwauling","caterer"]
+          bl = ["cat","caterers","c","caterwauler"]
+          a = fromList $ zip al [1..] :: TrieType
+          b = fromList $ zip bl [length al..]
+       in intersectionWithKey (\k vl vr -> length k + vl + vr) a b
+          == fromList (zip ["cat","caterers"] $
+                zipWith3 (join (.:) (+)) [1..] [length al..] (map length al))
+ |])
 
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
@@ -109,4 +122,5 @@ tests = testGroup "Individual cases"
    , $(makeCases mapsOnly "differenceWithKey1")
    , $(makeCases mapsOnly "differenceWithKey2")
    , $(makeCases mapsOnly "differenceWithKey3")
+   , $(makeCases mapsOnly "intersectionWithKey1")
    ]
