@@ -831,7 +831,8 @@ genericIntersectionWithKey = main DL.empty
                                     mapIntersect k' valIsect seeq j m m')
 
    mapIntersect k valIsect seeq j =
-      Map.intersectionWithKey (\x -> main (k `DL.snoc` x) valIsect seeq j)
+      Map.filter (not.null) .:
+         Map.intersectionWithKey (\x -> main (k `DL.snoc` x) valIsect seeq j)
 
    flipp :: ((x -> y -> z) -> st x -> st y -> st z)
          -> ((y -> x -> z) -> st y -> st x -> st z)

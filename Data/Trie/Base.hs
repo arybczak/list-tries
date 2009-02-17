@@ -458,8 +458,9 @@ genericIntersectionWithKey = go DL.empty
    go k valIntersection seeq f tr1 tr2 =
       tr seeq
          (onVals (valIntersection (f $ DL.toList k)) tr1 tr2)
-         (onMaps (Map.intersectionWithKey $
-                     \x -> go (k `DL.snoc` x) valIntersection seeq f)
+         (onMaps (Map.filter (not.null) .:
+                     Map.intersectionWithKey
+                        (\x -> go (k `DL.snoc` x) valIntersection seeq f))
                  tr1 tr2)
 
    tr seeq v m =
