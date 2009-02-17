@@ -110,6 +110,14 @@ $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
           == fromList (zip ["cat","caterers"] $
                 zipWith3 (join (.:) (+)) [1..] [length al..] (map length al))
  |])
+$(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
+   intersectionWithKey2 fromList intersectionWithKey =
+      let al = ["wa","wart","wartortle"]
+          bl = ["w","wartor","wartortles","wartortle army"]
+          a = fromList $ zip al [1..]
+          b = fromList $ zip bl [length al..]
+       in intersectionWithKey undefined a b == (fromList [] :: TrieType)
+ |])
 
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
@@ -123,4 +131,5 @@ tests = testGroup "Individual cases"
    , $(makeCases mapsOnly "differenceWithKey2")
    , $(makeCases mapsOnly "differenceWithKey3")
    , $(makeCases mapsOnly "intersectionWithKey1")
+   , $(makeCases mapsOnly "intersectionWithKey2")
    ]
