@@ -272,6 +272,20 @@ $(makeFunc allTries ["split","findMin","findSuccessor"] [d|
        in findMin b == findSuccessor m k
  |])
 
+-- The centre of a splitLookup/Member is the result of a lookup/member
+$(makeFunc mapsOnly ["splitLookup","lookup"] [d|
+   prop_splitLookup1 splitLookup lookup m k_ =
+      let k = unArb k_
+          (_,v,_) = splitLookup k (m :: TrieType)
+       in v == lookup k m
+ |])
+$(makeFunc setsOnly ["splitMember","member"] [d|
+   prop_splitMember1 splitMember member m k_ =
+      let k = unArb k_
+          (_,v,_) = splitMember k (m :: TrieType)
+       in v == member k m
+ |])
+
 -- toList (map trie) should be equivalent to map (toList trie)
 -- modulo ordering, hence toAscList
 --
@@ -424,6 +438,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_partition1")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
+   , $(makeProps mapsOnly "prop_splitLookup1")
+   , $(makeProps setsOnly "prop_splitMember1")
    , $(makeProps setsOnly "prop_mapKeys1_s")
    , $(makeProps mapsOnly "prop_mapKeys1_m")
    , $(makeProps setsOnly "prop_mapInKeys1_s")
