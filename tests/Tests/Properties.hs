@@ -246,6 +246,17 @@ $(makeFunc allTries ["union","difference","intersection"] [d|
       complement = difference c
  |])
 
+-- Partition is equivalent to two filters
+--
+-- #2956 avoidance
+$(makeFunc mapsOnly ["filter","partition"] [d|
+   prop_partition1 filter partition m =
+      let (a,b) = partition p (m :: TrieType)
+       in a == filter p m && b == filter (not.p) m
+    where
+      p = (==) 0 . flip mod 2
+ |])
+
 -- The maximum of the left side of a split about k is the predecessor of k
 $(makeFunc allTries ["split","findMax","findPredecessor"] [d|
    prop_splitMaxPredecessor split findMax findPredecessor m k_ =
@@ -410,6 +421,7 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_intersection2")
    , $(makeProps allTries "prop_deMorgan1")
    , $(makeProps allTries "prop_deMorgan2")
+   , $(makeProps mapsOnly "prop_partition1")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
    , $(makeProps setsOnly "prop_mapKeys1_s")
