@@ -257,6 +257,24 @@ $(makeFunc mapsOnly ["filter","partition"] [d|
       p = (==) 0 . flip mod 2
  |])
 
+-- mapMaybe can function as a filter and mapEither as a partition
+--
+-- #2956 avoidance
+$(makeFunc mapsOnly ["mapMaybe","filter"] [d|
+   prop_mapMaybe1 mapMaybe filter m =
+      mapMaybe (\x -> if p x then Just x else Nothing) m
+         == filter p (m :: TrieType)
+    where
+      p = (==) 0 . flip mod 2
+ |])
+$(makeFunc mapsOnly ["mapEither","partition"] [d|
+   prop_mapEither1 mapEither partition m =
+      mapEither (\x -> if p x then Left x else Right x) m
+         == partition p (m :: TrieType)
+    where
+      p = (==) 0 . flip mod 2
+ |])
+
 -- The maximum of the left side of a split about k is the predecessor of k
 $(makeFunc allTries ["split","findMax","findPredecessor"] [d|
    prop_splitMaxPredecessor split findMax findPredecessor m k_ =
@@ -442,6 +460,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_deMorgan1")
    , $(makeProps allTries "prop_deMorgan2")
    , $(makeProps mapsOnly "prop_partition1")
+   , $(makeProps mapsOnly "prop_mapMaybe1")
+   , $(makeProps mapsOnly "prop_mapEither1")
    , $(makeProps allTries "prop_splitMaxPredecessor")
    , $(makeProps allTries "prop_splitMinSuccessor")
    , $(makeProps mapsOnly "prop_splitLookup1")
