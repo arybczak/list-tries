@@ -291,28 +291,28 @@ $(makeFunc setsOnly ["splitMember","member"] [d|
 --
 -- #2956 avoidance
 $(makeFunc setsOnly ["map","toAscList"] [d|
-    prop_mapKeys1_s map toAscList m =
-       toAscList (map f (m :: TrieType)) ==
-          keyNub (Prelude.map f $ toAscList m)
-     where f = (:) 'x'
+   prop_mapKeys1_s map toAscList m =
+      toAscList (map f (m :: TrieType)) ==
+         keyNub (Prelude.map f $ toAscList m)
+    where f = (:) 'x'
  |])
 $(makeFunc mapsOnly ["mapKeys","toAscList"] [d|
-    prop_mapKeys1_m mapKeys toAscList m =
-       toAscList (mapKeys f (m :: TrieType)) ==
-          keyNub (Prelude.map (first f) $ toAscList m)
-     where f = (:) 'x'
+   prop_mapKeys1_m mapKeys toAscList m =
+      toAscList (mapKeys f (m :: TrieType)) ==
+         keyNub (Prelude.map (first f) $ toAscList m)
+    where f = (:) 'x'
  |])
 $(makeFunc setsOnly ["mapIn","toAscList"] [d|
-    prop_mapInKeys1_s mapIn toAscList m =
-       toAscList (mapIn f (m :: TrieType)) ==
-          keyNub (map (map f) $ toAscList m)
-     where f = toEnum . (+) 1 . fromEnum :: Char -> Char
+   prop_mapInKeys1_s mapIn toAscList m =
+      toAscList (mapIn f (m :: TrieType)) ==
+         keyNub (map (map f) $ toAscList m)
+    where f = toEnum . (+) 1 . fromEnum :: Char -> Char
  |])
 $(makeFunc mapsOnly ["mapInKeys","toAscList"] [d|
-    prop_mapInKeys1_m mapInKeys toAscList m =
-       toAscList (mapInKeys f (m :: TrieType)) ==
-          keyNub (map (first (map f)) $ toAscList m)
-     where f = toEnum . (+) 1 . fromEnum :: Char -> Char
+   prop_mapInKeys1_m mapInKeys toAscList m =
+      toAscList (mapInKeys f (m :: TrieType)) ==
+         keyNub (map (first (map f)) $ toAscList m)
+    where f = toEnum . (+) 1 . fromEnum :: Char -> Char
  |])
 
 -- min/maxView should be equivalent to separately finding and deleting the
