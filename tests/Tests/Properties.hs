@@ -315,6 +315,12 @@ $(makeFunc mapsOnly ["mapInKeys","toAscList"] [d|
     where f = toEnum . (+) 1 . fromEnum :: Char -> Char
  |])
 
+-- toAscList = reverse . toDescList
+$(makeFunc allTries ["toAscList","toDescList"] [d|
+   prop_ascDesc1 toAscList toDescList m =
+      toAscList (m :: TrieType) == reverse (toDescList m)
+ |])
+
 -- min/maxView should be equivalent to separately finding and deleting the
 -- min/max
 $(makeFunc allTries ["minView","findMin","deleteMin"] [d|
@@ -444,6 +450,7 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_mapKeys1_m")
    , $(makeProps setsOnly "prop_mapInKeys1_s")
    , $(makeProps mapsOnly "prop_mapInKeys1_m")
+   , $(makeProps allTries "prop_ascDesc1")
    , $(makeProps allTries "prop_minView1")
    , $(makeProps allTries "prop_maxView1")
    , $(makeProps allTries "prop_findPredecessor1")
