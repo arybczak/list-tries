@@ -28,7 +28,8 @@ import Data.Trie.Util (both, (.:))
 -- * alter
 -- * unionWithKey, differenceWithKey, intersectionWithKey
 -- * foldValues
--- * toList, fromListWith
+-- * toList
+-- * empty or fromList or fromListWith
 -- * isSubmapOfBy
 --
 -- For decent performance, supplying 'mapAccumWithKey' and 'filter' as well is
@@ -46,6 +47,8 @@ class Map m k where
    lookup :: m k a -> k -> Maybe a
 
    insert     ::                  m k a -> k -> a -> m k a
+   -- Strictness can be whatever is more optimal for the map type, shouldn't
+   -- matter
    insertWith :: (a -> a -> a) -> m k a -> k -> a -> m k a
 
    update :: (a -> Maybe a) -> m k a -> k -> m k a
@@ -106,7 +109,9 @@ class Map m k where
 
    filter p = fromList . Prelude.filter (p . snd) . toList
 
-   fromList = fromListWith const
+   -- Should be strict in the keys
+   fromList       = fromListWith const
+   fromListWith f = foldr (\(k,v) m -> insertWith f m k v) empty
 
    singletonView m =
       case toList m of
