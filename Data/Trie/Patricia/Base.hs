@@ -1211,11 +1211,11 @@ addPrefix xs tr =
     in mkTrie v (xs ++ pre) m
 
 -- O(1)
-splitPrefix :: (Alt st a, Trie trie st map k)
-            => trie map k a -> ([k], trie map k a)
+splitPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
+            => trie map k a -> ([k], st a, trie map k a)
 splitPrefix tr =
    let (v,pre,m) = tParts tr
-    in (pre, mkTrie v [] m)
+    in (pre, v, tryCompress $ mkTrie altEmpty [] m)
 
 -- O(m)
 lookupPrefix :: (Alt st a, Trie trie st map k)

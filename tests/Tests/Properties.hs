@@ -376,16 +376,23 @@ $(makeFunc allTries ["findSuccessor","findMax","null"] [d|
          isNothing.findSuccessor (m :: TrieType).getKey.fromJust.findMax $ m
  |])
 
--- Splitting away the common prefix and adding it back should change nothing
-$(makeFunc allTries ["addPrefix","splitPrefix"] [d|
-   prop_prefixOps1 addPrefix splitPrefix m =
-      uncurry addPrefix (splitPrefix m) == (m :: TrieType)
+-- Splitting away the common prefix and adding it and its value back
+-- should change nothing
+$(makeFunc setsOnly ["addPrefix","splitPrefix","insert"] [d|
+   prop_prefixOps1_s addPrefix splitPrefix insert m =
+      let (k,b,t) = splitPrefix (m :: TrieType)
+       in (if b then insert k else id) (addPrefix k t) == m
+ |])
+$(makeFunc mapsOnly ["addPrefix","splitPrefix","insert"] [d|
+   prop_prefixOps1_m addPrefix splitPrefix insert m =
+      let (k,mv,t) = splitPrefix (m :: TrieType)
+       in (case mv of Just v -> insert k v; _ -> id) (addPrefix k t) == m
  |])
 
 -- Looking up the common prefix and then adding it back should change nothing
 $(makeFunc allTries ["addPrefix","splitPrefix","lookupPrefix"] [d|
    prop_prefixOps2 addPrefix splitPrefix lookupPrefix m =
-      let (k,_) = splitPrefix (m :: TrieType)
+      let (k,_,_) = splitPrefix (m :: TrieType)
        in addPrefix k (lookupPrefix k m) == m
  |])
 
@@ -477,7 +484,8 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_findSuccessor1")
    , $(makeProps allTries "prop_findPredecessor2")
    , $(makeProps allTries "prop_findSuccessor2")
-   , $(makeProps allTries "prop_prefixOps1")
+   , $(makeProps setsOnly "prop_prefixOps1_s")
+   , $(makeProps mapsOnly "prop_prefixOps1_m")
    , $(makeProps allTries "prop_prefixOps2")
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")

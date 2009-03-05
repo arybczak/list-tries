@@ -275,8 +275,8 @@ addPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 addPrefix = TS .: Base.addPrefix .:. unTS
 
 -- O(m)
-splitPrefix :: Map map a => TrieSet map a -> ([a], TrieSet map a)
-splitPrefix = second TS . Base.splitPrefix . unTS
+splitPrefix :: Map map a => TrieSet map a -> ([a], Bool, TrieSet map a)
+splitPrefix = (\(k,b,t) -> (k,unwrap b,TS t)) . Base.splitPrefix . unTS
 
 -- O(m)
 lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a

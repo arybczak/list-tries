@@ -751,13 +751,14 @@ addPrefix (x:xs) = mkTrie altEmpty . Map.singleton x . addPrefix xs
 
 -- O(m)
 splitPrefix :: (Alt st a, Trie trie st map k)
-            => trie map k a -> ([k], trie map k a)
+            => trie map k a -> ([k], st a, trie map k a)
 splitPrefix = go DL.empty
  where
    go xs tr =
       case Map.singletonView (tMap tr) of
            Just (x,tr') -> go (xs `DL.snoc` x) tr'
-           Nothing      -> (DL.toList xs, tr)
+           Nothing      -> let (v,m) = tParts tr
+                            in (DL.toList xs, v, mkTrie altEmpty m)
 
 -- O(m)
 lookupPrefix :: (Alt st a, Trie trie st map k)

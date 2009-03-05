@@ -715,7 +715,7 @@ addPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 addPrefix = Base.addPrefix
 
 -- O(m)
-splitPrefix :: Map map k => TrieMap map k a -> ([k], TrieMap map k a)
+splitPrefix :: Map map k => TrieMap map k a -> ([k], Maybe a, TrieMap map k a)
 splitPrefix = Base.splitPrefix
 
 -- O(m)
