@@ -24,7 +24,7 @@ module Data.Trie.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, lookupPrefix
+   , addPrefix, splitPrefix, lookupPrefix, children
    , showTrieWith
    ) where
 
@@ -768,6 +768,13 @@ lookupPrefix (x:xs) tr =
    case Map.lookup (tMap tr) x of
         Nothing  -> empty
         Just tr' -> lookupPrefix xs tr'
+
+-- O(m)
+children :: Trie trie st map k => trie map k a -> [(k, trie map k a)]
+children tr = let m = tMap tr
+               in case Map.singletonView m of
+                       Just (_, tr') -> children tr'
+                       Nothing       -> Map.toList m
 
 -- * Visualization
 

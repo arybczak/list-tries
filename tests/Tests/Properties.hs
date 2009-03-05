@@ -396,6 +396,32 @@ $(makeFunc allTries ["addPrefix","splitPrefix","lookupPrefix"] [d|
        in addPrefix k (lookupPrefix k m) == m
  |])
 
+-- Splitting away the prefix shouldn't affect the children
+$(makeFunc allTries ["splitPrefix","children"] [d|
+   prop_prefixOps3 splitPrefix children t =
+      let (_,_,t') = splitPrefix (t :: TrieType)
+       in children t == children t'
+ |])
+
+-- Adding the common prefix and value to the union of the children should give
+-- back the original trie
+$(makeFunc setsOnly ["addPrefix","splitPrefix","children","unions","insert"]
+ [d|
+   prop_prefixOps4_s addPrefix splitPrefix children unions insert t =
+      let (k,b,_) = splitPrefix (t :: TrieType)
+       in t == ((if b then insert k else id) . addPrefix k .
+                   unions $ map (uncurry $ addPrefix . return)
+                                (children t))
+ |])
+$(makeFunc mapsOnly ["addPrefix","splitPrefix","children","unions","insert"]
+ [d|
+   prop_prefixOps4_m addPrefix splitPrefix children unions insert t =
+      let (k,mv,_) = splitPrefix (t :: TrieType)
+       in t == ((case mv of Just v -> insert k v; _ -> id) . addPrefix k .
+                   unions $ map (uncurry $ addPrefix . return)
+                                (children t))
+ |])
+
 -- The monoid laws: associativity, left identity, right identity
 $(makeFunc allTries [] [d|
    prop_monoidLaw1 x y z =
@@ -487,6 +513,9 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps setsOnly "prop_prefixOps1_s")
    , $(makeProps mapsOnly "prop_prefixOps1_m")
    , $(makeProps allTries "prop_prefixOps2")
+   , $(makeProps allTries "prop_prefixOps3")
+   , $(makeProps setsOnly "prop_prefixOps4_s")
+   , $(makeProps mapsOnly "prop_prefixOps4_m")
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")

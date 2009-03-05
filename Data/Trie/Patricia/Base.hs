@@ -24,7 +24,7 @@ module Data.Trie.Patricia.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, lookupPrefix
+   , addPrefix, splitPrefix, lookupPrefix, children
    , showTrieWith
    ) where
 
@@ -1232,6 +1232,10 @@ lookupPrefix xs tr =
                     Just tr' -> lookupPrefix ys tr'
 
             _ -> error "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
+
+-- O(1)
+children :: Trie trie st map k => trie map k a -> [(k, trie map k a)]
+children = Map.toList . tMap
 
 -- * Visualization
 

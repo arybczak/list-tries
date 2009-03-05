@@ -290,6 +290,10 @@ splitPrefix = (\(k,b,t) -> (k,unwrap b,TS t)) . Base.splitPrefix . unTS
 lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 lookupPrefix = TS .: Base.lookupPrefix .:. unTS
 
+-- O(1)
+children :: Map map a => TrieSet map a -> [(a, TrieSet map a)]
+children = Prelude.map (second TS) . Base.children . unTS
+
 -- * Visualization
 
 showTrie :: (Show a, Map map a) => TrieSet map a -> ShowS

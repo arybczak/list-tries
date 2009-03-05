@@ -735,6 +735,10 @@ splitPrefix = Base.splitPrefix
 lookupPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 lookupPrefix = Base.lookupPrefix
 
+-- O(1)
+children :: Map map k => TrieMap map k a -> [(k, TrieMap map k a)]
+children = Base.children
+
 -- * Visualization
 
 showTrie :: (Show k, Show a, Map map k) => TrieMap map k a -> ShowS

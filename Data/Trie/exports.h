@@ -14,7 +14,7 @@
 	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
 	findPredecessor, findSuccessor, \
 	\
-	addPrefix, splitPrefix, lookupPrefix, \
+	addPrefix, splitPrefix, lookupPrefix, children, \
 	\
 	showTrie
 
