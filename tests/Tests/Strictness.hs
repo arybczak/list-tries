@@ -32,37 +32,36 @@ import Tests.TH
 #define IS_STRICT (    isBottom.size)
 
 -- insertWith' should apply the combining function strictly, insertWith should
--- not. We use a singleton of [] to make sure that the combining function is
--- called.
+-- not. We use a singleton to make sure that the combining function is called.
 $(makeFunc mapsOnly ["size","singleton","insertWith"] [d|
    insertWith size singleton insertWith =
-      IS_LAZY   . insertWith  undefined [] undefined $
-         (singleton [] 0 :: TrieType)
+      IS_LAZY   . insertWith  undefined "foo" undefined $
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
    insertWith'1 size singleton insertWith' =
-      IS_STRICT . insertWith' undefined [] undefined $
-         (singleton [] 0 :: TrieType)
+      IS_STRICT . insertWith' undefined "foo" undefined $
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
    insertWith'2 size singleton insertWith' =
-      IS_STRICT . insertWith' (+)       [] undefined $
-         (singleton [] 0 :: TrieType)
+      IS_STRICT . insertWith' (+)       "foo" undefined $
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
    insertWith'3 size singleton insertWith' =
-      IS_STRICT . insertWith' undefined [] 0 $
-         (singleton [] 0 :: TrieType)
+      IS_STRICT . insertWith' undefined "foo" 0 $
+         (singleton "foo" 0 :: TrieType)
  |])
 
 -- As above, but for adjust' and adjust.
 $(makeFunc mapsOnly ["size","singleton","adjust"] [d|
    adjust size singleton adjust =
-      IS_LAZY   . adjust  undefined [] $ (singleton [] 0 :: TrieType)
+      IS_LAZY   . adjust  undefined "foo" $ (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","adjust'"] [d|
    adjust' size singleton adjust' =
-      IS_STRICT . adjust' undefined [] $ (singleton [] 0 :: TrieType)
+      IS_STRICT . adjust' undefined "foo" $ (singleton "foo" 0 :: TrieType)
  |])
 
 -- As above, but for alter and alter'.
@@ -193,19 +192,19 @@ $(makeFunc mapsOnly ["size","singleton","intersectionWithKey'"] [d|
 -- As above, but for the map family.
 $(makeFunc mapsOnly ["size","singleton","map"] [d|
    map size singleton map =
-      IS_LAZY   . map  undefined $ (singleton [] 0 :: TrieType)
+      IS_LAZY   . map  undefined $ (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","map'"] [d|
    map' size singleton map' =
-      IS_STRICT . map' undefined $ (singleton [] 0 :: TrieType)
+      IS_STRICT . map' undefined $ (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapWithKey"] [d|
    mapWithKey size singleton mapWithKey =
-      IS_LAZY   . mapWithKey  undefined $ (singleton [] 0 :: TrieType)
+      IS_LAZY   . mapWithKey  undefined $ (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapWithKey'"] [d|
    mapWithKey' size singleton mapWithKey' =
-      IS_STRICT . mapWithKey' undefined $ (singleton [] 0 :: TrieType)
+      IS_STRICT . mapWithKey' undefined $ (singleton "foo" 0 :: TrieType)
  |])
 
 -- As above, but for the mapInKeys family.
@@ -236,59 +235,61 @@ $(makeFunc mapsOnly ["size","fromList","mapInKeysWith'"] [d|
 -- As above, but for the mapAccum family.
 $(makeFunc mapsOnly ["size","singleton","mapAccum"] [d|
    mapAccum size singleton mapAccum =
-      IS_LAZY   . snd . mapAccum  undefined 0 $ (singleton [] 0 :: TrieType)
+      IS_LAZY   . snd . mapAccum  undefined 0 $ (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccum'"] [d|
    mapAccum' size singleton mapAccum' =
-      IS_STRICT . snd . mapAccum' undefined 0 $ (singleton [] 0 :: TrieType)
+      IS_STRICT . snd . mapAccum' undefined 0 $ (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumWithKey"] [d|
    mapAccumWithKey size singleton mapAccumWithKey =
       IS_LAZY   . snd . mapAccumWithKey  undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumWithKey'"] [d|
    mapAccumWithKey' size singleton mapAccumWithKey' =
       IS_STRICT . snd . mapAccumWithKey' undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumAsc"] [d|
    mapAccumAsc size singleton mapAccumAsc =
-      IS_LAZY   . snd . mapAccumAsc  undefined 0 $ (singleton [] 0 :: TrieType)
+      IS_LAZY   . snd . mapAccumAsc  undefined 0 $
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumAsc'"] [d|
    mapAccumAsc' size singleton mapAccumAsc' =
-      IS_STRICT . snd . mapAccumAsc' undefined 0 $ (singleton [] 0 :: TrieType)
+      IS_STRICT . snd . mapAccumAsc' undefined 0 $
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumAscWithKey"] [d|
    mapAccumAscWithKey size singleton mapAccumAscWithKey =
       IS_LAZY   . snd . mapAccumAscWithKey  undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumAscWithKey'"] [d|
    mapAccumAscWithKey' size singleton mapAccumAscWithKey' =
       IS_STRICT . snd . mapAccumAscWithKey' undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumDesc"] [d|
    mapAccumDesc size singleton mapAccumDesc =
       IS_LAZY   . snd . mapAccumDesc  undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumDesc'"] [d|
    mapAccumDesc' size singleton mapAccumDesc' =
       IS_STRICT . snd . mapAccumDesc' undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumDescWithKey"] [d|
    mapAccumDescWithKey size singleton mapAccumDescWithKey =
       IS_LAZY   . snd . mapAccumDescWithKey  undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 $(makeFunc mapsOnly ["size","singleton","mapAccumDescWithKey'"] [d|
    mapAccumDescWithKey' size singleton mapAccumDescWithKey' =
       IS_STRICT . snd . mapAccumDescWithKey' undefined 0 $
-         (singleton [] 0 :: TrieType)
+         (singleton "foo" 0 :: TrieType)
  |])
 
 -- As above, but for the fromListWith family.
