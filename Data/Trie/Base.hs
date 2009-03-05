@@ -17,7 +17,7 @@ module Data.Trie.Base
    , intersectionWith', intersectionWithKey'
    , filterWithKey, partitionWithKey
    , split, splitLookup
-   , mapKeysWith, mapInKeysWith
+   , mapKeysWith, mapInKeysWith, mapInKeysWith'
    , foldrWithKey, foldrAscWithKey, foldrDescWithKey
    , foldlWithKey', foldlAscWithKey', foldlDescWithKey'
    , toList, toAscList, toDescList
@@ -515,14 +515,32 @@ mapKeysWith fromlist f = fromlist . map (first f) . toList
 
 -- O(n)
 mapInKeysWith :: (Unionable st a, Trie trie st map k1, Trie trie st map k2)
-             => (a -> a -> a)
-             -> (k1 -> k2)
-             -> trie map k1 a
-             -> trie map k2 a
-mapInKeysWith j f tr =
+              => (a -> a -> a)
+              -> (k1 -> k2)
+              -> trie map k1 a
+              -> trie map k2 a
+mapInKeysWith = genericMapInKeysWith unionWith
+
+-- O(n)
+mapInKeysWith' :: (Unionable st a, Trie trie st map k1, Trie trie st map k2)
+               => (a -> a -> a)
+               -> (k1 -> k2)
+               -> trie map k1 a
+               -> trie map k2 a
+mapInKeysWith' = genericMapInKeysWith unionWith'
+
+genericMapInKeysWith :: ( Unionable st a
+                        , Trie trie st map k1, Trie trie st map k2
+                        )
+                     => (f -> trie map k2 a -> trie map k2 a -> trie map k2 a)
+                     -> f
+                     -> (k1 -> k2)
+                     -> trie map k1 a
+                     -> trie map k2 a
+genericMapInKeysWith unionW j f tr =
    mapMap tr $
-      Map.fromListWith (unionWith j) .
-         map (f *** mapInKeysWith j f) .
+      Map.fromListWith (unionW j) .
+         map (f *** genericMapInKeysWith unionW j f) .
       Map.toList
 
 -- * Folding

@@ -260,14 +260,18 @@ instance Eq k => Map AList k where
 
    foldValues f z (AL xs) = foldr (f.snd) z xs
 
-   toList (AL xs)      = xs
-   fromList            = AL . nubBy ((==) `on` fst)
-   fromListWith f_ xs_ = AL (go f_ xs_)
+   toList (AL xs) = xs
+   fromList       = AL . nubBy ((==) `on` fst)
+   fromListWith   = AL .: go
     where
       go _ []     = []
       go f (x:xs) =
+         -- We add some extra strictness here to match the other map types
+         -- (strict in key even for singletons) and because we don't need the
+         -- laziness (strict in value)
          let (as,bs) = partition (((==) `on` fst) x) xs
-          in (fst x, foldl1' f . Prelude.map snd $ x:as) : go f bs
+             v       = foldl1' f . Prelude.map snd $ x:as
+          in fst x `seq` v `seq` ((fst x, v) : go f bs)
 
    isSubmapOfBy f_ (AL xs_) (AL ys_) = go f_ xs_ ys_
     where

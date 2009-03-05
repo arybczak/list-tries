@@ -208,6 +208,31 @@ $(makeFunc mapsOnly ["size","singleton","mapWithKey'"] [d|
       IS_STRICT . mapWithKey' undefined $ (singleton [] 0 :: TrieType)
  |])
 
+-- As above, but for the mapInKeys family.
+--
+-- The *With ones need to actually trigger the union function, hence a simple
+-- singleton won't do.
+$(makeFunc mapsOnly ["size","fromList","mapInKeys"] [d|
+   mapInKeys size fromList mapInKeys =
+      IS_LAZY   . mapInKeys (const 'x') $
+         (fromList [("xy",0),("xz",undefined)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","fromList","mapInKeys'"] [d|
+   mapInKeys' size fromList mapInKeys' =
+      IS_STRICT . mapInKeys' (const 'x') $
+         (fromList [("xy",0),("xz",undefined)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","fromList","mapInKeysWith"] [d|
+   mapInKeysWith size fromList mapInKeysWith =
+      IS_LAZY   . mapInKeysWith  undefined (const 'x') $
+         (fromList [("xy",0),("xz",1)] :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","fromList","mapInKeysWith'"] [d|
+   mapInKeysWith' size fromList mapInKeysWith' =
+      IS_STRICT . mapInKeysWith' undefined (const 'x') $
+         (fromList [("xy",0),("xz",1)] :: TrieType)
+ |])
+
 -- As above, but for the mapAccum family.
 $(makeFunc mapsOnly ["size","singleton","mapAccum"] [d|
    mapAccum size singleton mapAccum =
@@ -315,6 +340,10 @@ tests = testGroup "Strictness"
    , $(makeCases mapsOnly "map'")
    , $(makeCases mapsOnly "mapWithKey")
    , $(makeCases mapsOnly "mapWithKey'")
+   , $(makeCases mapsOnly "mapInKeys")
+   , $(makeCases mapsOnly "mapInKeys'")
+   , $(makeCases mapsOnly "mapInKeysWith")
+   , $(makeCases mapsOnly "mapInKeysWith'")
    , $(makeCases mapsOnly "mapAccum")
    , $(makeCases mapsOnly "mapAccum'")
    , $(makeCases mapsOnly "mapAccumWithKey")

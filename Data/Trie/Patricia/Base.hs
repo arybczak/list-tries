@@ -17,7 +17,7 @@ module Data.Trie.Patricia.Base
    , intersectionWith', intersectionWithKey'
    , filterWithKey, partitionWithKey
    , split, splitLookup
-   , mapKeysWith, mapInKeysWith
+   , mapKeysWith, mapInKeysWith, mapInKeysWith'
    , foldrWithKey, foldrAscWithKey, foldrDescWithKey
    , foldlWithKey', foldlAscWithKey', foldlDescWithKey'
    , toList, toAscList, toDescList
@@ -33,7 +33,7 @@ import Control.Arrow       ((***), first)
 import Control.Exception   (assert)
 import qualified Data.DList as DL
 import Data.DList          (DList)
-import Data.List           (foldl', partition)
+import Data.List           (foldl', foldl1', partition)
 import Data.Maybe          (fromJust, isJust)
 import Prelude hiding      (lookup, filter, null)
 import qualified Prelude
@@ -933,18 +933,46 @@ mapKeysWith fromlist f = fromlist . map (first f) . toList
 
 -- O(n)
 mapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
-                , Trie trie st map k1, Trie trie st map k2
-                )
-             => (a -> a -> a)
-             -> (k1 -> k2)
-             -> trie map k1 a
-             -> trie map k2 a
-mapInKeysWith j f tr =
+                 , Trie trie st map k1, Trie trie st map k2
+                 )
+              => (a -> a -> a)
+              -> (k1 -> k2)
+              -> trie map k1 a
+              -> trie map k2 a
+mapInKeysWith = genericMapInKeysWith (flip const) (const ()) unionWith
+
+-- O(n)
+mapInKeysWith' :: ( Alt st a, Boolable (st a), Unionable st a
+                  , Trie trie st map k1, Trie trie st map k2
+                  )
+               => (a -> a -> a)
+               -> (k1 -> k2)
+               -> trie map k1 a
+               -> trie map k2 a
+mapInKeysWith' =
+   genericMapInKeysWith
+      seq
+      (\xs -> if Prelude.null xs then () else foldl1' seq xs `seq` ())
+      unionWith'
+
+genericMapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
+                        , Trie trie st map k1, Trie trie st map k2
+                        )
+                     => (() -> trie map k2 a -> trie map k2 a)
+                     -> ([k2] -> ())
+                     -> (f -> trie map k2 a -> trie map k2 a -> trie map k2 a)
+                     -> f
+                     -> (k1 -> k2)
+                     -> trie map k1 a
+                     -> trie map k2 a
+genericMapInKeysWith seeq listSeq unionW j f tr =
    let (v,p,m) = tParts tr
-    in mkTrie v (map f p) $
-          Map.fromListWith (unionWith j) .
-             map (f *** mapInKeysWith j f) .
-          Map.toList $ m
+       p'      = map f p
+    in listSeq p' `seeq`
+          (mkTrie v p' $
+              Map.fromListWith (unionW j) .
+                 map (f *** genericMapInKeysWith seeq listSeq unionW j f) .
+              Map.toList $ m)
 
 -- * Folding
 

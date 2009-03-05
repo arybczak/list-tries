@@ -56,7 +56,8 @@
 	mapAccumAsc',  mapAccumAscWithKey', \
 	mapAccumDesc,  mapAccumDescWithKey, \
 	mapAccumDesc', mapAccumDescWithKey', \
-	mapKeys, mapKeysWith, mapInKeys, mapInKeysWith, \
+	mapKeys, mapKeysWith, \
+	mapInKeys, mapInKeys', mapInKeysWith, mapInKeysWith', \
 	\
 	foldr, foldrWithKey, \
 	foldrAsc, foldrAscWithKey, \

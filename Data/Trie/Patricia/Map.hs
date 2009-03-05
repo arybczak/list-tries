@@ -579,11 +579,23 @@ mapInKeys :: (Map map k1, Map map k2)
 mapInKeys = mapInKeysWith defaultUnion
 
 -- O(n)
+mapInKeys' :: (Map map k1, Map map k2)
+           => (k1 -> k2) -> TrieMap map k1 a -> TrieMap map k2 a
+mapInKeys' = mapInKeysWith' defaultUnion
+
+-- O(n)
 mapInKeysWith :: (Map map k1, Map map k2) => (a -> a -> a)
-                                         -> (k1 -> k2)
-                                         -> TrieMap map k1 a
-                                         -> TrieMap map k2 a
+                                          -> (k1 -> k2)
+                                          -> TrieMap map k1 a
+                                          -> TrieMap map k2 a
 mapInKeysWith = Base.mapInKeysWith
+
+-- O(n)
+mapInKeysWith' :: (Map map k1, Map map k2) => (a -> a -> a)
+                                           -> (k1 -> k2)
+                                           -> TrieMap map k1 a
+                                           -> TrieMap map k2 a
+mapInKeysWith' = Base.mapInKeysWith'
 
 -- * Folding
 
