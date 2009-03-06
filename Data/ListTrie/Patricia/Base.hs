@@ -1227,12 +1227,12 @@ splitPrefix tr =
     in (pre, v, tryCompress $ mkTrie altEmpty [] m)
 
 -- O(m)
-lookupPrefix :: (Alt st a, Trie trie st map k)
+lookupPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
 lookupPrefix xs tr =
-   let (_,pre,m) = tParts tr
+   let (v,pre,m) = tParts tr
     in case comparePrefixes (Map.eqCmp m) pre xs of
-            Same                   -> tr
+            Same                   -> tryCompress (mkTrie v [] m)
             PostFix (Left _)       -> tr
             DifferedAt _ _ _       -> empty
             PostFix (Right (y:ys)) ->
