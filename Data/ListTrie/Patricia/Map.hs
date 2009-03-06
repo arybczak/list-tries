@@ -70,14 +70,14 @@ instance (Map map k, Eq (map k (TrieMap map k a)), Eq a)
       => Eq (TrieMap map k a)
  where
    Tr v1 p1 m1 == Tr v2 p2 m2 =
-      v1 == v2 && and (zipWith (Map.eqCmp m1) p1 p2)
+      v1 == v2 && Base.eqComparePrefixes (Map.eqCmp m1) p1 p2
                && m1 == m2
 
 instance (OrdMap map k, Ord (map k (TrieMap map k a)), Ord a)
       => Ord (TrieMap map k a)
  where
    compare (Tr v1 p1 m1) (Tr v2 p2 m2) =
-      compare v1 v2 `mappend` mconcat (zipWith (Map.ordCmp m1) p1 p2)
+      compare v1 v2 `mappend` Base.ordComparePrefixes (Map.ordCmp m1) p1 p2
                     `mappend` compare m1 m2
 
 instance Map map k => Monoid (TrieMap map k a) where

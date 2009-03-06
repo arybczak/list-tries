@@ -62,16 +62,22 @@ instance Map map k => Base.Trie TrieSetBase Identity map k where
 
 -- CMap contains TrieSetBase, not TrieSet, hence we must supply these instances
 -- for TrieSetBase first
+
+-- First some helpers
+eq :: Bool -> Bool -> (a -> a -> Bool) -> [a] -> [a] -> Bool
+eq b1 b2 f p1 p2 = b1 == b2 && Base.eqComparePrefixes f p1 p2
+
+ord :: Bool -> Bool -> (a -> a -> Ordering) -> [a] -> [a] -> Ordering
+ord b1 b2 f p1 p2 = compare b1 b2 `mappend` Base.ordComparePrefixes f p1 p2
+
 instance (Map map a, Eq (CMap map a Bool)) => Eq (TrieSetBase map a Bool) where
    Tr b1 p1 m1 == Tr b2 p2 m2 =
-      b1 == b2 && and (zipWith (Map.eqCmp m1) p1 p2)
-               && m1 == m2
+      eq b1 b2 (Map.eqCmp m1) p1 p2 && m1 == m2
 
 instance (OrdMap map a, Ord (CMap map a Bool)) => Ord (TrieSetBase map a Bool)
  where
    compare (Tr b1 p1 m1) (Tr b2 p2 m2) =
-      compare b1 b2 `mappend` mconcat (zipWith (Map.ordCmp m1) p1 p2)
-                    `mappend` compare m1 m2
+      ord b1 b2 (Map.ordCmp m1) p1 p2 `mappend` compare m1 m2
 
 -- See non-Patricia version for what this is and why
 newtype MapOf_A_To_TrieSets map a = Phantom (CMap map a Bool)
@@ -85,15 +91,14 @@ instance (Map map a, Eq (MapOf_A_To_TrieSets map a))
       => Eq (TrieSet map a)
  where
    TS (Tr b1 p1 m1) == TS (Tr b2 p2 m2) =
-      b1 == b2 && and (zipWith (Map.eqCmp m1) p1 p2)
-               && Phantom m1 == Phantom m2
+      eq b1 b2 (Map.eqCmp m1) p1 p2 && Phantom m1 == Phantom m2
 
 instance (OrdMap map a, Ord (MapOf_A_To_TrieSets map a))
       => Ord (TrieSet map a)
  where
    compare (TS (Tr b1 p1 m1)) (TS (Tr b2 p2 m2)) =
-      compare b1 b2 `mappend` mconcat (zipWith (Map.ordCmp m1) p1 p2)
-                    `mappend` compare (Phantom m1) (Phantom m2)
+      ord b1 b2 (Map.ordCmp m1) p1 p2
+         `mappend` compare (Phantom m1) (Phantom m2)
 
 instance Map map a => Monoid (TrieSet map a) where
    mempty  = empty

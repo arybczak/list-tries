@@ -26,6 +26,7 @@ module Data.ListTrie.Patricia.Base
    , findPredecessor, findSuccessor
    , addPrefix, splitPrefix, lookupPrefix, children
    , showTrieWith
+   , eqComparePrefixes, ordComparePrefixes
    ) where
 
 import Control.Applicative (Applicative(..), (<$>))
@@ -1311,6 +1312,19 @@ comparePrefixes = go []
       if a === b
          then go (a:samePart) (===) as bs
          else DifferedAt (reverse samePart) xs ys
+
+-- Exported for Eq/Ord instances
+eqComparePrefixes :: (a -> a -> Bool) -> [a] -> [a] -> Bool
+eqComparePrefixes eq xs ys = case comparePrefixes eq xs ys of
+                                  Same -> True
+                                  _    -> False
+
+ordComparePrefixes :: (a -> a -> Ordering) -> [a] -> [a] -> Ordering
+ordComparePrefixes ord xs ys =
+   case comparePrefixes (\x y -> ord x y == EQ) xs ys of
+        Same                     -> EQ
+        PostFix r                -> either (const GT) (const LT) r
+        DifferedAt _ (x:_) (y:_) -> ord x y
 
 -- After modifying the trie, compress a trie node into the prefix if possible.
 --
