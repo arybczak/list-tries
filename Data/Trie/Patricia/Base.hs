@@ -38,7 +38,7 @@ import Data.Maybe          (fromJust, isJust)
 import Prelude hiding      (lookup, filter, null)
 import qualified Prelude
 
-import qualified Data.Trie.Base.Map as Map
+import qualified Data.Trie.Base.Map.Internal as Map
 import Data.Trie.Base.Classes
    ( Boolable(..)
    , Unwrappable(..)

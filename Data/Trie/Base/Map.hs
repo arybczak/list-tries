@@ -2,7 +2,10 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
-module Data.Trie.Base.Map where
+module Data.Trie.Base.Map
+   ( Map(..), OrdMap(..)
+   , AList, WrappedIntMap
+   ) where
 
 import Control.Applicative (pure, (<*>))
 import Control.Arrow       ((***), first, second)
@@ -184,11 +187,6 @@ class Map m k => OrdMap m k where
       second fromList .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
       toDescList
-
--- Moved this outside Map because it's an odd one out: union and intersection
--- aren't needed
-difference :: Map m k => m k a -> m k b -> m k a
-difference = differenceWith (\_ _ -> Nothing)
 
 ------------- Instances
 
@@ -392,10 +390,10 @@ instance Ord k => OrdMap M.Map k where
    mapAccumDesc        = mapAccumR
    mapAccumDescWithKey = M.mapAccumRWithKey
 
-newtype IMap k v = IMap (IM.IntMap v) deriving (Eq,Ord)
+newtype WrappedIntMap k v = IMap (IM.IntMap v) deriving (Eq,Ord)
 
-instance Functor (IMap k) where fmap f (IMap m) = IMap (fmap f m)
-instance Foldable (IMap k) where
+instance Functor (WrappedIntMap k) where fmap f (IMap m) = IMap (fmap f m)
+instance Foldable (WrappedIntMap k) where
     fold        (IMap m) = fold        m
     foldMap f   (IMap m) = foldMap f   m
     foldl   f z (IMap m) = foldl   f z m
@@ -403,13 +401,13 @@ instance Foldable (IMap k) where
     foldr   f z (IMap m) = foldr   f z m
     foldr1  f   (IMap m) = foldr1  f   m
 
-instance Traversable (IMap k) where
+instance Traversable (WrappedIntMap k) where
    traverse f (IMap m) = pure IMap <*> traverse f m
    sequenceA (IMap m) = pure IMap <*> sequenceA m
    mapM f (IMap m) = liftM IMap (mapM f m)
    sequence (IMap m) = liftM IMap (sequence m)
 
-instance Enum k => Map IMap k where
+instance Enum k => Map WrappedIntMap k where
    eqCmp = const ((==) `on` fromEnum)
 
    empty       = IMap IM.empty
@@ -458,7 +456,7 @@ instance Enum k => Map IMap k where
            Just (a,others) | IM.null others -> Just (first toEnum a)
            _                                -> Nothing
 
-instance Enum k => OrdMap IMap k where
+instance Enum k => OrdMap WrappedIntMap k where
    ordCmp = const (compare `on` fromEnum)
 
    toAscList (IMap m)   = Prelude.map (first toEnum) . IM.toAscList $ m

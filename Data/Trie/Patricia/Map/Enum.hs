@@ -12,9 +12,9 @@
 
 module Data.Trie.Patricia.Map.Enum (MAP_EXPORTS) where
 
-import Data.Trie.Base.Map            (IMap)
+import Data.Trie.Base.Map            (WrappedIntMap)
 import Data.Trie.Patricia.Map hiding (TrieMap)
 import qualified Data.Trie.Patricia.Map as Base
 import Prelude hiding (filter, foldr, lookup, map, null)
 
-type TrieMap = Base.TrieMap IMap
+type TrieMap = Base.TrieMap WrappedIntMap
