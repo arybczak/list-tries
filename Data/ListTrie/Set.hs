@@ -61,31 +61,19 @@ instance Map map k => Base.Trie TrieSetBase Identity map k where
 instance Eq (CMap map a Bool) => Eq (TrieSetBase map a Bool) where
    Tr b1 m1 == Tr b2 m2 = b1 == b2 && m1 == m2
 
-instance Ord (CMap map a Bool) => Ord (TrieSetBase map a Bool) where
-   compare (Tr b1 m1) (Tr b2 m2) =
-      compare b1 b2 `mappend` compare m1 m2
+instance (Eq (CMap map a Bool), OrdMap map a, Ord a)
+      => Ord (TrieSetBase map a Bool)
+ where
+   compare = compare `on` Base.toAscList
 
--- The context has to have one of:
---    TrieSetBase map a Bool
---    CMap map a Bool
---    map a (TrieSetBase map a Bool)
---
--- We can't tell Haddock to hide them or anything so we cheat using this
--- newtype, showing the IMHO bit nicer "MapOf_A_To_TrieSets map a".
-newtype MapOf_A_To_TrieSets map a = Phantom (CMap map a Bool)
+instance Eq (CMap map a Bool) => Eq (TrieSet map a) where
+   (==) = (==) `on` unTS
 
-instance Eq (CMap map a Bool) => Eq (MapOf_A_To_TrieSets map a) where
-   Phantom a == Phantom b = a == b
-instance Ord (CMap map a Bool) => Ord (MapOf_A_To_TrieSets map a) where
-   compare (Phantom a) (Phantom b) = compare a b
-
-instance Eq (MapOf_A_To_TrieSets map a) => Eq (TrieSet map a) where
-   TS (Tr b1 m1) == TS (Tr b2 m2) =
-      b1 == b2 && Phantom m1 == Phantom m2
-
-instance Ord (MapOf_A_To_TrieSets map a) => Ord (TrieSet map a) where
-   compare (TS (Tr b1 m1)) (TS (Tr b2 m2)) =
-      compare b1 b2 `mappend` compare (Phantom m1) (Phantom m2)
+-- The CMap constraint is needed only because Eq is a superclass of Ord....
+-- sigh
+instance (Eq (CMap map a Bool), OrdMap map a, Ord a) => Ord (TrieSet map a)
+ where
+   compare = compare `on` unTS
 
 instance Map map a => Monoid (TrieSet map a) where
    mempty  = empty

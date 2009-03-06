@@ -33,6 +33,7 @@ import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
+import Data.Function       (on)
 import qualified Data.Foldable as F
 import qualified Data.Maybe as Maybe
 import Data.Monoid         (Monoid(..))
@@ -62,9 +63,11 @@ instance Map map k => Base.Trie TrieMap Maybe map k where
 instance (Eq (map k (TrieMap map k a)), Eq a) => Eq (TrieMap map k a) where
    Tr v1 m1 == Tr v2 m2 = v1 == v2 && m1 == m2
 
-instance (Ord (map k (TrieMap map k a)), Ord a) => Ord (TrieMap map k a) where
-   compare (Tr v1 m1) (Tr v2 m2) =
-      compare v1 v2 `mappend` compare m1 m2
+-- Eq constraint only needed because of superclassness... sigh
+instance (Eq (map k (TrieMap map k a)), OrdMap map k, Ord k, Ord a)
+      => Ord (TrieMap map k a)
+ where
+   compare = compare `on` toAscList
 
 instance Map map k => Monoid (TrieMap map k a) where
    mempty  = empty
