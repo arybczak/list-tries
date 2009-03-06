@@ -704,6 +704,8 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
    -- Polymorphic recursion in 'go' (valIsect :: st a -> st b -> st c ---> st b
    -- -> st a -> st c) means that it has to be explicitly typed in order to
    -- compile.
+   --
+   -- The repeated "Trie trie st map k" constraint is for Hugs.
 
    -- Like goLeft and goRight in 'difference', but handles both cases (since
    -- this is a commutative operation).
@@ -751,7 +753,7 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
    --
    -- Note that the prefix and boolean don't change: we've already got "ca",
    -- and we'd still like "cat" so we keep the True from there.
-   go :: (Alt st z, Boolable (st z))
+   go :: (Alt st z, Boolable (st z), Trie trie st map k)
       => (st x -> st y -> st z)
       -> (st z -> trie map k z -> trie map k z)
       -> CMap trie map k y
@@ -839,7 +841,7 @@ genericIntersectionWithKey = main DL.empty
    flipp f = flip . f . flip
 
    -- See intersectionWith: this explicit type is necessary
-   go :: (Alt st z, Boolable (st z))
+   go :: (Alt st z, Boolable (st z), Trie trie st map k)
       => DList k
       -> ((x -> y -> z) -> st x -> st y -> st z)
       -> (st z -> trie map k z -> trie map k z)
