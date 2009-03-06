@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
            , FlexibleContexts #-}
 
-module Data.Trie.Base
+module Data.ListTrie.Base
    ( Trie(..)
    , null, size, member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
@@ -37,16 +37,16 @@ import Data.Maybe          (fromJust)
 import Prelude hiding      (lookup, filter, null)
 import qualified Prelude
 
-import qualified Data.Trie.Base.Map.Internal as Map
-import Data.Trie.Base.Classes
+import qualified Data.ListTrie.Base.Map.Internal as Map
+import Data.ListTrie.Base.Classes
    ( Boolable(..)
    , Unwrappable(..)
    , Unionable(..), Differentiable(..), Intersectable(..)
    , Alt(..)
    , fmap', (<$!>)
    )
-import Data.Trie.Base.Map (Map, OrdMap)
-import Data.Trie.Util     ((.:), both)
+import Data.ListTrie.Base.Map (Map, OrdMap)
+import Data.ListTrie.Util     ((.:), both)
 
 class (Map map k, Functor st, Unwrappable st)
    => Trie trie st map k | trie -> st where

@@ -7,11 +7,11 @@
 
 #include "exports.h"
 
-module Data.Trie.Set.Eq (SET_EXPORTS) where
+module Data.ListTrie.Set.Eq (SET_EXPORTS) where
 
-import Data.Trie.Base.Map   (AList)
-import Data.Trie.Set hiding (TrieSet)
-import qualified Data.Trie.Set as Base
+import Data.ListTrie.Base.Map   (AList)
+import Data.ListTrie.Set hiding (TrieSet)
+import qualified Data.ListTrie.Set as Base
 import Prelude hiding (filter, foldr, map, null)
 
 type TrieSet = Base.TrieSet AList

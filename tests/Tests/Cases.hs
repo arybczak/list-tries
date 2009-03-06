@@ -9,20 +9,20 @@ import Test.Framework                 (testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.HUnit                     (assert)
 
-import qualified Data.Trie.Set.Eq
-import qualified Data.Trie.Set.Ord
-import qualified Data.Trie.Set.Enum
-import qualified Data.Trie.Map.Eq
-import qualified Data.Trie.Map.Ord
-import qualified Data.Trie.Map.Enum
-import qualified Data.Trie.Patricia.Set.Eq
-import qualified Data.Trie.Patricia.Set.Ord
-import qualified Data.Trie.Patricia.Set.Enum
-import qualified Data.Trie.Patricia.Map.Eq
-import qualified Data.Trie.Patricia.Map.Ord
-import qualified Data.Trie.Patricia.Map.Enum
+import qualified Data.ListTrie.Set.Eq
+import qualified Data.ListTrie.Set.Ord
+import qualified Data.ListTrie.Set.Enum
+import qualified Data.ListTrie.Map.Eq
+import qualified Data.ListTrie.Map.Ord
+import qualified Data.ListTrie.Map.Enum
+import qualified Data.ListTrie.Patricia.Set.Eq
+import qualified Data.ListTrie.Patricia.Set.Ord
+import qualified Data.ListTrie.Patricia.Set.Enum
+import qualified Data.ListTrie.Patricia.Map.Eq
+import qualified Data.ListTrie.Patricia.Map.Ord
+import qualified Data.ListTrie.Patricia.Map.Enum
 
-import Data.Trie.Util
+import Data.ListTrie.Util
 
 import Tests.TH
 

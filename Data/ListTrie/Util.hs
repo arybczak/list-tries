@@ -1,6 +1,6 @@
 -- File created: 2008-12-27 22:04:52
 
-module Data.Trie.Util ((.:), (.:.), both) where
+module Data.ListTrie.Util ((.:), (.:.), both) where
 
 infixr 9 .:, .:.
 

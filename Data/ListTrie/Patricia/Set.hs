@@ -1,7 +1,7 @@
--- File created: 2008-11-08 15:52:33
+-- File created: 2008-11-08 19:22:07
 
--- The base implementation of a trie representing a set of lists, generalized
--- over any type of map from element values to tries.
+-- The base implementation of a Patricia trie representing a set of lists,
+-- generalized over any type of map from element values to tries.
 --
 -- Complexities are given; @n@ refers to the number of elements in the set and
 -- @m@ to their maximum length. In addition, the trie's branching factor plays
@@ -19,7 +19,7 @@
 
 #include "exports.h"
 
-module Data.Trie.Set (SET_EXPORTS) where
+module Data.ListTrie.Patricia.Set (SET_EXPORTS) where
 
 import Control.Arrow  ((***), second)
 import Data.Function  (on)
@@ -31,21 +31,25 @@ import qualified Prelude
 import Text.Read (readPrec, lexP, parens, prec, Lexeme(Ident))
 #endif
 
-import qualified Data.Trie.Base     as Base
-import qualified Data.Trie.Base.Map as Map
-import Data.Trie.Base.Classes (Identity(..), Unwrappable(..))
-import Data.Trie.Base.Map     (Map, OrdMap)
-import Data.Trie.Util         ((.:), (.:.), both)
+import qualified Data.ListTrie.Base.Map      as Map
+import qualified Data.ListTrie.Patricia.Base as Base
+import Data.ListTrie.Base.Classes (Identity(..), Unwrappable(..))
+import Data.ListTrie.Base.Map     (Map, OrdMap)
+import Data.ListTrie.Util         ((.:), (.:.), both)
 
--- Invariant: any (Tr False _) has a True descendant.
+-- Invariant: any (Tr False _ _) has at least two children, all of which are
+-- True or have a True descendant.
 --
--- We need this 'bool' and Base stuff in order to satisfy the Base.Trie type
--- class.
-data TrieSetBase map a bool = Tr !bool !(CMap map a bool)
+-- In order to avoid a lot of special casing it has to be the case that there's
+-- only one way to represent a given trie. The above property makes sure of
+-- that, so that, for instance, 'fromList ["foo"]' can only be 'Tr True "foo"
+-- Map.empty', and not 'Tr False "fo" (Map.fromList [('o',Tr True ""
+-- Map.empty)])'. Base.tryCompress is a function which takes care of this.
+--
+-- This Base stuff is needed just as in the non-Patricia version.
+data TrieSetBase map a bool = Tr !bool ![a] !(CMap map a bool)
 type CMap map a bool = map a (TrieSetBase map a bool)
 
--- That makes TrieSet a newtype, which means some unfortunate wrapping and
--- unwrapping in the function definitions below.
 newtype TrieSet map a = TS { unTS :: TrieSetBase map a Bool }
 
 inTS :: (TrieSetBase map a Bool -> TrieSetBase nap b Bool)
@@ -54,18 +58,24 @@ inTS f = TS . f . unTS
 
 instance Map map k => Base.Trie TrieSetBase Identity map k where
    mkTrie = Tr . unwrap
-   tParts (Tr b m) = (Id b,m)
+   tParts (Tr b p m) = (Id b,p,m)
 
 -- CMap contains TrieSetBase, not TrieSet, hence we must supply these instances
 -- for TrieSetBase first
-instance (Eq (CMap map a Bool)) => Eq (TrieSetBase map a Bool) where
-   Tr b1 m1 == Tr b2 m2 = b1 == b2 && m1 == m2
+instance (Map map a, Eq (CMap map a Bool)) => Eq (TrieSetBase map a Bool) where
+   Tr b1 p1 m1 == Tr b2 p2 m2 =
+      b1 == b2 && and (zipWith (Map.eqCmp m1) p1 p2)
+               && m1 == m2
+
 instance (Eq (TrieSetBase map a Bool)) => Eq (TrieSet map a) where
    TS tr1 == TS tr2 = tr1 == tr2
 
-instance (Ord (CMap map a Bool)) => Ord (TrieSetBase map a Bool) where
-   compare (Tr b1 m1) (Tr b2 m2) =
-      compare b1 b2 `mappend` compare m1 m2
+instance (OrdMap map a, Ord (CMap map a Bool)) => Ord (TrieSetBase map a Bool)
+ where
+   compare (Tr b1 p1 m1) (Tr b2 p2 m2) =
+      compare b1 b2 `mappend` mconcat (zipWith (Map.ordCmp m1) p1 p2)
+                    `mappend` compare m1 m2
+
 instance (Ord (TrieSetBase map a Bool)) => Ord (TrieSet map a) where
    compare (TS tr1) (TS tr2) = compare tr1 tr2
 
@@ -122,7 +132,7 @@ isProperSubsetOf = Base.isProperSubmapOfBy (&&) `on` unTS
 empty :: Map map a => TrieSet map a
 empty = TS Base.empty
 
--- O(m)
+-- O(1)
 singleton :: Map map a => [a] -> TrieSet map a
 singleton k = TS$ Base.singleton k True
 
@@ -165,9 +175,8 @@ filter :: Map map a => ([a] -> Bool) -> TrieSet map a -> TrieSet map a
 filter p = inTS $ Base.filterWithKey (\k _ -> p k)
 
 -- O(n m)
-partition :: Map map a => ([a] -> Bool)
-                       -> TrieSet map a
-                       -> (TrieSet map a, TrieSet map a)
+partition :: Map map a
+          => ([a] -> Bool) -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 partition p = both TS . Base.partitionWithKey (\k _ -> p k) . unTS
 
 -- O(m)
@@ -175,9 +184,8 @@ split :: OrdMap map a => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 split = both TS .: Base.split .:. unTS
 
 -- O(m)
-splitMember :: OrdMap map a => [a]
-                            -> TrieSet map a
-                            -> (TrieSet map a, Bool, TrieSet map a)
+splitMember :: OrdMap map a
+            => [a] -> TrieSet map a -> (TrieSet map a, Bool, TrieSet map a)
 splitMember = (\(l,b,g) -> (TS l,unwrap b,TS g)) .: Base.splitLookup .:. unTS
 
 -- * Mapping
@@ -230,7 +238,7 @@ toAscList = Prelude.map fst . Base.toAscList . unTS
 toDescList :: OrdMap map a => TrieSet map a -> [[a]]
 toDescList = Prelude.map fst . Base.toDescList . unTS
 
--- O(n)
+-- O(n m)
 fromList :: Map map a => [[a]] -> TrieSet map a
 fromList = TS . Base.fromList . Prelude.map (flip (,) True)
 
@@ -274,7 +282,7 @@ findSuccessor = fmap fst .: Base.findSuccessor . unTS
 addPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 addPrefix = TS .: Base.addPrefix .:. unTS
 
--- O(m)
+-- O(1)
 splitPrefix :: Map map a => TrieSet map a -> ([a], Bool, TrieSet map a)
 splitPrefix = (\(k,b,t) -> (k,unwrap b,TS t)) . Base.splitPrefix . unTS
 
@@ -282,7 +290,7 @@ splitPrefix = (\(k,b,t) -> (k,unwrap b,TS t)) . Base.splitPrefix . unTS
 lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 lookupPrefix = TS .: Base.lookupPrefix .:. unTS
 
--- O(m)
+-- O(1)
 children :: Map map a => TrieSet map a -> [(a, TrieSet map a)]
 children = Prelude.map (second TS) . Base.children . unTS
 

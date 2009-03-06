@@ -10,11 +10,11 @@
 
 #include "exports.h"
 
-module Data.Trie.Set.Enum (SET_EXPORTS) where
+module Data.ListTrie.Set.Enum (SET_EXPORTS) where
 
-import Data.Trie.Base.Map   (WrappedIntMap)
-import Data.Trie.Set hiding (TrieSet)
-import qualified Data.Trie.Set as Base
+import Data.ListTrie.Base.Map   (WrappedIntMap)
+import Data.ListTrie.Set hiding (TrieSet)
+import qualified Data.ListTrie.Set as Base
 import Prelude hiding (filter, foldr, map, null)
 
 type TrieSet = Base.TrieSet WrappedIntMap

@@ -7,11 +7,11 @@
 
 #include "exports.h"
 
-module Data.Trie.Patricia.Map.Ord (MAP_EXPORTS) where
+module Data.ListTrie.Patricia.Map.Ord (MAP_EXPORTS) where
 
 import Data.Map                      (Map)
-import Data.Trie.Patricia.Map hiding (TrieMap)
-import qualified Data.Trie.Patricia.Map as Base
+import Data.ListTrie.Patricia.Map hiding (TrieMap)
+import qualified Data.ListTrie.Patricia.Map as Base
 import Prelude hiding (filter, foldr, lookup, map, null)
 
 type TrieMap = Base.TrieMap Map

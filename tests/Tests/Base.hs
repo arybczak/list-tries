@@ -8,11 +8,11 @@ module Tests.Base (Str(..), alpha, unArb, getKey) where
 import Control.Arrow   (first)
 import Test.QuickCheck
 
-import Data.Trie.Base.Map (Map)
-import qualified Data.Trie.Set          as  BS
-import qualified Data.Trie.Map          as  BM
-import qualified Data.Trie.Patricia.Set as PBS
-import qualified Data.Trie.Patricia.Map as PBM
+import Data.ListTrie.Base.Map (Map)
+import qualified Data.ListTrie.Set          as  BS
+import qualified Data.ListTrie.Map          as  BM
+import qualified Data.ListTrie.Patricia.Set as PBS
+import qualified Data.ListTrie.Patricia.Map as PBM
 
 newtype Str = Str { unStr :: String } deriving Show
 

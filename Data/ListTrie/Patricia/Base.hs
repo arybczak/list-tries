@@ -3,7 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
            , FlexibleContexts, ScopedTypeVariables #-}
 
-module Data.Trie.Patricia.Base
+module Data.ListTrie.Patricia.Base
    ( Trie(..)
    , null, size, member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
@@ -38,16 +38,16 @@ import Data.Maybe          (fromJust, isJust)
 import Prelude hiding      (lookup, filter, null)
 import qualified Prelude
 
-import qualified Data.Trie.Base.Map.Internal as Map
-import Data.Trie.Base.Classes
+import qualified Data.ListTrie.Base.Map.Internal as Map
+import Data.ListTrie.Base.Classes
    ( Boolable(..)
    , Unwrappable(..)
    , Unionable(..), Differentiable(..), Intersectable(..)
    , Alt(..)
    , fmap', (<$!>)
    )
-import Data.Trie.Base.Map (Map, OrdMap)
-import Data.Trie.Util     ((.:), both)
+import Data.ListTrie.Base.Map (Map, OrdMap)
+import Data.ListTrie.Util     ((.:), both)
 
 class (Map map k, Functor st, Unwrappable st)
    => Trie trie st map k | trie -> st where
@@ -134,7 +134,7 @@ isSubmapOfBy f_ trl trr =
                      Same              -> same f vl vr ml mr'
 
    go _ _ _ _ [] =
-      error "Data.Trie.Patricia.Base.isSubmapOfBy :: internal error"
+      error "Data.ListTrie.Patricia.Base.isSubmapOfBy :: internal error"
 
    same f vl vr ml mr =
       let hvl = hasValue vl
@@ -178,7 +178,7 @@ isProperSubmapOfBy = f False
                        Same              -> same proper g vl vr ml mr'
 
    go _ _ _ _ _ [] =
-      error "Data.Trie.Patricia.Base.isProperSubmapOfBy :: internal error"
+      error "Data.ListTrie.Patricia.Base.isProperSubmapOfBy :: internal error"
 
    same proper g vl vr ml mr =
       let hvl = hasValue vl
@@ -247,7 +247,8 @@ genericInsertWith (<$$>) f k new tr =
                mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
                                                    p (mkTrie old pr m)
 
-            _ -> error "Data.Trie.Patricia.Base.insertWith :: internal error"
+            _ -> error
+                    "Data.ListTrie.Patricia.Base.insertWith :: internal error"
 
 -- O(m)
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -360,7 +361,9 @@ genericAlter seeq f k tr =
                                             x (mkTrie v' xs Map.empty)
                       else tr
 
-            _ -> error "Data.Trie.Patricia.Base.genericAlter :: internal error"
+            _ ->
+               error
+                  "Data.ListTrie.Patricia.Base.genericAlter :: internal error"
 
 -- * Combination
 
@@ -420,7 +423,8 @@ genericUnionWith valUnion seeq tr1 tr2 =
    decompress m v (x:xs) = Map.singleton x (mkTrie v xs m)
    decompress _ _ []     = can'tHappen
 
-   can'tHappen = error "Data.Trie.Patricia.Base.unionWith :: internal error"
+   can'tHappen =
+      error "Data.ListTrie.Patricia.Base.unionWith :: internal error"
 
 -- O(min(n1,n2))
 unionWithKey :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
@@ -484,7 +488,8 @@ genericUnionWithKey = go DL.empty
    decompress m v (x:xs) = Map.singleton x (mkTrie v xs m)
    decompress _ _ []     = can'tHappen
 
-   can'tHappen = error "Data.Trie.Patricia.Base.unionWithKey :: internal error"
+   can'tHappen =
+      error "Data.ListTrie.Patricia.Base.unionWithKey :: internal error"
 
 unionsWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
            => (a -> a -> a) -> [trie map k a] -> trie map k a
@@ -571,7 +576,7 @@ differenceWith j_ tr1 tr2 =
    goLeft _ _ _ [] = can'tHappen
 
    can'tHappen =
-      error "Data.Trie.Patricia.Base.differenceWith :: internal error"
+      error "Data.ListTrie.Patricia.Base.differenceWith :: internal error"
 
 -- O(min(n1,n2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
@@ -646,7 +651,7 @@ differenceWithKey = go DL.empty
    goLeft _ _ _ _ [] = can'tHappen
 
    can'tHappen =
-      error "Data.Trie.Patricia.Base.differenceWithKey :: internal error"
+      error "Data.ListTrie.Patricia.Base.differenceWithKey :: internal error"
 
 -- O(min(n1,n2))
 intersectionWith :: ( Alt st c, Boolable (st c)
@@ -778,7 +783,7 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
                               go       valIsect  seeq m' v  mb pre     ys
 
    go _ _ _ _ _ _ [] =
-      error "Data.Trie.Patricia.Map.intersectionWith :: internal error"
+      error "Data.ListTrie.Patricia.Map.intersectionWith :: internal error"
 
 -- O(min(n1,n2))
 intersectionWithKey :: ( Alt st c, Boolable (st c)
@@ -870,7 +875,7 @@ genericIntersectionWithKey = main DL.empty
                                  m' v  mb pre     ys
 
    go _ _ _ _ _ _ _ _ [] =
-      error "Data.Trie.Patricia.Map.intersectionWithKey :: internal error"
+      error "Data.ListTrie.Patricia.Map.intersectionWithKey :: internal error"
 
 -- * Filtering
 
@@ -921,7 +926,8 @@ splitLookup xs tr =
             _ -> can'tHappen
  where
    mk v pre = tryCompress . mkTrie v pre
-   can'tHappen = error "Data.Trie.Patricia.Base.splitLookup :: internal error"
+   can'tHappen =
+      error "Data.ListTrie.Patricia.Base.splitLookup :: internal error"
 
 -- * Mapping
 
@@ -1170,7 +1176,7 @@ findPredecessor tr_ xs_         = go tr_ xs_
                _ -> can'tHappen
 
    can'tHappen =
-      error "Data.Trie.Patricia.Base.findPredecessor :: internal error"
+      error "Data.ListTrie.Patricia.Base.findPredecessor :: internal error"
 
 -- O(m)
 findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
@@ -1201,7 +1207,7 @@ findSuccessor tr_ xs_         = go tr_ xs_
                _ -> can'tHappen
 
    can'tHappen =
-      error "Data.Trie.Patricia.Base.findSuccessor :: internal error"
+      error "Data.ListTrie.Patricia.Base.findSuccessor :: internal error"
 
 -- * Trie-only operations
 
@@ -1233,7 +1239,9 @@ lookupPrefix xs tr =
                     Nothing  -> empty
                     Just tr' -> lookupPrefix ys tr'
 
-            _ -> error "Data.Trie.Patricia.Base.lookupPrefix :: internal error"
+            _ ->
+               error
+                  "Data.ListTrie.Patricia.Base.lookupPrefix :: internal error"
 
 -- O(1)
 children :: Trie trie st map k => trie map k a -> [(k, trie map k a)]

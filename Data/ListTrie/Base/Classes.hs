@@ -6,7 +6,7 @@
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
            , FlexibleInstances #-}
 
-module Data.Trie.Base.Classes where
+module Data.ListTrie.Base.Classes where
 
 import qualified Control.Applicative as A
 import Control.Applicative (Applicative(..))
@@ -60,7 +60,7 @@ instance Intersectable Maybe a b c where
 -- **FUNKY**
 instance Unionable Identity Bool where
    unionVals  _ (Id a) (Id b) = Id$ a || b
-   unionVals' = error "Data.Trie.Base.Classes.unionVals' :: internal error"
+   unionVals' = error "Data.ListTrie.Base.Classes.unionVals' :: internal error"
 
 -- **FUNKY**
 instance Differentiable Identity Bool Bool where
@@ -70,7 +70,7 @@ instance Differentiable Identity Bool Bool where
 instance Intersectable Identity Bool Bool Bool where
    intersectionVals _ (Id a) (Id b) = Id$ a && b
    intersectionVals' =
-      error "Data.Trie.Base.Classes.intersectionVals' :: internal error"
+      error "Data.ListTrie.Base.Classes.intersectionVals' :: internal error"
 
 class Applicative a => Alt a x where
    altEmpty :: a x

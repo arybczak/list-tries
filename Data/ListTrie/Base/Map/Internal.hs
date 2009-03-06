@@ -1,10 +1,10 @@
 -- File created: 2009-03-06 12:40:42
 
 -- Base.Map plus stuff we don't want to export
-module Data.Trie.Base.Map.Internal
-   (module Data.Trie.Base.Map, difference) where
+module Data.ListTrie.Base.Map.Internal
+   (module Data.ListTrie.Base.Map, difference) where
 
-import Data.Trie.Base.Map
+import Data.ListTrie.Base.Map
 
 -- Moved this outside Map because it's an odd one out: union and intersection
 -- aren't needed

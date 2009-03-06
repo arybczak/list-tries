@@ -2,7 +2,7 @@
 
 {-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
 
-module Data.Trie.Base.Map
+module Data.ListTrie.Base.Map
    ( Map(..), OrdMap(..)
    , AList, WrappedIntMap
    ) where
@@ -23,7 +23,7 @@ import qualified Data.Map    as M
 
 import Prelude hiding (foldl,foldl1,foldr,foldr1,mapM,sequence)
 
-import Data.Trie.Util (both, (.:))
+import Data.ListTrie.Util (both, (.:))
 
 -- Minimal complete implementation:
 -- * eqCmp

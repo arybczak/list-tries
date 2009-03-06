@@ -79,7 +79,7 @@ makeFunc modules expands =
  where
    isExpandable n = nameBase n `elem` expands
                  && fromMaybe True
-                       (fmap ("Data.Trie." `isPrefixOf`) (nameModule n))
+                       (fmap ("Data.ListTrie." `isPrefixOf`) (nameModule n))
 
    expandTopDec modu (FunD name clauses) =
       FunD (modularName (nameBase name) (moduleName modu))
@@ -190,20 +190,20 @@ testName Property test =
           ]
 
 relevantPart :: String -> String
-relevantPart = drop (length "Data.Trie.")
+relevantPart = drop (length "Data.ListTrie.")
 
-setsOnly = [SetModule "Data.Trie.Set.Eq"
-           ,SetModule "Data.Trie.Set.Ord"
-           ,SetModule "Data.Trie.Set.Enum"
-           ,SetModule "Data.Trie.Patricia.Set.Eq"
-           ,SetModule "Data.Trie.Patricia.Set.Ord"
-           ,SetModule "Data.Trie.Patricia.Set.Enum"
+setsOnly = [SetModule "Data.ListTrie.Set.Eq"
+           ,SetModule "Data.ListTrie.Set.Ord"
+           ,SetModule "Data.ListTrie.Set.Enum"
+           ,SetModule "Data.ListTrie.Patricia.Set.Eq"
+           ,SetModule "Data.ListTrie.Patricia.Set.Ord"
+           ,SetModule "Data.ListTrie.Patricia.Set.Enum"
            ]
-mapsOnly = [MapModule "Data.Trie.Map.Eq"
-           ,MapModule "Data.Trie.Map.Ord"
-           ,MapModule "Data.Trie.Map.Enum"
-           ,MapModule "Data.Trie.Patricia.Map.Eq"
-           ,MapModule "Data.Trie.Patricia.Map.Ord"
-           ,MapModule "Data.Trie.Patricia.Map.Enum"
+mapsOnly = [MapModule "Data.ListTrie.Map.Eq"
+           ,MapModule "Data.ListTrie.Map.Ord"
+           ,MapModule "Data.ListTrie.Map.Enum"
+           ,MapModule "Data.ListTrie.Patricia.Map.Eq"
+           ,MapModule "Data.ListTrie.Patricia.Map.Ord"
+           ,MapModule "Data.ListTrie.Patricia.Map.Enum"
            ]
 allTries = setsOnly ++ mapsOnly

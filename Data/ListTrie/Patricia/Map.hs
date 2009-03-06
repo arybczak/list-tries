@@ -27,7 +27,7 @@
 
 #include "exports.h"
 
-module Data.Trie.Patricia.Map (MAP_EXPORTS) where
+module Data.ListTrie.Patricia.Map (MAP_EXPORTS) where
 
 import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
@@ -44,10 +44,10 @@ import qualified Prelude
 import Text.Read (readPrec, lexP, parens, prec, Lexeme(Ident))
 #endif
 
-import qualified Data.Trie.Base.Map      as Map
-import qualified Data.Trie.Patricia.Base as Base
-import Data.Trie.Base.Classes (fmap')
-import Data.Trie.Base.Map     (Map, OrdMap)
+import qualified Data.ListTrie.Base.Map      as Map
+import qualified Data.ListTrie.Patricia.Base as Base
+import Data.ListTrie.Base.Classes (fmap')
+import Data.ListTrie.Base.Map     (Map, OrdMap)
 
 -- Invariant: any (Tr Nothing _ _) has at least two children, all of which are
 -- Just or have a Just descendant.
