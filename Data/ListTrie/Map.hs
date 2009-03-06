@@ -58,10 +58,11 @@ instance Map map k => Base.Trie TrieMap Maybe map k where
    mkTrie = Tr
    tParts (Tr v m) = (v,m)
 
-instance (Eq (CMap map k a), Eq a) => Eq (TrieMap map k a) where
+-- Don't use CMap in these instances since Haddock won't expand it
+instance (Eq (map k (TrieMap map k a)), Eq a) => Eq (TrieMap map k a) where
    Tr v1 m1 == Tr v2 m2 = v1 == v2 && m1 == m2
 
-instance (Ord (CMap map k a), Ord a) => Ord (TrieMap map k a) where
+instance (Ord (map k (TrieMap map k a)), Ord a) => Ord (TrieMap map k a) where
    compare (Tr v1 m1) (Tr v2 m2) =
       compare v1 v2 `mappend` compare m1 m2
 
