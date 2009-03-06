@@ -72,9 +72,6 @@ instance Intersectable Identity Bool Bool Bool where
    intersectionVals' =
       error "Data.Trie.Base.Classes.intersectionVals' :: internal error"
 
--- TODO: might be reasonably doable with plain Alternative: WrappedMonad for
--- Identity and a Monoid for Bool (monadLib has this stuff but if base doesn't
--- then screw it)
 class Applicative a => Alt a x where
    altEmpty :: a x
    (<|>) :: a x -> a x -> a x
