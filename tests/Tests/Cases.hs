@@ -30,6 +30,24 @@ $(makeFunc allTries ["null","empty"] [d|
    nullEmpty null empty = null (empty :: TrieType)
  |])
 
+-- "foo" is obviously not equal to "fo"
+$(makeFunc setsOnly ["singleton"] [d|
+   eq1_s singleton = singleton "foo" /= (singleton "fo" :: TrieType)
+ |])
+$(makeFunc mapsOnly ["singleton"] [d|
+   eq1_m singleton = singleton "foo" 0 /= (singleton "fo" 0 :: TrieType)
+ |])
+
+-- eq1 via compare instead of ==
+$(makeFunc setsOnly ["singleton"] [d|
+   ord1_s singleton =
+      compare (singleton "foo") (singleton "fo" :: TrieType) == GT
+ |])
+$(makeFunc mapsOnly ["singleton"] [d|
+   ord1_m singleton =
+      compare (singleton "foo" 0) (singleton "fo" 0 :: TrieType) == GT
+ |])
+
 -- Subset/map tests where the maps aren't identical or empty, couldn't think of
 -- a good property for such cases
 $(makeFunc setsOnly ["fromList","isSubsetOf"] [d|
@@ -138,6 +156,10 @@ $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
 
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
+   , $(makeCases setsOnly "eq1_s")
+   , $(makeCases mapsOnly "eq1_m")
+   , $(makeCases setsOnly "ord1_s")
+   , $(makeCases mapsOnly "ord1_m")
    , $(makeCases setsOnly "isSubsetOf1")
    , $(makeCases setsOnly "isSubsetOf2")
    , $(makeCases mapsOnly "isSubmapOf1")
