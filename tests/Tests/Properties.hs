@@ -460,6 +460,12 @@ $(makeFunc allTries [] [d|
    prop_showRead1 x = (read.show) (x :: TrieType) == x
  |])
 
+-- (compare `on` toAscList) should be equivalent to compare
+$(makeFunc allTries ["toAscList"] [d|
+   prop_ord1 toAscList x y =
+      compare x (y :: TrieType) == compare (toAscList x) (toAscList y)
+ |])
+
 tests = testGroup "QuickCheck properties"
    [ $(makeProps allTries "prop_size1")
    , $(makeProps allTries "prop_size2")
@@ -524,4 +530,5 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_traversableLaw1")
    , $(makeProps mapsOnly "prop_traversableLaw2")
    , $(makeProps allTries "prop_showRead1")
+   , $(makeProps allTries "prop_ord1")
    ]
