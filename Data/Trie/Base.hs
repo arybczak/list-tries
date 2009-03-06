@@ -117,7 +117,7 @@ notMember = not .: member
 -- O(m)
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup []     tr = tVal tr
-lookup (x:xs) tr = maybe altEmpty (lookup xs) (Map.lookup (tMap tr) x)
+lookup (x:xs) tr = maybe altEmpty (lookup xs) (Map.lookup x (tMap tr))
 
 -- O(m)
 lookupWithDefault :: (Alt st a, Trie trie st map k)
@@ -198,7 +198,7 @@ genericInsertWith (<$$>) f []     new tr =
 
 genericInsertWith (<$$>) f (x:xs) val tr = mapMap tr $ \m ->
    Map.insertWith (\_ old -> genericInsertWith (<$$>) f xs val old)
-                  m x (singleton xs val)
+                  x (singleton xs val) m
 
 -- O(m)
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -220,7 +220,7 @@ genericAdjust :: Trie trie st map k
               -> (a -> a) -> [k] -> trie map k a -> trie map k a
 genericAdjust myFmap f []     tr = mapVal tr (myFmap f)
 genericAdjust myFmap f (x:xs) tr =
-   mapMap tr $ \m -> Map.adjust (genericAdjust myFmap f xs) m x
+   mapMap tr $ \m -> Map.adjust (genericAdjust myFmap f xs) x m
 
 -- O(m)
 updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -232,15 +232,14 @@ updateLookup f [] tr =
 
 updateLookup f (x:xs) orig =
    let m   = tMap orig
-       old = Map.lookup m x
-    in case old of
+    in case Map.lookup x m of
             Nothing -> (altEmpty, orig)
             Just tr ->
                let (ret, upd) = updateLookup f xs tr
                 in ( ret
                    , mkTrie (tVal orig) $ if null upd
-                                             then Map.delete             m x
-                                             else Map.adjust (const upd) m x
+                                             then Map.delete             x m
+                                             else Map.adjust (const upd) x m
                    )
 
 -- O(m)
@@ -275,7 +274,7 @@ genericAlter seeq f (x:xs) tr = mapMap tr $ \m ->
                             Just old ->
                                let new = genericAlter seeq f xs old
                                 in if null new then Nothing else Just new)
-              m x
+              x m
 
 -- * Combination
 
@@ -494,13 +493,13 @@ splitLookup :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
 splitLookup []     tr = (empty, tVal tr, mkTrie altEmpty (tMap tr))
 splitLookup (x:xs) tr =
    let (v,m) = tParts tr
-       (ml, subTr, mg) = Map.splitLookup m x
+       (ml, subTr, mg) = Map.splitLookup x m
     in case subTr of
             Nothing  -> (mkTrie v ml, altEmpty, mkTrie altEmpty mg)
             Just tr' ->
                let (tl, v', tg) = splitLookup xs tr'
-                   ml' = if null tl then ml else Map.insert ml x tl
-                   mg' = if null tg then mg else Map.insert mg x tg
+                   ml' = if null tl then ml else Map.insert x tl ml
+                   mg' = if null tg then mg else Map.insert x tg mg
                 in (mkTrie v ml', v', mkTrie altEmpty mg')
 
 -- * Mapping
@@ -694,8 +693,8 @@ minMaxView f g tr_ = first Just (go f g tr_)
                       (minMax, tr'') = go isWanted mapView tr'
                    in ( first (k:) minMax
                       , mkTrie v $ if null tr''
-                                      then Map.delete              m k
-                                      else Map.adjust (const tr'') m k
+                                      then Map.delete              k m
+                                      else Map.adjust (const tr'') k m
                       )
 
 -- O(m)
@@ -715,8 +714,8 @@ findPredecessor tr_ xs_         = go tr_ xs_
    -- resort.
    go tr (x:xs) =
       let (v,m) = tParts tr
-          predecessor = Map.findPredecessor m x
-       in fmap (first (x:)) (Map.lookup m x >>= flip go xs)
+          predecessor = Map.findPredecessor x m
+       in fmap (first (x:)) (Map.lookup x m >>= flip go xs)
           <|>
           case predecessor of
                Nothing         ->
@@ -736,8 +735,8 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
    go tr (x:xs) =
       let m = tMap tr
-          successor = Map.findSuccessor m x
-       in fmap (first (x:)) (Map.lookup m x >>= flip go xs)
+          successor = Map.findSuccessor x m
+       in fmap (first (x:)) (Map.lookup x m >>= flip go xs)
           <|>
           (successor >>= \(best,btr) -> fmap (first (best:)) (findMin btr))
 
@@ -765,7 +764,7 @@ lookupPrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
 lookupPrefix []     tr = tr
 lookupPrefix (x:xs) tr =
-   case Map.lookup (tMap tr) x of
+   case Map.lookup x (tMap tr) of
         Nothing  -> empty
         Just tr' -> lookupPrefix xs tr'
 

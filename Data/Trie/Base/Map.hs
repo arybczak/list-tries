@@ -46,19 +46,19 @@ class Map m k where
    singleton ::           k -> a -> m k a
    doubleton :: k -> a -> k -> a -> m k a -- Precondition: the two keys differ
 
-   null   :: m k a -> Bool
-   lookup :: m k a -> k -> Maybe a
+   null   ::      m k a -> Bool
+   lookup :: k -> m k a -> Maybe a
 
-   insert     ::                  m k a -> k -> a -> m k a
+   insert     ::                  k -> a -> m k a -> m k a
    -- Strictness can be whatever is more optimal for the map type, shouldn't
    -- matter
-   insertWith :: (a -> a -> a) -> m k a -> k -> a -> m k a
+   insertWith :: (a -> a -> a) -> k -> a -> m k a -> m k a
 
-   update :: (a -> Maybe a) -> m k a -> k -> m k a
-   adjust :: (a -> a)       -> m k a -> k -> m k a
-   delete ::                   m k a -> k -> m k a
+   update :: (a -> Maybe a) -> k -> m k a -> m k a
+   adjust :: (a -> a)       -> k -> m k a -> m k a
+   delete ::                   k -> m k a -> m k a
 
-   alter :: (Maybe a -> Maybe a) -> m k a -> k -> m k a
+   alter :: (Maybe a -> Maybe a) -> k -> m k a -> m k a
 
    unionWith           ::      (a -> a -> a)       -> m k a -> m k a -> m k a
    differenceWith      ::      (a -> b -> Maybe a) -> m k a -> m k b -> m k a
@@ -84,15 +84,15 @@ class Map m k where
 
    singletonView :: m k a -> Maybe (k,a)
 
-   empty     = fromList []
-   singleton = insertWith const empty
-   doubleton = insertWith const .: singleton
+   empty         = fromList []
+   singleton k v = insert k v empty
+   doubleton k v = insert k v .: singleton
 
-   insert             = insertWith const
-   insertWith f m k v = alter (\mold -> Just $ case mold of
+   insert           = insertWith const
+   insertWith f k v = alter (\mold -> Just $ case mold of
                                                     Nothing  -> v
                                                     Just old -> f v old)
-                              m k
+                            k
 
    adjust f = update (Just . f)
    delete   = update (const Nothing)
@@ -114,7 +114,7 @@ class Map m k where
 
    -- Should be strict in the keys
    fromList       = fromListWith const
-   fromListWith f = foldr (\(k,v) m -> insertWith f m k v) empty
+   fromListWith f = foldr (uncurry $ insertWith f) empty
 
    singletonView m =
       case toList m of
@@ -143,14 +143,14 @@ class Map m k => OrdMap m k where
    fromDistinctAscList  :: [(k,a)] -> m k a
    fromDistinctDescList :: [(k,a)] -> m k a
 
-   splitLookup :: m k a -> k -> (m k a, Maybe a, m k a)
-   split       :: m k a -> k -> (m k a,          m k a)
+   splitLookup :: k -> m k a -> (m k a, Maybe a, m k a)
+   split       :: k -> m k a -> (m k a,          m k a)
 
    minViewWithKey :: m k a -> (Maybe (k,a), m k a)
    maxViewWithKey :: m k a -> (Maybe (k,a), m k a)
 
-   findPredecessor :: m k a -> k -> Maybe (k,a)
-   findSuccessor   :: m k a -> k -> Maybe (k,a)
+   findPredecessor :: k -> m k a -> Maybe (k,a)
+   findSuccessor   :: k -> m k a -> Maybe (k,a)
 
    mapAccumAsc         :: (a ->      b -> (a,c)) -> a -> m k b -> (a, m k c)
    mapAccumAscWithKey  :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
@@ -224,16 +224,16 @@ instance Eq k => Map AList k where
    singleton k v     = AL [(k,v)]
    doubleton a b p q = AL [(a,b),(p,q)]
 
-   null (AL xs)     = Prelude.null xs
-   lookup (AL xs) x = Prelude.lookup x xs
+   null     (AL xs) = Prelude.null xs
+   lookup x (AL xs) = Prelude.lookup x xs
 
-   alter f (AL xs) k =
+   alter f k (AL xs) =
       let (old, ys) = deleteAndGetBy ((== k).fst) xs
        in case f (fmap snd old) of
                Nothing -> AL ys
                Just v  -> AL $ (k,v) : ys
 
-   delete (AL xs) k = AL$ deleteBy (\a (b,_) -> a == b) k xs
+   delete k (AL xs) = AL$ deleteBy (\a (b,_) -> a == b) k xs
 
    unionWithKey f (AL xs) (AL ys) =
       AL . uncurry (++) $ updateFirstsBy (\(k,x) (_,y) -> Just (k, f k x y))
@@ -291,7 +291,7 @@ instance Ord k => OrdMap AList k where
    toAscList  = sortBy (       comparing fst) . toList
    toDescList = sortBy (flip $ comparing fst) . toList
 
-   splitLookup (AL xs) k =
+   splitLookup k (AL xs) =
       let (ls,gs)  = partition ((< k).fst) xs
           (mx,gs') = deleteAndGetBy ((== k).fst) gs
        in (AL ls, fmap snd mx, AL gs')
@@ -335,15 +335,15 @@ instance Ord k => Map M.Map k where
    singleton = M.singleton
 
    null   = M.null
-   lookup = flip M.lookup
+   lookup = M.lookup
 
-   insertWith f m k v = M.insertWith' f k v m
+   insertWith = M.insertWith'
 
-   update = flip . M.update
-   adjust = flip . M.adjust
-   delete = flip   M.delete
+   update = M.update
+   adjust = M.adjust
+   delete = M.delete
 
-   alter = flip . M.alter
+   alter  = M.alter
 
    unionWith           = M.unionWith
    differenceWith      = M.differenceWith
@@ -379,8 +379,8 @@ instance Ord k => OrdMap M.Map k where
    fromDistinctAscList  = M.fromDistinctAscList
    fromDistinctDescList = fromDistinctAscList . reverse
 
-   splitLookup = flip M.splitLookup
-   split       = flip M.split
+   splitLookup = M.splitLookup
+   split       = M.split
 
    minViewWithKey m = maybe (Nothing, m) (first Just) (M.minViewWithKey m)
    maxViewWithKey m = maybe (Nothing, m) (first Just) (M.maxViewWithKey m)
@@ -413,16 +413,16 @@ instance Enum k => Map WrappedIntMap k where
    empty       = IMap IM.empty
    singleton k = IMap . IM.singleton (fromEnum k)
 
-   null (IMap m)     = IM.null m
-   lookup (IMap m) k = IM.lookup (fromEnum k) m
+   null     (IMap m) = IM.null m
+   lookup k (IMap m) = IM.lookup (fromEnum k) m
 
-   insertWith f (IMap m) k v = IMap$ IM.insertWith f (fromEnum k) v m
+   insertWith f k v (IMap m) = IMap$ IM.insertWith f (fromEnum k) v m
 
-   update f (IMap m) k = IMap$ IM.update f (fromEnum k) m
-   adjust f (IMap m) k = IMap$ IM.adjust f (fromEnum k) m
-   delete   (IMap m) k = IMap$ IM.delete   (fromEnum k) m
+   update f k (IMap m) = IMap$ IM.update f (fromEnum k) m
+   adjust f k (IMap m) = IMap$ IM.adjust f (fromEnum k) m
+   delete   k (IMap m) = IMap$ IM.delete   (fromEnum k) m
 
-   alter f (IMap m) k = IMap$ IM.alter f (fromEnum k) m
+   alter  f k (IMap m) = IMap$ IM.alter  f (fromEnum k) m
 
    unionWith        f (IMap x) (IMap y) = IMap$ IM.unionWith        f x y
    differenceWith   f (IMap x) (IMap y) = IMap$ IM.differenceWith   f x y
@@ -464,10 +464,10 @@ instance Enum k => OrdMap WrappedIntMap k where
       IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)
    fromDistinctDescList = fromDistinctAscList . reverse
 
-   splitLookup (IMap m) =
-      (\(a,b,c) -> (IMap a, b, IMap c)) . flip IM.splitLookup m . fromEnum
+   splitLookup k (IMap m) =
+      (\(a,b,c) -> (IMap a, b, IMap c)) . IM.splitLookup (fromEnum k) $ m
 
-   split (IMap m) = both IMap . flip IM.split m . fromEnum
+   split k (IMap m) = both IMap . IM.split (fromEnum k) $ m
 
    minViewWithKey o@(IMap m) =
       maybe (Nothing, o) (Just . first toEnum *** IMap) (IM.minViewWithKey m)

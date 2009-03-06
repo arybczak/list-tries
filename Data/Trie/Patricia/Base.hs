@@ -97,7 +97,7 @@ lookup k tr =
     in case comparePrefixes (Map.eqCmp m) prefix k of
             Same                   -> v
             PostFix (Right (x:xs)) -> maybe altEmpty (lookup xs)
-                                            (Map.lookup m x)
+                                            (Map.lookup x m)
             _                      -> altEmpty
 
 -- O(m)
@@ -123,7 +123,7 @@ isSubmapOfBy f_ trl trr =
             Same              -> same f_ vl vr ml mr
  where
    go f mr vl ml (x:xs) =
-      case Map.lookup mr x of
+      case Map.lookup x mr of
            Nothing -> False
            Just tr ->
               let (vr,pre,mr') = tParts tr
@@ -167,7 +167,7 @@ isProperSubmapOfBy = f False
                Same              -> same proper g vl vr ml mr
 
    go proper g mr vl ml (x:xs) =
-      case Map.lookup mr x of
+      case Map.lookup x mr of
            Nothing -> False
            Just tr ->
               let (vr,pre,mr') = tParts tr
@@ -241,7 +241,7 @@ genericInsertWith (<$$>) f k new tr =
                           Map.insertWith
                              (\_ oldt ->
                                 genericInsertWith (<$$>) f xs new oldt)
-                             m x (singleton xs new)
+                             x (singleton xs new) m
 
             DifferedAt pr' (p:pr) (x:xs) ->
                mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
@@ -272,7 +272,7 @@ genericAdjust myFmap f k tr =
     in case comparePrefixes (Map.eqCmp m) prefix k of
             Same                   -> mkTrie (myFmap f v) prefix m
             PostFix (Right (x:xs)) ->
-               mkTrie v prefix $ Map.adjust (genericAdjust myFmap f xs) m x
+               mkTrie v prefix $ Map.adjust (genericAdjust myFmap f xs) x m
             _                      -> tr
 
 -- O(m)
@@ -286,15 +286,15 @@ updateLookup f k tr =
                                                   else v
                                        in (v, safeMkTrie v' prefix m)
             PostFix (Right (x:xs)) ->
-               case Map.lookup m x of
+               case Map.lookup x m of
                     Nothing  -> (altEmpty, tr)
                     Just tr' ->
                        let (ret, upd) = updateLookup f xs tr'
                         in ( ret
                            , safeMkTrie v prefix $
                                 if null upd
-                                   then Map.delete m x
-                                   else Map.adjust (const upd) m x
+                                   then Map.delete x m
+                                   else Map.adjust (const upd) x m
                            )
             _ -> (altEmpty, tr)
 
@@ -344,7 +344,7 @@ genericAlter seeq f k tr =
                                  Just t ->
                                     let new = genericAlter seeq f xs t
                                      in if null new then Nothing else Just new)
-                     m x
+                     x m
 
             PostFix (Left (p:ps)) ->
                let v' = f altEmpty
@@ -540,7 +540,7 @@ differenceWith j_ tr1 tr2 =
    -- noncommutative operation.
    goRight j left rightMap (x:xs) =
       let (v,pre,m) = tParts left
-       in case Map.lookup rightMap x of
+       in case Map.lookup x rightMap of
                Nothing     -> left
                Just right' ->
                   let (v',pre',m') = tParts right'
@@ -553,7 +553,7 @@ differenceWith j_ tr1 tr2 =
    goRight _ _ _ [] = can'tHappen
 
    goLeft j left right (x:xs) =
-      tryCompress . mkTrie vl prel $ Map.update f ml x
+      tryCompress . mkTrie vl prel $ Map.update f x ml
     where
       (vl,prel,ml) = tParts left
       (vr,   _,mr) = tParts right
@@ -608,7 +608,7 @@ differenceWithKey = go DL.empty
 
    goRight k j left rightMap (x:xs) =
       let (vl,_,ml) = tParts left
-       in case Map.lookup rightMap x of
+       in case Map.lookup x rightMap of
                Nothing    -> left
                Just right ->
                   let (vr,pre,mr) = tParts right
@@ -624,7 +624,7 @@ differenceWithKey = go DL.empty
    goRight _ _ _ _ [] = can'tHappen
 
    goLeft k j left right (x:xs) =
-      tryCompress . mkTrie vl prel $ Map.update f ml x
+      tryCompress . mkTrie vl prel $ Map.update f x ml
     where
       (vl,prel,ml) = tParts left
       (vr,   _,mr) = tParts right
@@ -761,7 +761,7 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
       -> [k]
       -> trie map k z
    go valIsect seeq ma v mb pre (x:xs) =
-      case Map.lookup ma x of
+      case Map.lookup x ma of
            Nothing -> empty
            Just tr ->
               let (v',pre',m') = tParts tr
@@ -851,7 +851,7 @@ genericIntersectionWithKey = main DL.empty
       -> [k]
       -> trie map k z
    go k valIsect seeq j ma v mb pre (x:xs) =
-      case Map.lookup ma x of
+      case Map.lookup x ma of
            Nothing -> empty
            Just tr ->
               let (v',pre',m') = tParts tr
@@ -906,15 +906,15 @@ splitLookup xs tr =
 
             PostFix (Left  _)      -> (empty, altEmpty, tr)
             PostFix (Right (y:ys)) ->
-               let (ml, maybeTr, mg) = Map.splitLookup m y
+               let (ml, maybeTr, mg) = Map.splitLookup y m
                 in case maybeTr of
                         -- Prefix goes in left side of split since it's shorter
                         -- than the given key and thus lesser
                         Nothing  -> (mk v pre ml, altEmpty, mk altEmpty pre mg)
                         Just tr' ->
                            let (tl, v', tg) = splitLookup ys tr'
-                               ml' = if null tl then ml else Map.insert ml y tl
-                               mg' = if null tg then mg else Map.insert mg y tg
+                               ml' = if null tl then ml else Map.insert y tl ml
+                               mg' = if null tg then mg else Map.insert y tg mg
                             in (mk v pre ml', v', mk altEmpty pre mg')
             _ -> can'tHappen
  where
@@ -1130,8 +1130,8 @@ minMaxView f g tr_ = first Just (go f g tr_)
                       (minMax, tr'') = go isWanted mapView tr'
                    in ( first (prepend pre k) minMax
                       , mkTrie v pre $ if null tr''
-                                          then Map.delete              m k
-                                          else Map.adjust (const tr'') m k
+                                          then Map.delete              k m
+                                          else Map.adjust (const tr'') k m
                       )
 
 -- O(m)
@@ -1155,8 +1155,8 @@ findPredecessor tr_ xs_         = go tr_ xs_
                -- See comment in non-Patricia version for explanation of
                -- algorithm
                PostFix (Right (y:ys)) ->
-                  let predecessor = Map.findPredecessor m y
-                   in (first (prepend pre y)<$>(Map.lookup m y >>= flip go ys))
+                  let predecessor = Map.findPredecessor y m
+                   in (first (prepend pre y)<$>(Map.lookup y m >>= flip go ys))
                       <|>
                       case predecessor of
                            Nothing         ->
@@ -1190,8 +1190,8 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
                PostFix (Left _)       -> findMin tr
                PostFix (Right (y:ys)) ->
-                  let successor = Map.findSuccessor m y
-                   in (first (prepend pre y)<$>(Map.lookup m y >>= flip go ys))
+                  let successor = Map.findSuccessor y m
+                   in (first (prepend pre y)<$>(Map.lookup y m >>= flip go ys))
                       <|>
                       (successor >>= \(best,btr) ->
                          first (prepend pre best) <$> findMin btr)
@@ -1227,7 +1227,7 @@ lookupPrefix xs tr =
             PostFix (Left _)       -> tr
             DifferedAt _ _ _       -> empty
             PostFix (Right (y:ys)) ->
-               case Map.lookup m y of
+               case Map.lookup y m of
                     Nothing  -> empty
                     Just tr' -> lookupPrefix ys tr'
 
