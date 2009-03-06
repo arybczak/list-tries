@@ -30,6 +30,8 @@ $(makeFunc allTries ["null","empty"] [d|
    nullEmpty null empty = null (empty :: TrieType)
  |])
 
+-- Subset/map tests where the maps aren't identical or empty, couldn't think of
+-- a good property for such cases
 $(makeFunc setsOnly ["fromList","isSubsetOf"] [d|
    isSubsetOf1 fromList isSubsetOf =
       (fromList ["cameroon","camera"] :: TrieType)
@@ -51,6 +53,7 @@ $(makeFunc mapsOnly ["fromList","isSubmapOf"] [d|
          fromList (zip ["cameroon","camera","camel","camouflage","cat"] [0..])
  |])
 
+-- Simple tests for alter to up the code coverage a bit
 $(makeFunc mapsOnly ["fromList","alter"] [d|
    alter1 fromList alter =
       alter (\Nothing -> Just 42) "foo" (fromList [("foobar",0)] :: TrieType)
@@ -62,6 +65,19 @@ $(makeFunc mapsOnly ["fromList","alter"] [d|
        in alter id "x" x == x
  |])
 
+-- Make sure insertWith applies the combining function in the right order
+$(makeFunc mapsOnly ["singleton","insertWith"] [d|
+   insertWith1 singleton insertWith =
+      insertWith (-) [] 3 (singleton [] 1) == (singleton [] 2 :: TrieType)
+ |])
+
+-- And the same for fromListWith
+$(makeFunc mapsOnly ["singleton","fromListWith"] [d|
+   fromListWith1 singleton fromListWith =
+      fromListWith (-) (zip (repeat []) [1..4]) ==
+         (singleton [] 2 :: TrieType)
+ |])
+
 -- A couple of simple sanity tests for the *WithKey set operations since they
 -- don't have properties at all
 $(makeFunc mapsOnly ["fromList","unionWithKey"] [d|
@@ -70,8 +86,8 @@ $(makeFunc mapsOnly ["fromList","unionWithKey"] [d|
           bl = ["tom","tomb","tomes","tomato","fark"]
           a = fromList $ zip al [1..] :: TrieType
           b = fromList $ zip bl [length al..]
-       in unionWithKey (\k vl vr -> vl + vr + length k) a b
-          == fromList (("tom",3+1+length al) : zip (tail al ++ tail bl) [2..])
+       in unionWithKey (\k vl vr -> vl - vr + length k) a b
+          == fromList (("tom",3+1-length al) : zip (tail al ++ tail bl) [2..])
  |])
 $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
    differenceWithKey1 fromList differenceWithKey =
@@ -79,8 +95,8 @@ $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
           bl = ["tom","tomb","tomes","tomato","fark"]
           a = fromList $ zip al [1..] :: TrieType
           b = fromList $ zip bl [length al..]
-       in differenceWithKey (\k vl vr -> Just $ vl + vr + length k) a b
-          == fromList (("tom",3+1+length al) : zip (tail al) [2..])
+       in differenceWithKey (\k vl vr -> Just $ vl - vr + length k) a b
+          == fromList (("tom",3+1-length al) : zip (tail al) [2..])
  |])
 $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
    differenceWithKey2 fromList differenceWithKey =
@@ -88,8 +104,8 @@ $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
           bl = ["shiner","shin","shiners","shoe"]
           a = fromList $ zip al [1..] :: TrieType
           b = fromList $ zip bl [length al..]
-       in differenceWithKey (\k vl vr -> Just $ vl + vr + length k) a b
-          == fromList (("shiner",6+1+length al) : zip (tail al) [2..])
+       in differenceWithKey (\k vl vr -> Just $ vl - vr + length k) a b
+          == fromList (("shiner",6+1-length al) : zip (tail al) [2..])
  |])
 $(makeFunc mapsOnly ["fromList","differenceWithKey"] [d|
    differenceWithKey3 fromList differenceWithKey =
@@ -106,9 +122,10 @@ $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
           bl = ["cat","caterers","c","caterwauler"]
           a = fromList $ zip al [1..] :: TrieType
           b = fromList $ zip bl [length al..]
-       in intersectionWithKey (\k vl vr -> length k + vl + vr) a b
+       in intersectionWithKey (\k vl vr -> length k - vl + vr) a b
           == fromList (zip ["cat","caterers"] $
-                zipWith3 (join (.:) (+)) [1..] [length al..] (map length al))
+                zipWith3 (join (.:) (+) . negate)
+                         [1..] [length al..] (map length al))
  |])
 $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
    intersectionWithKey2 fromList intersectionWithKey =
@@ -126,6 +143,8 @@ tests = testGroup "Individual cases"
    , $(makeCases mapsOnly "isSubmapOf1")
    , $(makeCases mapsOnly "alter1")
    , $(makeCases mapsOnly "alter2")
+   , $(makeCases mapsOnly "insertWith1")
+   , $(makeCases mapsOnly "fromListWith1")
    , $(makeCases mapsOnly "unionWithKey1")
    , $(makeCases mapsOnly "differenceWithKey1")
    , $(makeCases mapsOnly "differenceWithKey2")
