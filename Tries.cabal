@@ -14,7 +14,7 @@ Description:
 	.
    The data types are parametrized over the map type they use internally to
    store the child nodes: this allows extending them to support different kinds
-   of key types or increasing efficiency.  Child maps are required to be
+   of key types or increasing efficiency. Child maps are required to be
    instances of the Map class in Data.ListTrie.Base.Map. Some operations
    additionally require an OrdMap instance.
 	.
