@@ -6,7 +6,7 @@
 module Tests.Base (Str(..), alpha, unArb, getKey) where
 
 import Control.Arrow   (first)
-import Test.QuickCheck
+import Test.QuickCheck (Arbitrary(arbitrary, shrink), sized, choose)
 
 import Data.ListTrie.Base.Map (Map)
 import qualified Data.ListTrie.Set          as  BS
@@ -22,6 +22,8 @@ instance Arbitrary Str where
    arbitrary = sized $ \size -> do
       s <- mapM (const $ choose alpha) [0..size `mod` 6]
       return (Str s)
+
+   shrink (Str s) = map Str (shrink s)
 
 instance Map map Char => Arbitrary ( BS.TrieSet map Char) where
    arbitrary = fmap ( BS.fromList . map unArb) arbitrary

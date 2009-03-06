@@ -12,9 +12,9 @@ import Data.Maybe       (fromJust, isNothing)
 import Data.Monoid      (mappend, mempty)
 import Data.Traversable (fmapDefault, foldMapDefault)
 
-import Test.Framework                      (testGroup)
-import Test.Framework.Providers.QuickCheck (testProperty)
-import Test.QuickCheck                     ((==>))
+import Test.Framework                       (testGroup)
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+import Test.QuickCheck                      ((==>))
 
 import qualified Data.ListTrie.Set.Eq
 import qualified Data.ListTrie.Set.Ord
