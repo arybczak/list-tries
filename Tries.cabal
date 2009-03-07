@@ -11,13 +11,13 @@ Description:
    using tries, both simple and of the Patricia kind. In most (or all? sorry,
    haven't benchmarked yet) cases, the Patricia tries will have better
    performance, so use them unless you have reasons not to.
-	.
+   .
    The data types are parametrized over the map type they use internally to
    store the child nodes: this allows extending them to support different kinds
    of key types or increasing efficiency. Child maps are required to be
    instances of the Map class in Data.ListTrie.Base.Map. Some operations
    additionally require an OrdMap instance.
-	.
+   .
    The Eq, Ord, and Enum modules contain ready structures for key types which
    are instances of those classes, using lists of pairs, Data.Map, and
    Data.IntMap respectively.
@@ -55,7 +55,7 @@ Library
                     Data.ListTrie.Patricia.Set.Eq
                     Data.ListTrie.Patricia.Set.Ord
                     Data.ListTrie.Patricia.Set.Enum
-   Other-Modules:   Data.ListTrie.Base 
+   Other-Modules:   Data.ListTrie.Base
                     Data.ListTrie.Base.Classes
                     Data.ListTrie.Base.Map.Internal
                     Data.ListTrie.Patricia.Base
