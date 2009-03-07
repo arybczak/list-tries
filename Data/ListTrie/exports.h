@@ -1,64 +1,105 @@
 -- File created: 2008-12-30 18:33:18
 
-#define COMMON_EXPORTS \
+#define SET_EXPORTS \
+	{- * Set type -} \
+	TrieSet, \
+	{- * Construction -} \
+	empty, singleton, \
+	\
+	{- * Modification -} \
+	insert, delete, \
+	\
+	{- * Querying -} \
 	null, size, member, notMember, \
 	\
-	empty, singleton, insert, delete, \
-	\
-	union, unions, difference, intersection, \
-	\
-	filter, partition, split, \
-	\
-	toList, toAscList, toDescList, fromList, \
-	\
-	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
-	findPredecessor, findSuccessor, \
-	\
-	addPrefix, splitPrefix, lookupPrefix, children, \
-	\
-	showTrie
-
-#define SET_EXPORTS TrieSet, COMMON_EXPORTS, \
+	{- ** Subsets -} \
 	isSubsetOf, isProperSubsetOf, \
 	\
-	splitMember, \
+	{- * Combination -} \
+	union, unions, difference, intersection, \
 	\
+	{- * Filtering -} \
+	filter, partition, \
+	\
+	{- * Mapping -} \
 	map, mapIn, \
 	\
+	{- * Folding -} \
 	foldr, foldrAsc, foldrDesc, \
-	foldl', foldlAsc', foldlDesc'
+	foldl', foldlAsc', foldlDesc', \
+	\
+	{- * Conversion to and from lists -} \
+	toList, toAscList, toDescList, fromList, \
+	\
+	{- * Ordering-sensitive operations -} \
+	{- ** Minimum and maximum -} \
+	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
+	\
+	{- ** Predecessor and successor -} \
+	split, splitMember, \
+	findPredecessor, findSuccessor, \
+	\
+	{- * Trie-specific operations -} \
+	addPrefix, splitPrefix, lookupPrefix, children, \
+	\
+	{- * Visualization -} \
+	showTrie
 
-#define MAP_EXPORTS TrieMap, COMMON_EXPORTS, \
+#define MAP_EXPORTS \
+	{- * Map type -} \
+	TrieMap, \
+	\
+	{- * Construction -} \
+	empty, singleton, \
+	\
+	{- * Modification -} \
+	insert, delete, insertWith, insertWith', \
+	update, updateLookup, \
+	adjust, adjust', alter, alter', \
+	\
+	{- * Querying -} \
+	null, size, member, notMember, \
 	lookup, lookupWithDefault, \
 	\
+	{- ** Submaps -} \
 	isSubmapOf, isSubmapOfBy, \
 	isProperSubmapOf, isProperSubmapOfBy, \
 	\
-	insertWith, insertWith', \
-   adjust, adjust', update, updateLookup, alter, alter', \
-	\
-	union', unions', \
+	{- * Combination -} \
+	{- ** Union -} \
+	union, union', unions, unions', \
 	unionWith,  unionWithKey,  unionsWith,  unionsWithKey, \
 	unionWith', unionWithKey', unionsWith', unionsWithKey', \
-	differenceWith,  differenceWithKey, \
-	intersection', \
+	\
+	{- ** Difference -} \
+	difference, differenceWith, differenceWithKey, \
+	\
+	{- ** Intersection -} \
+	intersection, intersection', \
 	intersectionWith,  intersectionWithKey, \
 	intersectionWith', intersectionWithKey', \
 	\
-	filterWithKey, partitionWithKey, splitLookup, \
+	{- * Filtering -} \
+	filter, filterWithKey, partition, partitionWithKey, \
 	\
+	{- * Mapping -} \
+	{- ** Values -} \
+	map, map', mapWithKey, mapWithKey', \
 	mapMaybe, mapMaybeWithKey, mapEither, mapEitherWithKey, \
 	\
-	map, map', mapWithKey, mapWithKey', \
+	{- ** Keys -} \
+	mapKeys, mapKeysWith, \
+	mapInKeys, mapInKeys', mapInKeysWith, mapInKeysWith', \
+	\
+	{- ** With accumulation -} \
 	mapAccum,      mapAccumWithKey, \
 	mapAccum',     mapAccumWithKey', \
 	mapAccumAsc,   mapAccumAscWithKey, \
 	mapAccumAsc',  mapAccumAscWithKey', \
 	mapAccumDesc,  mapAccumDescWithKey, \
 	mapAccumDesc', mapAccumDescWithKey', \
-	mapKeys, mapKeysWith, \
-	mapInKeys, mapInKeys', mapInKeysWith, mapInKeysWith', \
 	\
+	{- * Folding -} \
 	foldr, foldrWithKey, \
 	foldrAsc, foldrAscWithKey, \
 	foldrDesc, foldrDescWithKey, \
@@ -66,7 +107,21 @@
 	foldlAsc', foldlAscWithKey', \
 	foldlDesc', foldlDescWithKey', \
 	\
+	{- * Conversion to and from lists -} \
+	toList, toAscList, toDescList, fromList, \
 	fromListWith,  fromListWithKey, \
 	fromListWith', fromListWithKey', \
 	\
-	showTrieWith
+	{- * Ordering-sensitive operations -} \
+	{- ** Minimum and maximum -} \
+	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
+	\
+	{- ** Predecessor and successor -} \
+	split, splitLookup, \
+	findPredecessor, findSuccessor, \
+	\
+	{- * Trie-specific operations -} \
+	addPrefix, splitPrefix, lookupPrefix, children, \
+	\
+	{- * Visualization -} \
+	showTrie, showTrieWith
