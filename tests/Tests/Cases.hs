@@ -154,6 +154,19 @@ $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
        in intersectionWithKey undefined a b == (fromList [] :: TrieType)
  |])
 
+-- children should return something nonempty even if there's only one path
+-- through the trie
+$(makeFunc setsOnly ["fromList","children"] [d|
+   children1_s fromList children =
+      children (fromList ["foo","foobar"] :: TrieType) ==
+         [('b',fromList ["ar"])]
+ |])
+$(makeFunc mapsOnly ["fromList","children"] [d|
+   children1_m fromList children =
+      children (fromList [("foo",1),("foobar",2)] :: TrieType) ==
+         [('b',fromList [("ar",2)])]
+ |])
+
 tests = testGroup "Individual cases"
    [ $(makeCases allTries "nullEmpty")
    , $(makeCases setsOnly "eq1_s")
@@ -173,4 +186,6 @@ tests = testGroup "Individual cases"
    , $(makeCases mapsOnly "differenceWithKey3")
    , $(makeCases mapsOnly "intersectionWithKey1")
    , $(makeCases mapsOnly "intersectionWithKey2")
+   , $(makeCases setsOnly "children1_s")
+   , $(makeCases mapsOnly "children1_m")
    ]
