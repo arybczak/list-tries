@@ -40,6 +40,7 @@
 	findPredecessor, findSuccessor, \
 	\
 	{- * Trie-specific operations -} \
+	{- $trie-only-ops -} \
 	addPrefix, splitPrefix, lookupPrefix, children, \
 	\
 	{- * Visualization -} \
@@ -121,6 +122,7 @@
 	findPredecessor, findSuccessor, \
 	\
 	{- * Trie-specific operations -} \
+	{- $trie-only-ops -} \
 	addPrefix, lookupPrefix, splitPrefix, children, \
 	\
 	{- * Visualization -} \
