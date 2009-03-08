@@ -61,4 +61,4 @@ Library
                     Data.ListTrie.Patricia.Base
                     Data.ListTrie.Util
 
-   Include-Dirs: Data/ListTrie
+   Include-Dirs: headers
