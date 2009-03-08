@@ -33,7 +33,7 @@
 	\
 	{- * Ordering-sensitive operations -} \
 	{- ** Minimum and maximum -} \
-	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
+	minView, maxView, findMin, findMax, deleteMin, deleteMax, \
 	\
 	{- ** Predecessor and successor -} \
 	split, splitMember, \
