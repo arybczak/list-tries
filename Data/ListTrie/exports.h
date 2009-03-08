@@ -121,7 +121,7 @@
 	findPredecessor, findSuccessor, \
 	\
 	{- * Trie-specific operations -} \
-	addPrefix, splitPrefix, lookupPrefix, children, \
+	addPrefix, lookupPrefix, splitPrefix, children, \
 	\
 	{- * Visualization -} \
 	showTrie, showTrieWith
