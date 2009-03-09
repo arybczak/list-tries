@@ -18,7 +18,7 @@
 -- a lookup operation on the 'Map' used. This complexity depends on the
 -- underlying operation, which is not part of the specification of the visible
 -- function. Thus it could change whilst affecting the complexity only for
--- certain Map types: hence this "b factor" is not shown explicitly.
+-- certain Map types: hence this \"b factor\" is not shown explicitly.
 --
 -- Disclaimer: the complexities have not been proven.
 module Data.ListTrie.Set (SET_EXPORTS) where
