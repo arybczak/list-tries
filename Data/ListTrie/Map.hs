@@ -9,8 +9,8 @@
 -- generalized over any type of map from element values to tries.
 --
 -- Worst-case complexities are given in terms of @n@, @m@, and @k@. @n@ refers
--- to the number of keys in the set and @m@ to their maximum length. @k@ refers
--- to the length of a key given to the function, not any property of the set.
+-- to the number of keys in the map and @m@ to their maximum length. @k@ refers
+-- to the length of a key given to the function, not any property of the map.
 --
 -- In addition, the trie's branching factor plays a part in almost every
 -- operation, but the complexity depends on the underlying 'Map'. Thus, for
@@ -281,7 +281,7 @@ defaultUnion = const
 -- keys that are members of either map. This union is left-biased: if a key is
 -- a member of both maps, the value from the first map is chosen.
 --
--- The worst-case performance occurs when the two sets are identical.
+-- The worst-case performance occurs when the two maps are identical.
 --
 -- > union = unionWith const
 union :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
@@ -405,7 +405,7 @@ differenceWithKey = Base.differenceWithKey
 -- | @O(min(n1,n2))@. The intersection of the two maps: the map which contains
 -- all keys that are members of both maps.
 --
--- The worst-case performance occurs when the two sets are identical.
+-- The worst-case performance occurs when the two maps are identical.
 --
 -- > intersection = intersectionWith const
 intersection :: Map map k
@@ -514,7 +514,7 @@ mapEitherWithKey f =
 
 -- * Mapping
 
--- | @O(n m)@. Apply the given function to all the elements in the set.
+-- | @O(n m)@. Apply the given function to all the elements in the map.
 map :: Map map k => (a -> b) -> TrieMap map k a -> TrieMap map k b
 map = genericMap fmap
 
