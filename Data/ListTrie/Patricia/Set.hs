@@ -281,12 +281,12 @@ minView = (fmap fst *** TS) . Base.minView . unTS
 maxView :: OrdMap map a => TrieSet map a -> (Maybe [a], TrieSet map a)
 maxView = (fmap fst *** TS) . Base.maxView . unTS
 
--- | @O(m)@. Like 'fst' composed with 'minView'. Just the minimal key in the
+-- | @O(m)@. Like 'fst' composed with 'minView'. 'Just' the minimal key in the
 -- set, or 'Nothing' if the set is empty.
 findMin :: OrdMap map a => TrieSet map a -> Maybe [a]
 findMin = fmap fst . Base.findMin . unTS
 
--- | @O(m)@. Like 'fst' composed with 'maxView'. Just the maximal key in the
+-- | @O(m)@. Like 'fst' composed with 'maxView'. 'Just' the maximal key in the
 -- set, or 'Nothing' if the set is empty.
 findMax :: OrdMap map a => TrieSet map a -> Maybe [a]
 findMax = fmap fst . Base.findMax . unTS
@@ -296,7 +296,7 @@ findMax = fmap fst . Base.findMax . unTS
 deleteMin :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMin = inTS Base.deleteMin
 
--- | @O(m)@. Like 'snd' composed with 'maxView'. The set without its minimal
+-- | @O(m)@. Like 'snd' composed with 'maxView'. The set without its maximal
 -- key, or the unchanged original set if it was empty.
 deleteMax :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMax = inTS Base.deleteMax
@@ -313,13 +313,13 @@ splitMember :: OrdMap map a
             => [a] -> TrieSet map a -> (TrieSet map a, Bool, TrieSet map a)
 splitMember = (\(l,b,g) -> (TS l,unwrap b,TS g)) .: Base.splitLookup .:. unTS
 
--- | @O(m)@. Just the key of the set which precedes the given key in order, or
--- 'Nothing' if the set is empty.
+-- | @O(m)@. 'Just' the key of the set which precedes the given key in order,
+-- or 'Nothing' if the set is empty.
 findPredecessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findPredecessor = fmap fst .: Base.findPredecessor . unTS
 
--- | @O(m)@. Just the key of the set which succeeds the given key in order, or
--- 'Nothing' if the set is empty.
+-- | @O(m)@. 'Just' the key of the set which succeeds the given key in order,
+-- or 'Nothing' if the set is empty.
 findSuccessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
 findSuccessor = fmap fst .: Base.findSuccessor . unTS
 
