@@ -25,10 +25,9 @@
 -- Strict versions of functions are provided for those who want to be certain
 -- that their 'TrieMap' doesn't contain values consisting of unevaluated
 -- thunks. Note, however, that they do not evaluate the whole trie strictly,
--- only the values. And only to one level of depth: for instance, 'alter\'' and
--- 'differenceWith\'' do not 'seq' the value within the 'Maybe', only the
--- 'Maybe' itself. The user should add the strictness in such cases himself, if
--- he so wishes.
+-- only the values. And only to one level of depth: for instance, 'alter'' does
+-- not 'seq' the value within the 'Maybe', only the 'Maybe' itself. The user
+-- should add the strictness in such cases himself, if he so wishes.
 --
 -- Many functions come in both ordinary and @WithKey@ forms, where the former
 -- takes a function of type @a -> b@ and the latter of type @[k] -> a -> b@,
