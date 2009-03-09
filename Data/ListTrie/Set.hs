@@ -290,7 +290,7 @@ findMax = fmap fst . Base.findMax . unTS
 deleteMin :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMin = inTS Base.deleteMin
 
--- | @O(m)@. Like 'snd' composed with 'maxView'. The set without its minimal
+-- | @O(m)@. Like 'snd' composed with 'maxView'. The set without its maximal
 -- key, or the unchanged original set if it was empty.
 deleteMax :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMax = inTS Base.deleteMax
