@@ -112,12 +112,12 @@ singleton k = TS$ Base.singleton k True
 
 -- * Modification
 
--- | @O(min(m,s)@). Inserts the key into the set. If the key is already a
+-- | @O(min(m,s))@. Inserts the key into the set. If the key is already a
 -- member of the set, the set is unchanged.
 insert :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 insert k = inTS$ Base.insert k True
 
--- | @O(min(m,s)@). Removes the key from the set. If the key is not a member of
+-- | @O(min(m,s))@. Removes the key from the set. If the key is not a member of
 -- the set, the set is unchanged.
 delete :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 delete = inTS . Base.delete
@@ -132,21 +132,21 @@ null = Base.null . unTS
 size :: Map map a => TrieSet map a -> Int
 size = Base.size . unTS
 
--- | @O(min(m,s)@). 'True' iff the given key is contained within the set.
+-- | @O(min(m,s))@. 'True' iff the given key is contained within the set.
 member :: Map map a => [a] -> TrieSet map a -> Bool
 member = Base.member .:. unTS
 
--- | @O(min(m,s)@). 'False' iff the given key is contained within the set.
+-- | @O(min(m,s))@. 'False' iff the given key is contained within the set.
 notMember :: Map map a => [a] -> TrieSet map a -> Bool
 notMember = Base.notMember .:. unTS
 
--- | @O(min(n1,n2)@). 'True' iff the first set is a subset of the second, i.e.
+-- | @O(min(n1,n2))@. 'True' iff the first set is a subset of the second, i.e.
 -- all keys that are members of the first set are also members of the second
 -- set.
 isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isSubsetOf = Base.isSubmapOfBy (&&) `on` unTS
 
--- | @O(min(n1,n2)@). 'True' iff the first set is a proper subset of the
+-- | @O(min(n1,n2))@. 'True' iff the first set is a proper subset of the
 -- second, i.e. the first is a subset of the second, but the sets are not
 -- equal.
 isProperSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
@@ -157,21 +157,21 @@ isProperSubsetOf = Base.isProperSubmapOfBy (&&) `on` unTS
 defaultUnion :: Bool -> Bool -> Bool
 defaultUnion = error "TrieSet.union :: internal error"
 
--- | @O(min(n1,n2)@). The union of the two sets: the set which contains all
+-- | @O(min(n1,n2))@. The union of the two sets: the set which contains all
 -- keys that are members of either set.
 --
 -- The worst-case performance occurs when the two sets are identical.
 union :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
 union = TS .: Base.unionWith defaultUnion `on` unTS
 
--- | @O(sum(n)@). The union of all the sets: the set which contains all keys
+-- | @O(sum(n))@. The union of all the sets: the set which contains all keys
 -- that are members of any of the sets.
 --
 -- The worst-case performance occurs when all the sets are identical.
 unions :: Map map a => [TrieSet map a] -> TrieSet map a
 unions = TS . Base.unionsWith defaultUnion . Prelude.map unTS
 
--- | @O(min(n1,n2)@). The difference of the two sets: the set which contains
+-- | @O(min(n1,n2))@. The difference of the two sets: the set which contains
 -- all keys that are members of the first set and not members of the second
 -- set.
 --
@@ -181,7 +181,7 @@ difference = TS .: Base.differenceWith
                       (error "TrieSet.difference :: internal error")
                    `on` unTS
 
--- | @O(min(n1,n2)@). The intersection of the two sets: the set which contains
+-- | @O(min(n1,n2))@. The intersection of the two sets: the set which contains
 -- all keys that are members of both sets.
 --
 -- The worst-case performance occurs when the two sets are identical.
@@ -200,9 +200,8 @@ filter p = inTS $ Base.filterWithKey (\k _ -> p k)
 -- | @O(n m)@. A pair of sets: the first element contains those keys for which
 -- the given predicate returns 'True', and the second element contains those
 -- for which it was 'False'.
-partition :: Map map a => ([a] -> Bool)
-                       -> TrieSet map a
-                       -> (TrieSet map a, TrieSet map a)
+partition :: Map map a
+          => ([a] -> Bool) -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 partition p = both TS . Base.partitionWithKey (\k _ -> p k) . unTS
 
 -- * Mapping
@@ -245,15 +244,18 @@ foldlDesc' f = Base.foldlDescWithKey' (\k _ -> f k) .:. unTS
 
 -- * Conversion between lists
 
--- | @O(n m)@. Converts the set to a list of the keys contained within.
+-- | @O(n m)@. Converts the set to a list of the keys contained within, in
+-- undefined order.
 toList :: Map map a => TrieSet map a -> [[a]]
 toList = Prelude.map fst . Base.toList . unTS
 
--- | @O(n m)@.  Converts the set to a list of the keys contained within.
+-- | @O(n m)@. Converts the set to a list of the keys contained within, in
+-- ascending order.
 toAscList :: OrdMap map a => TrieSet map a -> [[a]]
 toAscList = Prelude.map fst . Base.toAscList . unTS
 
--- | @O(n m)@. Converts the set to a list of the keys contained within.
+-- | @O(n m)@. Converts the set to a list of the keys contained within, in
+-- descending order.
 toDescList :: OrdMap map a => TrieSet map a -> [[a]]
 toDescList = Prelude.map fst . Base.toDescList . unTS
 
@@ -293,17 +295,16 @@ deleteMin = inTS Base.deleteMin
 deleteMax :: OrdMap map a => TrieSet map a -> TrieSet map a
 deleteMax = inTS Base.deleteMax
 
--- | @O(min(m,s)@). Splits the set in two about the given key. The first
+-- | @O(min(m,s))@. Splits the set in two about the given key. The first
 -- element of the resulting pair is a set containing the keys lesser than the
 -- given key; the second contains those keys that are greater.
 split :: OrdMap map a => [a] -> TrieSet map a -> (TrieSet map a, TrieSet map a)
 split = both TS .: Base.split .:. unTS
 
--- | @O(min(m,s)@). Like 'split', but also returns whether the given key was a
+-- | @O(min(m,s))@. Like 'split', but also returns whether the given key was a
 -- member of the set or not.
-splitMember :: OrdMap map a => [a]
-                            -> TrieSet map a
-                            -> (TrieSet map a, Bool, TrieSet map a)
+splitMember :: OrdMap map a
+            => [a] -> TrieSet map a -> (TrieSet map a, Bool, TrieSet map a)
 splitMember = (\(l,b,g) -> (TS l,unwrap b,TS g)) .: Base.splitLookup .:. unTS
 
 -- | @O(m)@. Just the key of the set which precedes the given key in order, or
