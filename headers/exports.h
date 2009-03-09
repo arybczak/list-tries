@@ -82,11 +82,11 @@
 	\
 	{- * Filtering -} \
 	filter, filterWithKey, partition, partitionWithKey, \
+	mapMaybe, mapMaybeWithKey, mapEither, mapEitherWithKey, \
 	\
 	{- * Mapping -} \
 	{- ** Values -} \
 	map, map', mapWithKey, mapWithKey', \
-	mapMaybe, mapMaybeWithKey, mapEither, mapEitherWithKey, \
 	\
 	{- ** Keys -} \
 	mapKeys, mapKeysWith, \
