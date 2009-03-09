@@ -41,7 +41,7 @@
 	\
 	{- * Trie-specific operations -} \
 	{- $trie-only-ops -} \
-	addPrefix, splitPrefix, lookupPrefix, children, \
+	addPrefix, lookupPrefix, splitPrefix, children, \
 	\
 	{- * Visualization -} \
 	showTrie
@@ -115,7 +115,7 @@
 	\
 	{- * Ordering-sensitive operations -} \
 	{- ** Minimum and maximum -} \
-	findMin, findMax, deleteMin, deleteMax, minView, maxView, \
+	minView, maxView, findMin, findMax, deleteMin, deleteMax, \
 	\
 	{- ** Predecessor and successor -} \
 	split, splitLookup, \
