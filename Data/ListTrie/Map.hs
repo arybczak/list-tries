@@ -130,7 +130,7 @@ instance (Map map k, Read k, Read a) => Read (TrieMap map k a) where
 empty :: Map map k => TrieMap map k a
 empty = Base.empty
 
--- | @O(m)@. The singleton map containing only the given key-value pair.
+-- | @O(s)@. The singleton map containing only the given key-value pair.
 singleton :: Map map k => [k] -> a -> TrieMap map k a
 singleton = Base.singleton
 
