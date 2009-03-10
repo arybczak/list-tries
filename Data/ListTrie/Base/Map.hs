@@ -21,37 +21,51 @@ import Data.Traversable    (Traversable(..), mapAccumR)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
-import Prelude hiding (foldl,foldl1,foldr,foldr1,mapM,sequence)
+import Prelude hiding ( foldl,foldl1,foldr,foldr1
+                      , mapM,sequence
+                      , null,lookup,filter -- for Haddock
+                      )
+import qualified Prelude
 
 import Data.ListTrie.Util (both, (.:))
 
--- Minimal complete implementation:
--- * eqCmp
--- * null, lookup
--- * alter
--- * unionWithKey, differenceWithKey, intersectionWithKey
--- * toList
--- * empty or fromList or fromListWith
--- * isSubmapOfBy
+-- | Minimal complete implementation:
 --
--- For decent performance, supplying 'mapAccumWithKey' and 'filter' as well is
--- probably a good idea.
+-- * 'eqCmp'
+--
+-- * 'null'
+--
+-- * 'lookup'
+--
+-- * 'alter'
+--
+-- * 'unionWithKey', 'differenceWithKey', 'intersectionWithKey'
+--
+-- * 'toList'
+--
+-- * 'empty' or 'fromList' or 'fromListWith'
+--
+-- * 'isSubmapOfBy'
+--
+-- For decent performance, supplying at least 'mapAccumWithKey' and 'filter' as
+-- well is probably a good idea.
 class Foldable (m k) => Map m k where
-   -- Like an Eq instance over k, but should compare on the same type as 'm'
-   -- does. In most cases this can be defined just as 'const (==)'.
+   -- | Like an 'Eq' instance over k, but should compare on the same type as
+   -- @m@ does. In most cases this can be defined just as @const (==)@.
    eqCmp :: m k a -> k -> k -> Bool
 
    empty     ::                     m k a
    singleton ::           k -> a -> m k a
-   doubleton :: k -> a -> k -> a -> m k a -- Precondition: the two keys differ
+   -- | Precondition: the two keys differ
+   doubleton :: k -> a -> k -> a -> m k a
 
    null   ::      m k a -> Bool
    lookup :: k -> m k a -> Maybe a
 
-   insert     ::                  k -> a -> m k a -> m k a
-   -- Strictness can be whatever is more optimal for the map type, shouldn't
+   -- | Strictness can be whatever is more optimal for the map type, shouldn't
    -- matter
    insertWith :: (a -> a -> a) -> k -> a -> m k a -> m k a
+   insert     ::                  k -> a -> m k a -> m k a
 
    update :: (a -> Maybe a) -> k -> m k a -> m k a
    adjust :: (a -> a)       -> k -> m k a -> m k a
@@ -109,7 +123,7 @@ class Foldable (m k) => Map m k where
 
    filter p = fromList . Prelude.filter (p . snd) . toList
 
-   -- Should be strict in the keys
+   -- | Should be strict in the keys
    fromList       = fromListWith const
    fromListWith f = foldr (uncurry $ insertWith f) empty
 
@@ -118,21 +132,27 @@ class Foldable (m k) => Map m k where
            [x] -> Just x
            _   -> Nothing
 
--- Minimal complete definition:
--- * ordCmp
--- * toAscList or toDescList
--- * splitLookup
+-- |  Minimal complete definition:
 --
--- fromDistinctAscList and fromDistinctAscList are only used in the default
--- definitions of minViewWithKey and maxViewWithKey, and default to fromList.
+-- * 'ordCmp'
+--
+-- * 'toAscList' or 'toDescList'
+--
+-- * 'splitLookup'
+--
+-- 'fromDistinctAscList' and 'fromDistinctAscList' are only used in the default
+-- definitions of 'minViewWithKey' and 'maxViewWithKey', and default to
+-- 'fromList'.
 --
 -- For decent performance, supplying at least the following is probably a good
 -- idea:
--- * minViewWithKey, maxViewWithKey
--- * mapAccumAscWithKey, mapAccumDescWithKey
+--
+-- * 'minViewWithKey', 'maxViewWithKey'
+--
+-- * 'mapAccumAscWithKey', 'mapAccumDescWithKey'
 class Map m k => OrdMap m k where
-   -- Like an Ord instance over k, but should compare on the same type as 'm'
-   -- does. In most cases this can be defined just as 'const compare'.
+   -- | Like an Ord instance over k, but should compare on the same type as @m@
+   -- does. In most cases this can be defined just as @const compare@.
    ordCmp :: m k a -> k -> k -> Ordering
 
    toAscList            :: m k a -> [(k,a)]
@@ -300,7 +320,7 @@ deleteAndGetBy = go []
          then (Just x, xs ++ ys)
          else go (x:ys) p xs
 
--- These two are from Data.List, just with more general type signatures...
+-- This is from Data.List, just with a more general type signature...
 deleteBy :: (a -> b -> Bool) -> a -> [b] -> [b]
 deleteBy _  _ []     = []
 deleteBy eq x (y:ys) = if x `eq` y then ys else y : deleteBy eq x ys
