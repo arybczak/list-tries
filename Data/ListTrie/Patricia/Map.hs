@@ -232,7 +232,7 @@ alter' = Base.alter'
 null :: Map map k => TrieMap map k a -> Bool
 null = Base.null
 
--- | @O(n)@. The number of elements in the map.
+-- | @O(n m)@. The number of elements in the map.
 size :: Map map k => TrieMap map k a -> Int
 size = Base.size
 
