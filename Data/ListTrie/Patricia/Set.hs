@@ -54,6 +54,20 @@ import Data.ListTrie.Util         ((.:), (.:.), both)
 data TrieSetBase map a bool = Tr !bool ![a] !(CMap map a bool)
 type CMap map a bool = map a (TrieSetBase map a bool)
 
+-- | The data structure itself: a set of keys of type @[a]@ implemented as a
+-- trie, using @map@ to map keys of type @a@ to sub-tries.
+--
+-- Regarding the instances:
+--
+-- - The @CMap@ type is internal, ignore it. For 'Eq' and 'Ord' an 'Eq'
+--   instance is required: what this means is that @map a v@ is expected to be
+--   an instance of 'Eq', given 'Eq'@ v@.
+--
+-- - The 'Eq' constraint for the 'Ord' instance is misleading: it is needed
+--   only because 'Eq' is a superclass of 'Ord'.
+--
+-- - The 'Monoid' instance defines 'mappend' as 'union' and 'mempty' as
+--   'empty'.
 newtype TrieSet map a = TS { unTS :: TrieSetBase map a Bool }
 
 inTS :: (TrieSetBase map a Bool -> TrieSetBase nap b Bool)
