@@ -355,16 +355,16 @@ addPrefix = TS .: Base.addPrefix .:. unTS
 -- prefix, with the prefix removed from each key. If the given key is not a
 -- prefix of any key in the set, the set is returned unchanged. For example:
 --
--- > lookupPrefix "a" (fromList ["a","ab","ac"]) == fromList ["","b","c"]
+-- > deletePrefix "a" (fromList ["a","ab","ac"]) == fromList ["","b","c"]
 --
 -- This function can be used, for instance, to reduce potentially expensive I/O
 -- operations: if you need to check whether a string is a member of a set, but
 -- you only have a prefix of it and retrieving the rest is an expensive
--- operation, calling 'lookupPrefix' with what you have might allow you to
+-- operation, calling 'deletePrefix' with what you have might allow you to
 -- avoid the operation: if the resulting set is empty, the entire string cannot
 -- be a member of the set.
-lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
-lookupPrefix = TS .: Base.lookupPrefix .:. unTS
+deletePrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
+deletePrefix = TS .: Base.deletePrefix .:. unTS
 
 -- | @O(1)@. A triple containing the longest common prefix of all keys in the
 -- set, whether that prefix was a member of the set, and the set with that

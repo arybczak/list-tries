@@ -41,7 +41,7 @@
 	\
 	{- * Trie-specific operations -} \
 	{- $trie-only-ops -} \
-	addPrefix, lookupPrefix, splitPrefix, children, \
+	addPrefix, deletePrefix, splitPrefix, children, \
 	\
 	{- * Visualization -} \
 	showTrie
@@ -124,7 +124,7 @@
 	\
 	{- * Trie-specific operations -} \
 	{- $trie-only-ops -} \
-	addPrefix, lookupPrefix, splitPrefix, children, \
+	addPrefix, deletePrefix, splitPrefix, children, \
 	\
 	{- * Visualization -} \
 	showTrie, showTrieWith

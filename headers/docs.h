@@ -4,7 +4,7 @@
 --
 -- Functions which utilize the unique structure of tries.
 --
--- 'addPrefix' and 'lookupPrefix' allow fast adding and removing of prefixes
+-- 'addPrefix' and 'deletePrefix' allow fast adding and removing of prefixes
 -- to/from all keys of a trie.
 --
 -- 'splitPrefix' and 'children' allow traversing of a trie in a manner suitable

@@ -952,17 +952,17 @@ addPrefix = Base.addPrefix
 -- prefix, with the prefix removed from each key. If the given key is not a
 -- prefix of any key in the map, the map is returned unchanged. For example:
 --
--- > lookupPrefix "a" (fromList [("a",1),("ab",2),("ac",3)])
+-- > deletePrefix "a" (fromList [("a",1),("ab",2),("ac",3)])
 -- >    == fromList [("",1),("b",2),("c",3)]
 --
 -- This function can be used, for instance, to reduce potentially expensive I/O
 -- operations: if you need to find the value in a map associated with a string,
 -- but you only have a prefix of it and retrieving the rest is an expensive
--- operation, calling 'lookupPrefix' with what you have might allow you to
+-- operation, calling 'deletePrefix' with what you have might allow you to
 -- avoid the operation: if the resulting map is empty, the entire string cannot
 -- be a member of the map.
-lookupPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
-lookupPrefix = Base.lookupPrefix
+deletePrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
+deletePrefix = Base.deletePrefix
 
 -- | @O(m)@. A triple containing the longest common prefix of all keys in the
 -- map, the value associated with that prefix, if any, and the map with that

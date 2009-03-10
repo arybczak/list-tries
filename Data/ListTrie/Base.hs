@@ -24,7 +24,7 @@ module Data.ListTrie.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, lookupPrefix, children
+   , addPrefix, splitPrefix, deletePrefix, children
    , showTrieWith
    ) where
 
@@ -766,13 +766,13 @@ addPrefix []     = id
 addPrefix (x:xs) = mkTrie altEmpty . Map.singleton x . addPrefix xs
 
 -- O(m)
-lookupPrefix :: (Alt st a, Trie trie st map k)
+deletePrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
-lookupPrefix []     tr = tr
-lookupPrefix (x:xs) tr =
+deletePrefix []     tr = tr
+deletePrefix (x:xs) tr =
    case Map.lookup x (tMap tr) of
         Nothing  -> empty
-        Just tr' -> lookupPrefix xs tr'
+        Just tr' -> deletePrefix xs tr'
 
 -- O(m)
 splitPrefix :: (Alt st a, Trie trie st map k)

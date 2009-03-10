@@ -392,10 +392,10 @@ $(makeFunc mapsOnly ["addPrefix","splitPrefix","insert"] [d|
  |])
 
 -- Looking up the common prefix and then adding it back should change nothing
-$(makeFunc allTries ["addPrefix","splitPrefix","lookupPrefix"] [d|
-   prop_prefixOps2 addPrefix splitPrefix lookupPrefix m =
+$(makeFunc allTries ["addPrefix","splitPrefix","deletePrefix"] [d|
+   prop_prefixOps2 addPrefix splitPrefix deletePrefix m =
       let (k,_,_) = splitPrefix (m :: TrieType)
-       in addPrefix k (lookupPrefix k m) == m
+       in addPrefix k (deletePrefix k m) == m
  |])
 
 -- Splitting away the prefix shouldn't affect the children
