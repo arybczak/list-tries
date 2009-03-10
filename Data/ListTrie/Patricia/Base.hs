@@ -1335,6 +1335,9 @@ ordComparePrefixes ord xs ys =
         Same                     -> EQ
         PostFix r                -> either (const GT) (const LT) r
         DifferedAt _ (x:_) (y:_) -> ord x y
+        _                        ->
+           error$ "Data.ListTrie.Patricia.Base.ordComparePrefixes :: " ++
+                  "internal error"
 
 -- After modifying the trie, compress a trie node into the prefix if possible.
 --
