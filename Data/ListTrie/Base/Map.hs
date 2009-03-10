@@ -30,14 +30,13 @@ import Data.ListTrie.Util (both, (.:))
 -- * null, lookup
 -- * alter
 -- * unionWithKey, differenceWithKey, intersectionWithKey
--- * foldValues
 -- * toList
 -- * empty or fromList or fromListWith
 -- * isSubmapOfBy
 --
 -- For decent performance, supplying 'mapAccumWithKey' and 'filter' as well is
 -- probably a good idea.
-class Map m k where
+class Foldable (m k) => Map m k where
    -- Like an Eq instance over k, but should compare on the same type as 'm'
    -- does. In most cases this can be defined just as 'const (==)'.
    eqCmp :: m k a -> k -> k -> Bool
@@ -73,8 +72,6 @@ class Map m k where
    mapAccumWithKey :: (a -> k -> b -> (a,c)) -> a -> m k b -> (a, m k c)
 
    filter :: (a -> Bool) -> m k a -> m k a
-
-   foldValues :: (a -> b -> b) -> b -> m k a -> b
 
    toList       :: m k a -> [(k,a)]
    fromList     ::                  [(k,a)] -> m k a
@@ -261,8 +258,6 @@ instance Eq k => Map AList k where
                                           in (a', (k, v')))
                             z xs
 
-   foldValues f z (AL xs) = foldr (f.snd) z xs
-
    toList (AL xs) = xs
    fromList       = AL . nubBy ((==) `on` fst)
    fromListWith   = AL .: go
@@ -359,8 +354,6 @@ instance Ord k => Map M.Map k where
 
    filter = M.filter
 
-   foldValues = M.fold
-
    toList       = M.toList
    fromList     = M.fromList
    fromListWith = M.fromListWith
@@ -442,8 +435,6 @@ instance Enum k => Map WrappedIntMap k where
       second IMap$ IM.mapAccumWithKey (\a -> f a . toEnum) z x
 
    filter p (IMap x) = IMap $ IM.filter p x
-
-   foldValues f z (IMap m) = IM.fold f z m
 
    toList (IMap m) = Prelude.map (first toEnum) . IM.toList $ m
    fromList        = IMap . IM.fromList       . Prelude.map (first fromEnum)

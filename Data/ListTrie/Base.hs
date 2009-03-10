@@ -5,7 +5,7 @@
 
 module Data.ListTrie.Base
    ( Trie(..)
-   , null, size, member, notMember, lookup, lookupWithDefault
+   , null, size, size', member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
    , insert, insertWith, insertWith'
@@ -32,9 +32,10 @@ import Control.Applicative (Applicative(..), (<$>))
 import Control.Arrow       ((***), first)
 import qualified Data.DList as DL
 import Data.DList          (DList)
-import Data.List           (foldl', partition)
+import Data.Foldable       (foldr, foldl')
+import Data.List           (partition)
 import Data.Maybe          (fromJust)
-import Prelude hiding      (lookup, filter, null)
+import Prelude hiding      (lookup, filter, foldr, null)
 import qualified Prelude
 
 import qualified Data.ListTrie.Base.Map.Internal as Map
@@ -214,8 +215,14 @@ null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
 null tr = Map.null (tMap tr) && (noValue.tVal $ tr)
 
 -- O(n m)
-size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
-size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
+size :: (Boolable (st a), Trie trie st map k, Num n) => trie map k a -> n
+size  tr = foldr  ((+) . size)  (if hasValue (tVal tr) then 1 else 0) (tMap tr)
+
+-- O(n m)
+size' :: (Boolable (st a), Trie trie st map k, Num n) => trie map k a -> n
+size' tr = foldl' (flip $ (+) . size')
+                  (if hasValue (tVal tr) then 1 else 0)
+                  (tMap tr)
 
 -- O(min(m,s))
 member :: (Alt st a, Boolable (st a), Trie trie st map k)

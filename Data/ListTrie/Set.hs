@@ -143,9 +143,15 @@ delete = inTS . Base.delete
 null :: Map map a => TrieSet map a -> Bool
 null = Base.null . unTS
 
--- | @O(n m)@. The number of keys in the set.
-size :: Map map a => TrieSet map a -> Int
+-- | @O(n m)@. The number of keys in the set. The value is built up lazily,
+-- allowing for delivery of partial results without traversing the whole set.
+size :: (Map map a, Num n) => TrieSet map a -> n
 size = Base.size . unTS
+
+-- | @O(n m)@. The number of keys in the set. The value is built strictly: no
+-- value is returned until the set has been fully traversed.
+size' :: (Map map a, Num n) => TrieSet map a -> n
+size' = Base.size' . unTS
 
 -- | @O(min(m,s))@. 'True' iff the given key is contained within the set.
 member :: Map map a => [a] -> TrieSet map a -> Bool

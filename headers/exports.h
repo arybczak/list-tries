@@ -10,7 +10,7 @@
 	insert, delete, \
 	\
 	{- * Querying -} \
-	null, size, member, notMember, \
+	null, size, size', member, notMember, \
 	\
 	{- ** Subsets -} \
 	isSubsetOf, isProperSubsetOf, \
@@ -59,7 +59,7 @@
 	adjust, adjust', alter, alter', \
 	\
 	{- * Querying -} \
-	null, size, member, notMember, \
+	null, size, size', member, notMember, \
 	lookup, lookupWithDefault, \
 	\
 	{- ** Submaps -} \

@@ -5,7 +5,7 @@
 
 module Data.ListTrie.Patricia.Base
    ( Trie(..)
-   , null, size, member, notMember, lookup, lookupWithDefault
+   , null, size, size', member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
    , insert, insertWith, insertWith'
@@ -34,9 +34,10 @@ import Control.Arrow       ((***), first)
 import Control.Exception   (assert)
 import qualified Data.DList as DL
 import Data.DList          (DList)
-import Data.List           (foldl', foldl1', partition)
+import Data.Foldable       (foldr, foldl')
+import Data.List           (foldl1', partition)
 import Data.Maybe          (fromJust, isJust)
-import Prelude hiding      (lookup, filter, null)
+import Prelude hiding      (lookup, filter, foldr, null)
 import qualified Prelude
 
 import qualified Data.ListTrie.Base.Map.Internal as Map
@@ -248,8 +249,14 @@ null tr = let (v,p,m) = tParts tr
            in Map.null m && noValue v && assert (Prelude.null p) True
 
 -- O(n m)
-size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
-size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
+size :: (Boolable (st a), Trie trie st map k, Num n) => trie map k a -> n
+size  tr = foldr  ((+) . size)  (if hasValue (tVal tr) then 1 else 0) (tMap tr)
+
+-- O(n m)
+size' :: (Boolable (st a), Trie trie st map k, Num n) => trie map k a -> n
+size' tr = foldl' (flip $ (+) . size')
+                  (if hasValue (tVal tr) then 1 else 0)
+                  (tMap tr)
 
 -- O(min(m,s))
 member :: (Alt st a, Boolable (st a), Trie trie st map k)

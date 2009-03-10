@@ -220,9 +220,15 @@ alter' = Base.alter'
 null :: Map map k => TrieMap map k a -> Bool
 null = Base.null
 
--- | @O(n m)@. The number of elements in the map.
-size :: Map map k => TrieMap map k a -> Int
+-- | @O(n m)@. The number of elements in the map. The value is built up lazily,
+-- allowing for delivery of partial results without traversing the whole map.
+size :: (Map map k, Num n) => TrieMap map k a -> n
 size = Base.size
+
+-- | @O(n m)@. The number of elements in the map. The value is built strictly:
+-- no value is returned until the map has been fully traversed.
+size' :: (Map map k, Num n) => TrieMap map k a -> n
+size' = Base.size'
 
 -- | @O(min(m,s))@. 'True' iff the given key is associated with a value in the
 -- map.
