@@ -67,6 +67,22 @@ import Data.ListTrie.Base.Map     (Map, OrdMap)
 -- that, so that, for instance, 'fromList [("foo",1)]' can only be 'Tr (Just 1)
 -- "foo" Map.empty', and not 'Tr Nothing "fo" (Map.fromList [('o',Tr (Just 1)
 -- "" Map.empty)])'. Base.tryCompress is a function which takes care of this.
+--
+-- | The data structure itself: a map from keys of type @[k]@ to values of type
+-- @v@ implemented as a trie, using @map@ to map keys of type @k@ to sub-tries.
+--
+-- Regarding the instances:
+--
+-- - The @Trie@ class is internal, ignore it.
+--
+-- - The 'Eq' constraint for the 'Ord' instance is misleading: it is needed
+--   only because 'Eq' is a superclass of 'Ord'.
+--
+-- - The 'Foldable' and 'Traversable' instances allow folding over and
+--   traversing only the values, not the keys.
+--
+-- - The 'Monoid' instance defines 'mappend' as 'union' and 'mempty' as
+--   'empty'.
 data TrieMap map k v = Tr (Maybe v) ![k] !(CMap map k v)
 
 type CMap map k v = map k (TrieMap map k v)
@@ -165,7 +181,7 @@ adjust' :: Map map k => (a -> a) -> [k] -> TrieMap map k a -> TrieMap map k a
 adjust' = Base.adjust'
 
 -- | @O(min(m,s))@. Updates the value at the given key: if the given
--- functionreturns 'Nothing', the value and its associated key are removed; if
+-- function returns 'Nothing', the value and its associated key are removed; if
 -- 'Just'@ a@is returned, the old value is replaced with @a@. If the key is
 -- not a member of the map, the map is unchanged.
 update :: Map map k
