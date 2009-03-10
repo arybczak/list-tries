@@ -12,7 +12,7 @@ import Control.Arrow       ((***), first, second)
 import Control.Monad       (liftM, liftM2)
 import Data.Foldable       (Foldable(..))
 import Data.Function       (on)
-import Data.List           ( foldl', foldl1'
+import Data.List           ( foldl1'
                            , mapAccumL, nubBy, partition
                            , sort, sortBy
                            )
@@ -304,9 +304,6 @@ deleteAndGetBy = go []
 deleteBy :: (a -> b -> Bool) -> a -> [b] -> [b]
 deleteBy _  _ []     = []
 deleteBy eq x (y:ys) = if x `eq` y then ys else y : deleteBy eq x ys
-
-deleteFirstsBy :: (a -> b -> Bool) -> [a] -> [b] -> [a]
-deleteFirstsBy = foldl' . flip . deleteBy . flip
 
 updateFirstsBy :: (a -> b -> Maybe a)
                -> (a -> b -> Bool)
