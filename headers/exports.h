@@ -26,6 +26,7 @@
 	\
 	{- * Folding -} \
 	foldr, foldrAsc, foldrDesc, \
+	foldl, foldlAsc, foldlDesc, \
 	foldl', foldlAsc', foldlDesc', \
 	\
 	{- * Conversion to and from lists -} \
@@ -105,6 +106,9 @@
 	foldr, foldrWithKey, \
 	foldrAsc, foldrAscWithKey, \
 	foldrDesc, foldrDescWithKey, \
+	foldl, foldlWithKey, \
+	foldlAsc, foldlAscWithKey, \
+	foldlDesc, foldlDescWithKey, \
 	foldl', foldlWithKey', \
 	foldlAsc', foldlAscWithKey', \
 	foldlDesc', foldlDescWithKey', \

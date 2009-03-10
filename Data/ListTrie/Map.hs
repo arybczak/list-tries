@@ -45,7 +45,7 @@ import qualified Data.Foldable as F
 import qualified Data.Maybe as Maybe
 import Data.Monoid         (Monoid(..))
 import Data.Traversable    (Traversable(traverse))
-import Prelude hiding      (filter, foldr, lookup, map, null)
+import Prelude hiding      (filter, foldl, foldr, lookup, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
@@ -103,6 +103,7 @@ instance Map map k => Functor (TrieMap map k) where
    fmap = map
 
 instance Map map k => F.Foldable (TrieMap map k) where
+   foldl = foldl . flip
    foldr = foldr
 
 instance (Map map k, Traversable (map k)) => Traversable (TrieMap map k) where
@@ -796,6 +797,35 @@ foldrDesc = foldrDescWithKey . const
 foldrDescWithKey :: OrdMap map k
                  => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
 foldrDescWithKey = Base.foldrDescWithKey
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the toList representation.
+foldl :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldl = foldlWithKey . const
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the toList representation,
+-- folding over both the keys and the elements.
+foldlWithKey :: Map map k => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldlWithKey = Base.foldlWithKey
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the toAscList representation.
+foldlAsc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldlAsc = foldlAscWithKey . const
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the toAscList representation,
+-- folding over both the keys and the elements.
+foldlAscWithKey :: OrdMap map k
+                => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldlAscWithKey = Base.foldlAscWithKey
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the toDescList representation.
+foldlDesc :: OrdMap map k => (a -> b -> b) -> b -> TrieMap map k a -> b
+foldlDesc = foldlDescWithKey . const
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the toDescList representation,
+-- folding over both the keys and the elements.
+foldlDescWithKey :: OrdMap map k
+                 => ([k] -> a -> b -> b) -> b -> TrieMap map k a -> b
+foldlDescWithKey = Base.foldlDescWithKey
 
 -- | @O(n m)@. Equivalent to a list @foldl'@ on the 'toList' representation.
 foldl' :: Map map k => (a -> b -> b) -> b -> TrieMap map k a -> b

@@ -26,7 +26,7 @@ module Data.ListTrie.Patricia.Set (SET_EXPORTS) where
 import Control.Arrow  ((***), second)
 import Data.Function  (on)
 import Data.Monoid    (Monoid(..))
-import Prelude hiding (filter, foldr, map, null)
+import Prelude hiding (filter, foldl, foldr, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__
@@ -254,6 +254,18 @@ foldrAsc f = Base.foldrAscWithKey (\k _ -> f k) .:. unTS
 -- | @O(n m)@. Equivalent to a list @foldr@ on the 'toDescList' representation.
 foldrDesc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
 foldrDesc f = Base.foldrDescWithKey (\k _ -> f k) .:. unTS
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the 'toList' representation.
+foldl :: Map map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldl f = Base.foldlWithKey (\k _ -> f k) .:. unTS
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the 'toAscList' representation.
+foldlAsc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldlAsc f = Base.foldlAscWithKey (\k _ -> f k) .:. unTS
+
+-- | @O(n m)@. Equivalent to a list @foldl@ on the 'toDescList' representation.
+foldlDesc :: OrdMap map a => ([a] -> b -> b) -> b -> TrieSet map a -> b
+foldlDesc f = Base.foldlDescWithKey (\k _ -> f k) .:. unTS
 
 -- | @O(n m)@. Equivalent to a list @foldl'@ on the 'toList' representation.
 foldl' :: Map map a => ([a] -> b -> b) -> b -> TrieSet map a -> b

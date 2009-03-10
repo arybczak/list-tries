@@ -18,7 +18,8 @@ module Data.ListTrie.Patricia.Base
    , filterWithKey, partitionWithKey
    , split, splitLookup
    , mapKeysWith, mapInKeysWith, mapInKeysWith'
-   , foldrWithKey, foldrAscWithKey, foldrDescWithKey
+   , foldrWithKey,  foldrAscWithKey,  foldrDescWithKey
+   , foldlWithKey,  foldlAscWithKey,  foldlDescWithKey
    , foldlWithKey', foldlAscWithKey', foldlDescWithKey'
    , toList, toAscList, toDescList
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
@@ -979,6 +980,21 @@ foldrAscWithKey f x = foldr (uncurry f) x . toAscList
 foldrDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrDescWithKey f x = foldr (uncurry f) x . toDescList
+
+-- O(n m)
+foldlWithKey :: (Boolable (st a), Trie trie st map k)
+             => ([k] -> a -> b -> b) -> b -> trie map k a -> b
+foldlWithKey f x = foldl (flip $ uncurry f) x . toList
+
+-- O(n m)
+foldlAscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+                => ([k] -> a -> b -> b) -> b -> trie map k a -> b
+foldlAscWithKey f x = foldl (flip $ uncurry f) x . toAscList
+
+-- O(n m)
+foldlDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
+foldlDescWithKey f x = foldl (flip $ uncurry f) x . toDescList
 
 -- O(n m)
 foldlWithKey' :: (Boolable (st a), Trie trie st map k)
