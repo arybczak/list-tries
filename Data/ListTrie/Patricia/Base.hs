@@ -70,6 +70,176 @@ tMap = (\(_,_,c) -> c) . tParts
 
 -----------------------
 
+-- * Construction
+
+-- O(1)
+empty :: (Alt st a, Trie trie st map k) => trie map k a
+empty = mkTrie altEmpty [] Map.empty
+
+-- O(1)
+singleton :: (Alt st a, Trie trie st map k) => [k] -> a -> trie map k a
+singleton k v = mkTrie (pure v) k Map.empty
+
+-- O(min(m,s))
+insert :: (Alt st a, Boolable (st a), Trie trie st map k)
+       => [k] -> a -> trie map k a -> trie map k a
+insert = insertWith const
+
+-- O(min(m,s))
+insertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
+           => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
+insertWith = genericInsertWith (<$>)
+
+-- O(min(m,s))
+insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
+            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
+insertWith' = genericInsertWith (<$!>)
+
+genericInsertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
+                  => ((a -> a) -> st a -> st a)
+                  -> (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
+genericInsertWith (<$$>) f k new tr =
+   let (old,prefix,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) prefix k of
+            Same -> mkTrie ((f new <$$> old) <|> pure new) prefix m
+
+            PostFix (Left (p:pr)) -> mkTrie (pure new) k
+                                            (Map.singleton p (mkTrie old pr m))
+            PostFix (Right (x:xs)) ->
+               -- Minor optimization: instead of tryCompress we just check for
+               -- the case of an empty trie
+               if null tr
+                  then singleton k new
+                  else mkTrie old prefix $
+                          Map.insertWith
+                             (\_ oldt ->
+                                genericInsertWith (<$$>) f xs new oldt)
+                             x (singleton xs new) m
+
+            DifferedAt pr' (p:pr) (x:xs) ->
+               mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
+                                                   p (mkTrie old pr m)
+
+            _ -> error
+                    "Data.ListTrie.Patricia.Base.insertWith :: internal error"
+
+-- O(min(m,s))
+delete :: (Alt st a, Boolable (st a), Trie trie st map k)
+       => [k] -> trie map k a -> trie map k a
+delete = alter (const altEmpty)
+
+-- O(min(m,s))
+adjust :: Trie trie st map k
+       => (a -> a) -> [k] -> trie map k a -> trie map k a
+adjust = genericAdjust fmap
+
+-- O(min(m,s))
+adjust' :: (Alt st a, Boolable (st a), Trie trie st map k)
+        => (a -> a) -> [k] -> trie map k a -> trie map k a
+adjust' = genericAdjust fmap'
+
+genericAdjust :: Trie trie st map k
+              => ((a -> a) -> st a -> st a)
+              -> (a -> a) -> [k] -> trie map k a -> trie map k a
+genericAdjust myFmap f k tr =
+   let (v,prefix,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) prefix k of
+            Same                   -> mkTrie (myFmap f v) prefix m
+            PostFix (Right (x:xs)) ->
+               mkTrie v prefix $ Map.adjust (genericAdjust myFmap f xs) x m
+            _                      -> tr
+
+-- O(min(m,s))
+updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
+             => (a -> st a) -> [k] -> trie map k a -> (st a, trie map k a)
+updateLookup f k tr =
+   let (v,prefix,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) prefix k of
+            Same                   -> let v' = if hasValue v
+                                                  then f (unwrap v)
+                                                  else v
+                                       in (v, safeMkTrie v' prefix m)
+            PostFix (Right (x:xs)) ->
+               case Map.lookup x m of
+                    Nothing  -> (altEmpty, tr)
+                    Just tr' ->
+                       let (ret, upd) = updateLookup f xs tr'
+                        in ( ret
+                           , safeMkTrie v prefix $
+                                if null upd
+                                   then Map.delete x m
+                                   else Map.adjust (const upd) x m
+                           )
+            _ -> (altEmpty, tr)
+
+-- O(min(m,s))
+--
+-- This can be lazy in exactly one case: the key is a prefix of more than one
+-- key in the trie. In that case, we know that the resulting trie continues to
+-- contain those children.
+--
+-- In all other cases we have to check whether the function removed a key or
+-- not, in order to be able to keep the trie in an internally valid state.
+
+-- (I.e. we need to try to compress it.)
+alter :: (Alt st a, Boolable (st a), Trie trie st map k)
+      => (st a -> st a) -> [k] -> trie map k a -> trie map k a
+alter = genericAlter (flip const)
+
+-- O(min(m,s))
+alter' :: (Alt st a, Boolable (st a), Trie trie st map k)
+       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
+alter' = genericAlter seq
+
+genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
+             => (st a -> trie map k a -> trie map k a)
+             -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
+genericAlter seeq f k tr =
+   let (v,prefix,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) prefix k of
+            Same                   ->
+               let v' = f v
+                in -- We need to compress if the map was empty or a singleton
+                   -- and the value was removed
+                   if    (Map.null m || isJust (Map.singletonView m))
+                      && not (hasValue v')
+                      then tryCompress (mkTrie v' prefix m)
+                      else v' `seeq` mkTrie v' prefix m
+
+            PostFix (Right (x:xs)) ->
+               mkTrie v prefix $
+                  Map.alter
+                     (\mt -> case mt of
+                                 Nothing ->
+                                    let v' = f altEmpty
+                                     in if hasValue v'
+                                           then Just (singleton xs (unwrap v'))
+                                           else Nothing
+                                 Just t ->
+                                    let new = genericAlter seeq f xs t
+                                     in if null new then Nothing else Just new)
+                     x m
+
+            PostFix (Left (p:ps)) ->
+               let v' = f altEmpty
+                in if hasValue v'
+                      then mkTrie v' k $ Map.singleton p (mkTrie v ps m)
+                      else tr
+
+            DifferedAt pr (p:ps) (x:xs) ->
+               let v' = f altEmpty
+                in if hasValue v'
+                      then mkTrie altEmpty pr $
+                              Map.doubleton p (mkTrie v  ps m)
+                                            x (mkTrie v' xs Map.empty)
+                      else tr
+
+            _ ->
+               error
+                  "Data.ListTrie.Patricia.Base.genericAlter :: internal error"
+
+-- * Querying
+
 -- O(1)
 --
 -- Test the strict field last for maximal laziness
@@ -77,21 +247,21 @@ null :: (Boolable (st a), Trie trie st map k) => trie map k a -> Bool
 null tr = let (v,p,m) = tParts tr
            in Map.null m && noValue v && assert (Prelude.null p) True
 
--- O(n)
+-- O(n m)
 size :: (Boolable (st a), Trie trie st map k) => trie map k a -> Int
 size tr = Map.foldValues ((+) . size) (fromEnum.hasValue.tVal $ tr) (tMap tr)
 
--- O(m)
+-- O(min(m,s))
 member :: (Alt st a, Boolable (st a), Trie trie st map k)
        => [k] -> trie map k a -> Bool
 member = hasValue .: lookup
 
--- O(m)
+-- O(min(m,s))
 notMember :: (Alt st a, Boolable (st a), Trie trie st map k)
           => [k] -> trie map k a -> Bool
 notMember = not .: member
 
--- O(m)
+-- O(min(m,s))
 lookup :: (Alt st a, Trie trie st map k) => [k] -> trie map k a -> st a
 lookup k tr =
    let (v,prefix,m) = tParts tr
@@ -101,7 +271,7 @@ lookup k tr =
                                             (Map.lookup x m)
             _                      -> altEmpty
 
--- O(m)
+-- O(min(m,s))
 lookupWithDefault :: (Alt st a, Trie trie st map k)
                   => a -> [k] -> trie map k a -> a
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
@@ -197,174 +367,6 @@ isProperSubmapOfBy = f False
                    then proper'
                    else Map.isSubmapOfBy (f proper' g) ml mr
               ]
-
--- * Construction
-
--- O(1)
-empty :: (Alt st a, Trie trie st map k) => trie map k a
-empty = mkTrie altEmpty [] Map.empty
-
--- O(1)
-singleton :: (Alt st a, Trie trie st map k) => [k] -> a -> trie map k a
-singleton k v = mkTrie (pure v) k Map.empty
-
--- O(m)
-insert :: (Alt st a, Boolable (st a), Trie trie st map k)
-       => [k] -> a -> trie map k a -> trie map k a
-insert = insertWith const
-
--- O(m)
-insertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
-           => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith = genericInsertWith (<$>)
-
--- O(m)
-insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
-            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith' = genericInsertWith (<$!>)
-
-genericInsertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
-                  => ((a -> a) -> st a -> st a)
-                  -> (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-genericInsertWith (<$$>) f k new tr =
-   let (old,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same -> mkTrie ((f new <$$> old) <|> pure new) prefix m
-
-            PostFix (Left (p:pr)) -> mkTrie (pure new) k
-                                            (Map.singleton p (mkTrie old pr m))
-            PostFix (Right (x:xs)) ->
-               -- Minor optimization: instead of tryCompress we just check for
-               -- the case of an empty trie
-               if null tr
-                  then singleton k new
-                  else mkTrie old prefix $
-                          Map.insertWith
-                             (\_ oldt ->
-                                genericInsertWith (<$$>) f xs new oldt)
-                             x (singleton xs new) m
-
-            DifferedAt pr' (p:pr) (x:xs) ->
-               mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
-                                                   p (mkTrie old pr m)
-
-            _ -> error
-                    "Data.ListTrie.Patricia.Base.insertWith :: internal error"
-
--- O(m)
-delete :: (Alt st a, Boolable (st a), Trie trie st map k)
-       => [k] -> trie map k a -> trie map k a
-delete = alter (const altEmpty)
-
--- O(m)
-adjust :: Trie trie st map k
-       => (a -> a) -> [k] -> trie map k a -> trie map k a
-adjust = genericAdjust fmap
-
--- O(m)
-adjust' :: (Alt st a, Boolable (st a), Trie trie st map k)
-        => (a -> a) -> [k] -> trie map k a -> trie map k a
-adjust' = genericAdjust fmap'
-
-genericAdjust :: Trie trie st map k
-              => ((a -> a) -> st a -> st a)
-              -> (a -> a) -> [k] -> trie map k a -> trie map k a
-genericAdjust myFmap f k tr =
-   let (v,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   -> mkTrie (myFmap f v) prefix m
-            PostFix (Right (x:xs)) ->
-               mkTrie v prefix $ Map.adjust (genericAdjust myFmap f xs) x m
-            _                      -> tr
-
--- O(m)
-updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
-             => (a -> st a) -> [k] -> trie map k a -> (st a, trie map k a)
-updateLookup f k tr =
-   let (v,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   -> let v' = if hasValue v
-                                                  then f (unwrap v)
-                                                  else v
-                                       in (v, safeMkTrie v' prefix m)
-            PostFix (Right (x:xs)) ->
-               case Map.lookup x m of
-                    Nothing  -> (altEmpty, tr)
-                    Just tr' ->
-                       let (ret, upd) = updateLookup f xs tr'
-                        in ( ret
-                           , safeMkTrie v prefix $
-                                if null upd
-                                   then Map.delete x m
-                                   else Map.adjust (const upd) x m
-                           )
-            _ -> (altEmpty, tr)
-
--- O(m)
---
--- This can be lazy in exactly one case: the key is a prefix of more than one
--- key in the trie. In that case, we know that the resulting trie continues to
--- contain those children.
---
--- In all other cases we have to check whether the function removed a key or
--- not, in order to be able to keep the trie in an internally valid state.
-
--- (I.e. we need to try to compress it.)
-alter :: (Alt st a, Boolable (st a), Trie trie st map k)
-      => (st a -> st a) -> [k] -> trie map k a -> trie map k a
-alter = genericAlter (flip const)
-
--- O(m)
-alter' :: (Alt st a, Boolable (st a), Trie trie st map k)
-       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
-alter' = genericAlter seq
-
-genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
-             => (st a -> trie map k a -> trie map k a)
-             -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
-genericAlter seeq f k tr =
-   let (v,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   ->
-               let v' = f v
-                in -- We need to compress if the map was empty or a singleton
-                   -- and the value was removed
-                   if    (Map.null m || isJust (Map.singletonView m))
-                      && not (hasValue v')
-                      then tryCompress (mkTrie v' prefix m)
-                      else v' `seeq` mkTrie v' prefix m
-
-            PostFix (Right (x:xs)) ->
-               mkTrie v prefix $
-                  Map.alter
-                     (\mt -> case mt of
-                                 Nothing ->
-                                    let v' = f altEmpty
-                                     in if hasValue v'
-                                           then Just (singleton xs (unwrap v'))
-                                           else Nothing
-                                 Just t ->
-                                    let new = genericAlter seeq f xs t
-                                     in if null new then Nothing else Just new)
-                     x m
-
-            PostFix (Left (p:ps)) ->
-               let v' = f altEmpty
-                in if hasValue v'
-                      then mkTrie v' k $ Map.singleton p (mkTrie v ps m)
-                      else tr
-
-            DifferedAt pr (p:ps) (x:xs) ->
-               let v' = f altEmpty
-                in if hasValue v'
-                      then mkTrie altEmpty pr $
-                              Map.doubleton p (mkTrie v  ps m)
-                                            x (mkTrie v' xs Map.empty)
-                      else tr
-
-            _ ->
-               error
-                  "Data.ListTrie.Patricia.Base.genericAlter :: internal error"
 
 -- * Combination
 
@@ -892,44 +894,6 @@ partitionWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
                  -> (trie map k a, trie map k a)
 partitionWithKey p = both fromList . partition (uncurry p) . toList
 
--- O(m)
-split :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
-      => [k] -> trie map k a -> (trie map k a, trie map k a)
-split xs tr = let (l,_,g) = splitLookup xs tr in (l,g)
-
--- O(m)
-splitLookup :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
-            => [k]
-            -> trie map k a
-            -> (trie map k a, st a, trie map k a)
-splitLookup xs tr =
-   let (v,pre,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) pre xs of
-            Same                     -> (empty, v, mk altEmpty pre m)
-            DifferedAt _ (p:_) (x:_) ->
-               case Map.ordCmp m p x of
-                    LT -> (tr, altEmpty, empty)
-                    GT -> (empty, altEmpty, tr)
-                    EQ -> can'tHappen
-
-            PostFix (Left  _)      -> (empty, altEmpty, tr)
-            PostFix (Right (y:ys)) ->
-               let (ml, maybeTr, mg) = Map.splitLookup y m
-                in case maybeTr of
-                        -- Prefix goes in left side of split since it's shorter
-                        -- than the given key and thus lesser
-                        Nothing  -> (mk v pre ml, altEmpty, mk altEmpty pre mg)
-                        Just tr' ->
-                           let (tl, v', tg) = splitLookup ys tr'
-                               ml' = if null tl then ml else Map.insert y tl ml
-                               mg' = if null tg then mg else Map.insert y tg mg
-                            in (mk v pre ml', v', mk altEmpty pre mg')
-            _ -> can'tHappen
- where
-   mk v pre = tryCompress . mkTrie v pre
-   can'tHappen =
-      error "Data.ListTrie.Patricia.Base.splitLookup :: internal error"
-
 -- * Mapping
 
 -- O(n m)
@@ -940,7 +904,7 @@ mapKeysWith :: (Boolable (st a), Trie trie st map k1, Trie trie st map k2)
             -> trie map k2 a
 mapKeysWith fromlist f = fromlist . map (first f) . toList
 
--- O(n)
+-- O(n m)
 mapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
                  , Trie trie st map k1, Trie trie st map k2
                  )
@@ -950,7 +914,7 @@ mapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
               -> trie map k2 a
 mapInKeysWith = genericMapInKeysWith (flip const) (const ()) unionWith
 
--- O(n)
+-- O(n m)
 mapInKeysWith' :: ( Alt st a, Boolable (st a), Unionable st a
                   , Trie trie st map k1, Trie trie st map k2
                   )
@@ -985,48 +949,48 @@ genericMapInKeysWith seeq listSeq unionW j f tr =
 
 -- * Folding
 
--- O(n)
+-- O(n m)
 foldrWithKey :: (Boolable (st a), Trie trie st map k)
             => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrWithKey f x = foldr (uncurry f) x . toList
 
--- O(n)
+-- O(n m)
 foldrAscWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrAscWithKey f x = foldr (uncurry f) x . toAscList
 
--- O(n)
+-- O(n m)
 foldrDescWithKey :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldrDescWithKey f x = foldr (uncurry f) x . toDescList
 
--- O(n)
+-- O(n m)
 foldlWithKey' :: (Boolable (st a), Trie trie st map k)
             => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldlWithKey' f x = foldl' (flip $ uncurry f) x . toList
 
--- O(n)
+-- O(n m)
 foldlAscWithKey' :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldlAscWithKey' f x = foldl' (flip $ uncurry f) x . toAscList
 
--- O(n)
+-- O(n m)
 foldlDescWithKey' :: (Boolable (st a), Trie trie st map k, OrdMap map k)
                 => ([k] -> a -> b -> b) -> b -> trie map k a -> b
 foldlDescWithKey' f x = foldl' (flip $ uncurry f) x . toDescList
 
 -- * Conversion between lists
 
--- O(n)
+-- O(n m)
 toList :: (Boolable (st a), Trie trie st map k) => trie map k a -> [([k],a)]
 toList = genericToList Map.toList DL.cons
 
--- O(n)
+-- O(n m)
 toAscList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> [([k],a)]
 toAscList = genericToList Map.toAscList DL.cons
 
--- O(n)
+-- O(n m)
 toDescList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
            => trie map k a -> [([k],a)]
 toDescList = genericToList (reverse . Map.toAscList) (flip DL.snoc)
@@ -1077,6 +1041,37 @@ fromListWithKey' f = foldl' (\tr (k,v) -> insertWith' (f k) k v tr) empty
 -- * Min/max
 
 -- O(m)
+minView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
+        => trie map k a -> (Maybe ([k], a), trie map k a)
+minView = minMaxView (hasValue.tVal) (fst . Map.minViewWithKey)
+
+-- O(m)
+maxView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
+        => trie map k a -> (Maybe ([k], a), trie map k a)
+maxView = minMaxView (Map.null.tMap) (fst . Map.maxViewWithKey)
+
+minMaxView :: (Alt st a, Boolable (st a), Trie trie st map k)
+           => (trie map k a -> Bool)
+           -> (CMap trie map k a -> Maybe (k, trie map k a))
+           -> trie map k a
+           -> (Maybe ([k], a), trie map k a)
+minMaxView _ _ tr_ | null tr_ = (Nothing, tr_)
+minMaxView f g tr_ = first Just (go f g tr_)
+ where
+   go isWanted mapView tr =
+      let (v,pre,m) = tParts tr
+       in if isWanted tr
+             then ((pre, unwrap v), safeMkTrie altEmpty pre m)
+
+             else let (k,      tr')  = fromJust (mapView m)
+                      (minMax, tr'') = go isWanted mapView tr'
+                   in ( first (prepend pre k) minMax
+                      , mkTrie v pre $ if null tr''
+                                          then Map.delete              k m
+                                          else Map.adjust (const tr'') k m
+                      )
+
+-- O(m)
 findMin :: (Boolable (st a), Trie trie st map k, OrdMap map k)
         => trie map k a -> Maybe ([k], a)
 findMin = findMinMax (hasValue . tVal) (fst . Map.minViewWithKey)
@@ -1112,36 +1107,43 @@ deleteMax :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
           => trie map k a -> trie map k a
 deleteMax = snd . maxView
 
--- O(m)
-minView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
-        => trie map k a -> (Maybe ([k], a), trie map k a)
-minView = minMaxView (hasValue.tVal) (fst . Map.minViewWithKey)
+-- O(min(m,s))
+split :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
+      => [k] -> trie map k a -> (trie map k a, trie map k a)
+split xs tr = let (l,_,g) = splitLookup xs tr in (l,g)
 
--- O(m)
-maxView :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
-        => trie map k a -> (Maybe ([k], a), trie map k a)
-maxView = minMaxView (Map.null.tMap) (fst . Map.maxViewWithKey)
+-- O(min(m,s))
+splitLookup :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
+            => [k]
+            -> trie map k a
+            -> (trie map k a, st a, trie map k a)
+splitLookup xs tr =
+   let (v,pre,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) pre xs of
+            Same                     -> (empty, v, mk altEmpty pre m)
+            DifferedAt _ (p:_) (x:_) ->
+               case Map.ordCmp m p x of
+                    LT -> (tr, altEmpty, empty)
+                    GT -> (empty, altEmpty, tr)
+                    EQ -> can'tHappen
 
-minMaxView :: (Alt st a, Boolable (st a), Trie trie st map k)
-           => (trie map k a -> Bool)
-           -> (CMap trie map k a -> Maybe (k, trie map k a))
-           -> trie map k a
-           -> (Maybe ([k], a), trie map k a)
-minMaxView _ _ tr_ | null tr_ = (Nothing, tr_)
-minMaxView f g tr_ = first Just (go f g tr_)
+            PostFix (Left  _)      -> (empty, altEmpty, tr)
+            PostFix (Right (y:ys)) ->
+               let (ml, maybeTr, mg) = Map.splitLookup y m
+                in case maybeTr of
+                        -- Prefix goes in left side of split since it's shorter
+                        -- than the given key and thus lesser
+                        Nothing  -> (mk v pre ml, altEmpty, mk altEmpty pre mg)
+                        Just tr' ->
+                           let (tl, v', tg) = splitLookup ys tr'
+                               ml' = if null tl then ml else Map.insert y tl ml
+                               mg' = if null tg then mg else Map.insert y tg mg
+                            in (mk v pre ml', v', mk altEmpty pre mg')
+            _ -> can'tHappen
  where
-   go isWanted mapView tr =
-      let (v,pre,m) = tParts tr
-       in if isWanted tr
-             then ((pre, unwrap v), safeMkTrie altEmpty pre m)
-
-             else let (k,      tr')  = fromJust (mapView m)
-                      (minMax, tr'') = go isWanted mapView tr'
-                   in ( first (prepend pre k) minMax
-                      , mkTrie v pre $ if null tr''
-                                          then Map.delete              k m
-                                          else Map.adjust (const tr'') k m
-                      )
+   mk v pre = tryCompress . mkTrie v pre
+   can'tHappen =
+      error "Data.ListTrie.Patricia.Base.splitLookup :: internal error"
 
 -- O(m)
 findPredecessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
@@ -1212,19 +1214,12 @@ findSuccessor tr_ xs_         = go tr_ xs_
 
 -- * Trie-only operations
 
--- O(s) where s is the input
+-- O(s)
 addPrefix :: (Alt st a, Trie trie st map k)
           => [k] -> trie map k a -> trie map k a
 addPrefix xs tr =
    let (v,pre,m) = tParts tr
     in mkTrie v (xs ++ pre) m
-
--- O(1)
-splitPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
-            => trie map k a -> ([k], st a, trie map k a)
-splitPrefix tr =
-   let (v,pre,m) = tParts tr
-    in (pre, v, tryCompress $ mkTrie altEmpty [] m)
 
 -- O(m)
 lookupPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -1245,11 +1240,19 @@ lookupPrefix xs tr =
                   "Data.ListTrie.Patricia.Base.lookupPrefix :: internal error"
 
 -- O(1)
+splitPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
+            => trie map k a -> ([k], st a, trie map k a)
+splitPrefix tr =
+   let (v,pre,m) = tParts tr
+    in (pre, v, tryCompress $ mkTrie altEmpty [] m)
+
+-- O(1)
 children :: Trie trie st map k => trie map k a -> [(k, trie map k a)]
 children = Map.toList . tMap
 
 -- * Visualization
 
+-- O(n m)
 showTrieWith :: (Show k, Trie trie st map k)
              => (st a -> ShowS) -> trie map k a -> ShowS
 showTrieWith = go 0
