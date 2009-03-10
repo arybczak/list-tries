@@ -335,13 +335,13 @@ splitMember = (\(l,b,g) -> (TS l,unwrap b,TS g)) .: Base.splitLookup .:. unTS
 
 -- | @O(m)@. 'Just' the key of the set which precedes the given key in order,
 -- or 'Nothing' if the set is empty.
-findPredecessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
-findPredecessor = fmap fst .: Base.findPredecessor . unTS
+findPredecessor :: OrdMap map a => [a] -> TrieSet map a -> Maybe [a]
+findPredecessor = fmap fst .: Base.findPredecessor .:. unTS
 
 -- | @O(m)@. 'Just' the key of the set which succeeds the given key in order,
 -- or 'Nothing' if the set is empty.
-findSuccessor :: OrdMap map a => TrieSet map a -> [a] -> Maybe [a]
-findSuccessor = fmap fst .: Base.findSuccessor . unTS
+findSuccessor :: OrdMap map a => [a] -> TrieSet map a -> Maybe [a]
+findSuccessor = fmap fst .: Base.findSuccessor .:. unTS
 
 -- * Trie-only operations
 

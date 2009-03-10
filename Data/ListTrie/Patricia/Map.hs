@@ -949,12 +949,12 @@ splitLookup = Base.splitLookup
 
 -- | @O(m)@. 'Just' the key of the map which precedes the given key in order,
 -- along with its associated value, or 'Nothing' if the map is empty.
-findPredecessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
+findPredecessor :: OrdMap map k => [k] -> TrieMap map k a -> Maybe ([k], a)
 findPredecessor = Base.findPredecessor
 
 -- | @O(m)@. 'Just' the key of the map which succeeds the given key in order,
 -- along with its associated value, or 'Nothing' if the map is empty.
-findSuccessor :: OrdMap map k => TrieMap map k a -> [k] -> Maybe ([k], a)
+findSuccessor :: OrdMap map k => [k] -> TrieMap map k a -> Maybe ([k], a)
 findSuccessor = Base.findSuccessor
 
 -- * Trie-only operations

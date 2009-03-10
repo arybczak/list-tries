@@ -1159,11 +1159,11 @@ splitLookup xs tr =
 
 -- O(m)
 findPredecessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
-                => trie map k a -> [k] -> Maybe ([k], a)
-findPredecessor tr  _ | null tr = Nothing
-findPredecessor tr_ xs_         = go tr_ xs_
+                => [k] -> trie map k a -> Maybe ([k], a)
+findPredecessor _   tr | null tr = Nothing
+findPredecessor xs_ tr_          = go xs_ tr_
  where
-   go tr xs =
+   go xs tr =
       let (v,pre,m) = tParts tr
        in case comparePrefixes (Map.eqCmp m) pre xs of
                Same             -> Nothing
@@ -1179,7 +1179,7 @@ findPredecessor tr_ xs_         = go tr_ xs_
                -- algorithm
                PostFix (Right (y:ys)) ->
                   let predecessor = Map.findPredecessor y m
-                   in (first (prepend pre y)<$>(Map.lookup y m >>= flip go ys))
+                   in (first (prepend pre y)<$>(Map.lookup y m >>= go ys))
                       <|>
                       case predecessor of
                            Nothing         ->
@@ -1195,11 +1195,11 @@ findPredecessor tr_ xs_         = go tr_ xs_
 
 -- O(m)
 findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
-              => trie map k a -> [k] -> Maybe ([k], a)
-findSuccessor tr  _ | null tr = Nothing
-findSuccessor tr_ xs_         = go tr_ xs_
+              => [k] -> trie map k a -> Maybe ([k], a)
+findSuccessor _   tr | null tr = Nothing
+findSuccessor xs_ tr_          = go xs_ tr_
  where
-   go tr xs =
+   go xs tr =
       let (_,pre,m) = tParts tr
        in case comparePrefixes (Map.eqCmp m) pre xs of
                Same -> do (k,t) <- fst $ Map.minViewWithKey m
@@ -1214,7 +1214,7 @@ findSuccessor tr_ xs_         = go tr_ xs_
                PostFix (Left _)       -> findMin tr
                PostFix (Right (y:ys)) ->
                   let successor = Map.findSuccessor y m
-                   in (first (prepend pre y)<$>(Map.lookup y m >>= flip go ys))
+                   in (first (prepend pre y)<$>(Map.lookup y m >>= go ys))
                       <|>
                       (successor >>= \(best,btr) ->
                          first (prepend pre best) <$> findMin btr)

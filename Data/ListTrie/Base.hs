@@ -716,11 +716,11 @@ splitLookup (x:xs) tr =
 
 -- O(m)
 findPredecessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
-                => trie map k a -> [k] -> Maybe ([k], a)
-findPredecessor tr  _ | null tr = Nothing
-findPredecessor tr_ xs_         = go tr_ xs_
+                => [k] -> trie map k a -> Maybe ([k], a)
+findPredecessor _   tr | null tr = Nothing
+findPredecessor xs_ tr_          = go xs_ tr_
  where
-   go _  [] = Nothing
+   go [] _ = Nothing
 
    -- We need to try the trie at x and then the trie at the predecessor of x:
    -- e.g. if looking for "foo", we need to try any 'f' branch to see if it has
@@ -729,10 +729,10 @@ findPredecessor tr_ xs_         = go tr_ xs_
    --
    -- If there's no branch less than 'f' we try the current position as a last
    -- resort.
-   go tr (x:xs) =
+   go (x:xs) tr =
       let (v,m) = tParts tr
           predecessor = Map.findPredecessor x m
-       in fmap (first (x:)) (Map.lookup x m >>= flip go xs)
+       in fmap (first (x:)) (Map.lookup x m >>= go xs)
           <|>
           case predecessor of
                Nothing         ->
@@ -743,17 +743,17 @@ findPredecessor tr_ xs_         = go tr_ xs_
 
 -- O(m)
 findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
-              => trie map k a -> [k] -> Maybe ([k], a)
-findSuccessor tr  _ | null tr = Nothing
-findSuccessor tr_ xs_         = go tr_ xs_
+              => [k] -> trie map k a -> Maybe ([k], a)
+findSuccessor _   tr | null tr = Nothing
+findSuccessor xs_ tr_          = go xs_ tr_ 
  where
-   go tr [] = do (k,t) <- fst . Map.minViewWithKey . tMap $ tr
+   go [] tr = do (k,t) <- fst . Map.minViewWithKey . tMap $ tr
                  fmap (first (k:)) (findMin t)
 
-   go tr (x:xs) =
+   go (x:xs) tr =
       let m = tMap tr
           successor = Map.findSuccessor x m
-       in fmap (first (x:)) (Map.lookup x m >>= flip go xs)
+       in fmap (first (x:)) (Map.lookup x m >>= go xs)
           <|>
           (successor >>= \(best,btr) -> fmap (first (best:)) (findMin btr))
 

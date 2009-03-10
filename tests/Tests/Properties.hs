@@ -280,14 +280,14 @@ $(makeFunc allTries ["split","findMax","findPredecessor"] [d|
    prop_splitMaxPredecessor split findMax findPredecessor m k_ =
       let k = unArb k_
           (a,_) = split k (m :: TrieType)
-       in findMax a == findPredecessor m k
+       in findMax a == findPredecessor k m
  |])
 -- The minimum of the right side of a split about k is the successor of k
 $(makeFunc allTries ["split","findMin","findSuccessor"] [d|
    prop_splitMinSuccessor split findMin findSuccessor m k_ =
       let k = unArb k_
           (_,b) = split k (m :: TrieType)
-       in findMin b == findSuccessor m k
+       in findMin b == findSuccessor k m
  |])
 
 -- The centre of a splitLookup/Member is the result of a lookup/member
@@ -353,27 +353,29 @@ $(makeFunc allTries ["maxView","findMax","deleteMax"] [d|
 -- [] has no predecessor
 $(makeFunc allTries ["findPredecessor"] [d|
    prop_findPredecessor1 findPredecessor m =
-      isNothing (findPredecessor (m :: TrieType) [])
+      isNothing (findPredecessor [] (m :: TrieType))
  |])
 
 -- The successor of [] is the minimum (unless [] itself is the minimum)
 $(makeFunc allTries ["findSuccessor","findMin","notMember","null"] [d|
    prop_findSuccessor1 findSuccessor findMin notMember null m =
       not (null m) && notMember [] m ==>
-         findSuccessor (m :: TrieType) [] == findMin m
+         findSuccessor [] (m :: TrieType) == findMin m
  |])
 
 -- The minimum has no predecessor
 $(makeFunc allTries ["findPredecessor","findMin","null"] [d|
    prop_findPredecessor2 findPredecessor findMin null m =
       not (null m) ==>
-         isNothing.findPredecessor (m :: TrieType).getKey.fromJust.findMin $ m
+         isNothing $ findPredecessor (getKey.fromJust.findMin $ m)
+                                     (m :: TrieType)
  |])
 -- The maximum has no successor
 $(makeFunc allTries ["findSuccessor","findMax","null"] [d|
    prop_findSuccessor2 findSuccessor findMax null m =
       not (null m) ==>
-         isNothing.findSuccessor (m :: TrieType).getKey.fromJust.findMax $ m
+         isNothing $ findSuccessor (getKey.fromJust.findMax $ m)
+                                   (m :: TrieType)
  |])
 
 -- Splitting away the common prefix and adding it and its value back
