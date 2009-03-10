@@ -6,15 +6,12 @@
 -- do not compare the elements themselves, but rather their Int representation
 -- after 'fromEnum'.
 
-{-# LANGUAGE CPP #-}
-
-#include "exports.h"
-
-module Data.ListTrie.Patricia.Map.Enum (MAP_EXPORTS) where
+module Data.ListTrie.Patricia.Map.Enum ( TrieMap
+                                       , module Data.ListTrie.Patricia.Map
+                                       ) where
 
 import Data.ListTrie.Base.Map            (WrappedIntMap)
 import Data.ListTrie.Patricia.Map hiding (TrieMap)
 import qualified Data.ListTrie.Patricia.Map as Base
-import Prelude hiding (filter, foldr, lookup, map, null)
 
 type TrieMap = Base.TrieMap WrappedIntMap

@@ -3,15 +3,12 @@
 -- A set of lists of elements that can be totally ordered, based on a Patricia
 -- trie.
 
-{-# LANGUAGE CPP #-}
+module Data.ListTrie.Patricia.Set.Ord ( TrieSet
+                                      , module Data.ListTrie.Patricia.Set
+                                      ) where
 
-#include "exports.h"
-
-module Data.ListTrie.Patricia.Set.Ord (SET_EXPORTS) where
-
-import Data.Map                      (Map)
+import Data.Map                          (Map)
 import Data.ListTrie.Patricia.Set hiding (TrieSet)
 import qualified Data.ListTrie.Patricia.Set as Base
-import Prelude hiding (filter, foldr, map, null)
 
 type TrieSet = Base.TrieSet Map
