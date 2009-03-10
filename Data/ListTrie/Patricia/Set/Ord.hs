@@ -1,8 +1,7 @@
 -- File created: 2009-01-06 13:50:00
 
--- A set of lists of elements that can be totally ordered, based on a Patricia
--- trie.
-
+-- | A set of lists of elements that can be totally ordered, based on a
+-- Patricia trie.
 module Data.ListTrie.Patricia.Set.Ord ( TrieSet
                                       , module Data.ListTrie.Patricia.Set
                                       ) where

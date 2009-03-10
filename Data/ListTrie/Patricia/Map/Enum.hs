@@ -1,11 +1,11 @@
 -- File created: 2008-12-29 12:42:12
 
--- A map with lists of enumerable elements as keys, based on a Patricia trie.
+-- | A map from lists of enumerable elements to arbitrary values, based on a
+-- Patricia trie.
 --
 -- Note that those operations which require an ordering, such as 'toAscList',
--- do not compare the elements themselves, but rather their Int representation
--- after 'fromEnum'.
-
+-- do not compare the elements themselves, but rather their 'Int'
+-- representation after 'fromEnum'.
 module Data.ListTrie.Patricia.Map.Enum ( TrieMap
                                        , module Data.ListTrie.Patricia.Map
                                        ) where

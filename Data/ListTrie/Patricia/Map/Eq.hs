@@ -1,8 +1,7 @@
 -- File created: 2009-01-06 13:49:30
 
--- A map with lists of elements that can be compared for equality as keys,
--- based on a Patricia trie.
-
+-- | A map from lists of elements that can be compared for equality to
+-- arbitrary values, based on a Patricia trie.
 module Data.ListTrie.Patricia.Map.Eq ( TrieMap
                                      , module Data.ListTrie.Patricia.Map
                                      ) where
