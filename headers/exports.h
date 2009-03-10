@@ -54,7 +54,8 @@
 	empty, singleton, \
 	\
 	{- * Modification -} \
-	insert, delete, insertWith, insertWith', \
+	insert, insert', insertWith, insertWith', \
+	delete, \
 	update, updateLookup, \
 	adjust, adjust', alter, alter', \
 	\

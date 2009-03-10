@@ -8,7 +8,7 @@ module Data.ListTrie.Base
    , null, size, size', member, notMember, lookup, lookupWithDefault
    , isSubmapOfBy, isProperSubmapOfBy
    , empty, singleton
-   , insert, insertWith, insertWith'
+   , insert, insert', insertWith, insertWith'
    , delete, adjust, adjust', updateLookup, alter, alter'
    , unionWith, unionWithKey, unionWith', unionWithKey'
    , unionsWith, unionsWithKey, unionsWith', unionsWithKey'
@@ -111,6 +111,11 @@ insert :: (Alt st a, Trie trie st map k)
 insert = insertWith const
 
 -- O(min(m,s))
+insert' :: (Alt st a, Boolable (st a), Trie trie st map k)
+        => [k] -> a -> trie map k a -> trie map k a
+insert' = insertWith' const
+
+-- O(min(m,s))
 insertWith :: (Alt st a, Trie trie st map k)
            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
 insertWith = genericInsertWith (<$>)
@@ -118,7 +123,7 @@ insertWith = genericInsertWith (<$>)
 -- O(min(m,s))
 insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
             => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith' = genericInsertWith (<$!>)
+insertWith' = (seq <*>) .: genericInsertWith (<$!>)
 
 genericInsertWith :: (Alt st a, Trie trie st map k)
                   => ((a -> a) -> st a -> st a)

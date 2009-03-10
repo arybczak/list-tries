@@ -150,8 +150,17 @@ singleton = Base.singleton
 
 -- | @O(min(m,s))@. Inserts the key-value pair into the map. If the key is
 -- already a member of the map, the given value replaces the old one.
+--
+-- > insert = insertWith const
 insert :: Map map k => [k] -> a -> TrieMap map k a -> TrieMap map k a
 insert = Base.insert
+
+-- | @O(min(m,s))@. Like 'insert', but the new value is reduced to weak head
+-- normal form before being placed into the map.
+--
+-- > insert' = insertWith' const
+insert' :: Map map k => [k] -> a -> TrieMap map k a -> TrieMap map k a
+insert' = Base.insert'
 
 -- | @O(min(m,s))@. Inserts the key-value pair into the map. If the key is
 -- already a member of the map, the old value is replaced by @f givenValue
@@ -160,8 +169,9 @@ insertWith :: Map map k
            => (a -> a -> a) -> [k] -> a -> TrieMap map k a -> TrieMap map k a
 insertWith = Base.insertWith
 
--- | @O(min(m,s))@. Like 'insertWith', but the combining function is applied
--- strictly.
+-- | @O(min(m,s))@. Like 'insertWith', but the new value is reduced to weak
+-- head normal form before being placed into the map, whether it is the given
+-- value or a result of the combining function.
 insertWith' :: Map map k
             => (a -> a -> a) -> [k] -> a -> TrieMap map k a -> TrieMap map k a
 insertWith' = Base.insertWith'

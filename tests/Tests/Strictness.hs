@@ -31,10 +31,20 @@ import Tests.TH
 #define IS_LAZY   (not.isBottom.size)
 #define IS_STRICT (    isBottom.size)
 
+-- insert' should be strict in the value, insert should not.
+$(makeFunc mapsOnly ["size","empty","insert"] [d|
+   insert size empty insert =
+      IS_LAZY   . insert  "foo" undefined $ (empty :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","empty","insert'"] [d|
+   insert' size empty insert' =
+      IS_STRICT . insert' "foo" undefined $ (empty :: TrieType)
+ |])
+
 -- insertWith' should apply the combining function strictly, insertWith should
 -- not. We use a singleton to make sure that the combining function is called.
 $(makeFunc mapsOnly ["size","singleton","insertWith"] [d|
-   insertWith size singleton insertWith =
+   insertWith1 size singleton insertWith =
       IS_LAZY   . insertWith  undefined "foo" undefined $
          (singleton "foo" 0 :: TrieType)
  |])
@@ -54,7 +64,17 @@ $(makeFunc mapsOnly ["size","singleton","insertWith'"] [d|
          (singleton "foo" 0 :: TrieType)
  |])
 
--- As above, but for adjust' and adjust.
+-- Also, insertWith' should always be strict in the value.
+$(makeFunc mapsOnly ["size","empty","insertWith"] [d|
+   insertWith2 size empty insertWith =
+      IS_LAZY   . insertWith  undefined "foo" undefined $ (empty :: TrieType)
+ |])
+$(makeFunc mapsOnly ["size","empty","insertWith'"] [d|
+   insertWith'4 size empty insertWith' =
+      IS_STRICT . insertWith' undefined "foo" undefined $ (empty :: TrieType)
+ |])
+
+-- As for insertWith, but for adjust' and adjust.
 $(makeFunc mapsOnly ["size","singleton","adjust"] [d|
    adjust size singleton adjust =
       IS_LAZY   . adjust  undefined "foo" $ (singleton "foo" 0 :: TrieType)
@@ -311,10 +331,14 @@ $(makeFunc mapsOnly ["size","fromListWithKey'"] [d|
  |])
 
 tests = testGroup "Strictness"
-   [ $(makeCases mapsOnly "insertWith")
+   [ $(makeCases mapsOnly "insert")
+   , $(makeCases mapsOnly "insert'")
+   , $(makeCases mapsOnly "insertWith1")
    , $(makeCases mapsOnly "insertWith'1")
    , $(makeCases mapsOnly "insertWith'2")
    , $(makeCases mapsOnly "insertWith'3")
+   , $(makeCases mapsOnly "insertWith2")
+   , $(makeCases mapsOnly "insertWith'4")
    , $(makeCases mapsOnly "adjust")
    , $(makeCases mapsOnly "adjust'")
    , $(makeCases mapsOnly "alter")
