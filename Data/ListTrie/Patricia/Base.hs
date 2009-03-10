@@ -1293,6 +1293,7 @@ showTrieWith = go 0
 -- helpers
 
 -- mkTrie, but makes sure that empty tries don't have nonempty prefixes
+-- intentionally strict in the value: gives update its semantics
 safeMkTrie :: (Alt st a, Boolable (st a), Trie trie st map k)
            => st a -> [k] -> CMap trie map k a -> trie map k a
 safeMkTrie v p m =
