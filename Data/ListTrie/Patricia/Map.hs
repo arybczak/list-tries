@@ -215,8 +215,8 @@ updateLookup = Base.updateLookup
 --
 -- - If @f@ returned 'Nothing', the map is unchanged.
 --
--- The function is applied lazily only if the given key is a prefix of another
--- key in the map.
+-- The function is applied lazily only if the given key is a prefix of more
+-- than one key in the map.
 alter :: Map map k
       => (Maybe a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
 alter = Base.alter
