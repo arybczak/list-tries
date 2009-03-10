@@ -140,10 +140,6 @@ class Foldable (m k) => Map m k where
 --
 -- * 'splitLookup'
 --
--- 'fromDistinctAscList' and 'fromDistinctAscList' are only used in the default
--- definitions of 'minViewWithKey' and 'maxViewWithKey', and default to
--- 'fromList'.
---
 -- For decent performance, supplying at least the following is probably a good
 -- idea:
 --
@@ -157,8 +153,6 @@ class Map m k => OrdMap m k where
 
    toAscList            :: m k a -> [(k,a)]
    toDescList           :: m k a -> [(k,a)]
-   fromDistinctAscList  :: [(k,a)] -> m k a
-   fromDistinctDescList :: [(k,a)] -> m k a
 
    splitLookup :: k -> m k a -> (m k a, Maybe a, m k a)
    split       :: k -> m k a -> (m k a,          m k a)
@@ -176,20 +170,18 @@ class Map m k => OrdMap m k where
 
    toAscList  = reverse . toDescList
    toDescList = reverse . toAscList
-   fromDistinctAscList  = fromList
-   fromDistinctDescList = fromList
 
    split m k = let (a,_,b) = splitLookup m k in (a,b)
 
    minViewWithKey m =
       case toAscList m of
            []     -> (Nothing, m)
-           (x:xs) -> (Just x, fromDistinctAscList xs)
+           (x:xs) -> (Just x, fromList xs)
 
    maxViewWithKey m =
       case toDescList m of
            []     -> (Nothing, m)
-           (x:xs) -> (Just x, fromDistinctDescList xs)
+           (x:xs) -> (Just x, fromList xs)
 
    findPredecessor m = fst . maxViewWithKey . fst . split m
    findSuccessor   m = fst . minViewWithKey . snd . split m
@@ -385,9 +377,7 @@ instance Ord k => Map M.Map k where
 instance Ord k => OrdMap M.Map k where
    ordCmp = const compare
 
-   toAscList            = M.toAscList
-   fromDistinctAscList  = M.fromDistinctAscList
-   fromDistinctDescList = fromDistinctAscList . reverse
+   toAscList = M.toAscList
 
    splitLookup = M.splitLookup
    split       = M.split
@@ -467,10 +457,7 @@ instance Enum k => Map WrappedIntMap k where
 instance Enum k => OrdMap WrappedIntMap k where
    ordCmp = const (compare `on` fromEnum)
 
-   toAscList (IMap m)   = Prelude.map (first toEnum) . IM.toAscList $ m
-   fromDistinctAscList  =
-      IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)
-   fromDistinctDescList = fromDistinctAscList . reverse
+   toAscList (IMap m) = Prelude.map (first toEnum) . IM.toAscList $ m
 
    splitLookup k (IMap m) =
       (\(a,b,c) -> (IMap a, b, IMap c)) . IM.splitLookup (fromEnum k) $ m
