@@ -288,7 +288,7 @@ lookupWithDefault :: (Alt st a, Trie trie st map k)
                   => a -> [k] -> trie map k a -> a
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 isSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
              => (a -> b -> Bool)
              -> trie map k a
@@ -327,7 +327,7 @@ isSubmapOfBy f_ trl trr =
               , Map.isSubmapOfBy (isSubmapOfBy f) ml mr
               ]
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
                    => (a -> b -> Bool)
                    -> trie map k a
@@ -386,12 +386,12 @@ isProperSubmapOfBy = f False
 -- additional O(m) cost from keeping track of the key, which is why the basic
 -- ones can't just call them.
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 unionWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith f = genericUnionWith (unionVals f) (flip const)
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 unionWith' :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith' f = genericUnionWith (unionVals' f) seq
@@ -441,7 +441,7 @@ genericUnionWith valUnion seeq tr1 tr2 =
    can'tHappen =
       error "Data.ListTrie.Patricia.Base.unionWith :: internal error"
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 unionWithKey :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
              => ([k] -> a -> a -> a)
              -> trie map k a
@@ -449,7 +449,7 @@ unionWithKey :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
              -> trie map k a
 unionWithKey = genericUnionWithKey unionVals (flip const)
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 unionWithKey' :: ( Alt st a, Boolable (st a), Unionable st a
                  , Trie trie st map k
                  )
@@ -506,27 +506,31 @@ genericUnionWithKey = go DL.empty
    can'tHappen =
       error "Data.ListTrie.Patricia.Base.unionWithKey :: internal error"
 
+-- O(sum(n))
 unionsWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
            => (a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWith j = foldl' (unionWith j) empty
 
+-- O(sum(n))
 unionsWith' :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
             => (a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWith' j = foldl' (unionWith' j) empty
 
+-- O(sum(n))
 unionsWithKey :: ( Alt st a, Boolable (st a)
                  , Unionable st a, Trie trie st map k
                  )
               => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWithKey j = foldl' (unionWithKey j) empty
 
+-- O(sum(n))
 unionsWithKey' :: ( Alt st a, Boolable (st a)
                   , Unionable st a, Trie trie st map k
                   )
                => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWithKey' j = foldl' (unionWithKey' j) empty
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                => (a -> b -> Maybe a)
                -> trie map k a
@@ -593,7 +597,7 @@ differenceWith j_ tr1 tr2 =
    can'tHappen =
       error "Data.ListTrie.Patricia.Base.differenceWith :: internal error"
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
                      , Trie trie st map k
                      )
@@ -668,7 +672,7 @@ differenceWithKey = go DL.empty
    can'tHappen =
       error "Data.ListTrie.Patricia.Base.differenceWithKey :: internal error"
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 intersectionWith :: ( Alt st c, Boolable (st c)
                     , Intersectable st a b c, Intersectable st b a c
                     , Trie trie st map k
@@ -679,7 +683,7 @@ intersectionWith :: ( Alt st c, Boolable (st c)
                  -> trie map k c
 intersectionWith f = genericIntersectionWith (intersectionVals f) (flip const)
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 intersectionWith' :: ( Alt st c, Boolable (st c)
                      , Intersectable st a b c, Intersectable st b a c
                      , Trie trie st map k
@@ -800,7 +804,7 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
    go _ _ _ _ _ _ [] =
       error "Data.ListTrie.Patricia.Map.intersectionWith :: internal error"
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 intersectionWithKey :: ( Alt st c, Boolable (st c)
                        , Intersectable st a b c, Intersectable st b a c
                        , Trie trie st map k
@@ -811,7 +815,7 @@ intersectionWithKey :: ( Alt st c, Boolable (st c)
                     -> trie map k c
 intersectionWithKey = genericIntersectionWithKey intersectionVals (flip const)
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 intersectionWithKey' :: ( Alt st c, Boolable (st c)
                         , Intersectable st a b c, Intersectable st b a c
                         , Trie trie st map k

@@ -256,15 +256,15 @@ lookup = Base.lookup
 lookupWithDefault :: Map map k => a -> [k] -> TrieMap map k a -> a
 lookupWithDefault = Base.lookupWithDefault
 
--- | @O(min(n1,n2))@. 'True' iff the first map is a submap of the second, i.e.
--- all keys that are members of the first map are also members of the second
--- map, and their associated values are the same.
+-- | @O(min(n1 m1,n2 m2))@. 'True' iff the first map is a submap of the second,
+-- i.e. all keys that are members of the first map are also members of the
+-- second map, and their associated values are the same.
 --
 -- > isSubmapOf = isSubmapOfBy (==)
 isSubmapOf :: (Map map k, Eq a) => TrieMap map k a -> TrieMap map k a -> Bool
 isSubmapOf = isSubmapOfBy (==)
 
--- | @O(min(n1,n2))@. Like 'isSubmapOf', but one can specify the equality
+-- | @O(min(n1 m1,n2 m2))@. Like 'isSubmapOf', but one can specify the equality
 -- relation applied to the values.
 --
 -- 'True' iff all keys that are members of the first map are also members of
@@ -275,7 +275,7 @@ isSubmapOfBy :: Map map k
              => (a -> b -> Bool) -> TrieMap map k a -> TrieMap map k b -> Bool
 isSubmapOfBy = Base.isSubmapOfBy
 
--- | @O(min(n1,n2))@. 'True' iff the first map is a proper submap of the
+-- | @O(min(n1 m1,n2 m2))@. 'True' iff the first map is a proper submap of the
 -- second, i.e. all keys that are members of the first map are also members of
 -- the second map, and their associated values are the same, but the maps are
 -- not equal. That is, at least one key was a member of the second map but not
@@ -286,8 +286,8 @@ isProperSubmapOf :: (Map map k, Eq a)
                  => TrieMap map k a -> TrieMap map k a -> Bool
 isProperSubmapOf = isProperSubmapOfBy (==)
 
--- | @O(min(n1,n2))@. Like 'isProperSubmapOf', but one can specify the equality
--- relation applied to the values.
+-- | @O(min(n1 m1,n2 m2))@. Like 'isProperSubmapOf', but one can specify the
+-- equality relation applied to the values.
 --
 -- 'True' iff all keys that are members of the first map are also members of
 -- the second map, and the given function @f@ returns 'True' for all @f
@@ -305,9 +305,9 @@ isProperSubmapOfBy = Base.isProperSubmapOfBy
 defaultUnion :: a -> a -> a
 defaultUnion = const
 
--- | @O(min(n1,n2))@. The union of the two maps: the map which contains all
--- keys that are members of either map. This union is left-biased: if a key is
--- a member of both maps, the value from the first map is chosen.
+-- | @O(min(n1 m1,n2 m2))@. The union of the two maps: the map which contains
+-- all keys that are members of either map. This union is left-biased: if a key
+-- is a member of both maps, the value from the first map is chosen.
 --
 -- The worst-case performance occurs when the two maps are identical.
 --
@@ -315,39 +315,39 @@ defaultUnion = const
 union :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 union = unionWith defaultUnion
 
--- | @O(min(n1,n2))@. Like 'union', but the combining function ('const') is
+-- | @O(min(n1 m1,n2 m2))@. Like 'union', but the combining function ('const') is
 -- applied strictly.
 --
 -- > union' = unionWith' const
 union' :: Map map k => TrieMap map k a -> TrieMap map k a -> TrieMap map k a
 union' = unionWith' defaultUnion
 
--- | @O(min(n1,n2))@. Like 'union', but the given function is used to determine
--- the new value if a key is a member of both given maps. For a function @f@,
--- the new value is @f firstMapValue secondMapValue@.
+-- | @O(min(n1 m1,n2 m2))@. Like 'union', but the given function is used to
+-- determine the new value if a key is a member of both given maps. For a
+-- function @f@, the new value is @f firstMapValue secondMapValue@.
 unionWith :: Map map k => (a -> a -> a)
                        -> TrieMap map k a
                        -> TrieMap map k a
                        -> TrieMap map k a
 unionWith = Base.unionWith
 
--- | @O(min(n1,n2))@. Like 'unionWith', but the combining function is applied
--- strictly.
+-- | @O(min(n1 m1,n2 m2))@. Like 'unionWith', but the combining function is
+-- applied strictly.
 unionWith' :: Map map k => (a -> a -> a)
                         -> TrieMap map k a
                         -> TrieMap map k a
                         -> TrieMap map k a
 unionWith' = Base.unionWith'
 
--- | @O(min(n1,n2))@. Like 'unionWith', but in addition to the two values, the
--- key is passed to the combining function.
+-- | @O(min(n1 m1,n2 m2))@. Like 'unionWith', but in addition to the two
+-- values, the key is passed to the combining function.
 unionWithKey :: Map map k => ([k] -> a -> a -> a)
                           -> TrieMap map k a
                           -> TrieMap map k a
                           -> TrieMap map k a
 unionWithKey = Base.unionWithKey
 
--- | @O(min(n1,n2))@. Like 'unionWithKey', but the combining function is
+-- | @O(min(n1 m1,n2 m2))@. Like 'unionWithKey', but the combining function is
 -- applied strictly.
 unionWithKey' :: Map map k => ([k] -> a -> a -> a)
                            -> TrieMap map k a
@@ -402,8 +402,8 @@ unionsWithKey' :: Map map k
                => ([k] -> a -> a -> a) -> [TrieMap map k a] ->  TrieMap map k a
 unionsWithKey' = Base.unionsWithKey'
 
--- | @O(min(n1,n2))@. The difference of the two maps: the map which contains
--- all keys that are members of the first map and not of the second.
+-- | @O(min(n1 m1,n2 m2))@. The difference of the two maps: the map which
+-- contains all keys that are members of the first map and not of the second.
 --
 -- The worst-case performance occurs when the two maps are identical.
 --
@@ -412,26 +412,27 @@ difference :: Map map k
            => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
 difference = differenceWith (\_ _ -> Nothing)
 
--- | @O(min(n1,n2))@. Like 'difference', but the given function determines what
--- to do when a key is a member of both maps. If the function returns
--- 'Nothing', the key is removed; if it returns 'Just' a new value, that value
--- replaces the old one in the first map.
+-- | @O(min(n1 m1,n2 m2))@. Like 'difference', but the given function
+-- determines what to do when a key is a member of both maps. If the function
+-- returns 'Nothing', the key is removed; if it returns 'Just' a new value,
+-- that value replaces the old one in the first map.
 differenceWith :: Map map k => (a -> b -> Maybe a)
                             -> TrieMap map k a
                             -> TrieMap map k b
                             -> TrieMap map k a
 differenceWith = Base.differenceWith
 
--- | @O(min(n1,n2))@. Like 'differenceWith', but in addition to the two values,
--- the key they are associated with is passed to the combining function.
+-- | @O(min(n1 m1,n2 m2))@. Like 'differenceWith', but in addition to the two
+-- values, the key they are associated with is passed to the combining
+-- function.
 differenceWithKey :: Map map k => ([k] -> a -> b -> Maybe a)
                                -> TrieMap map k a
                                -> TrieMap map k b
                                -> TrieMap map k a
 differenceWithKey = Base.differenceWithKey
 
--- | @O(min(n1,n2))@. The intersection of the two maps: the map which contains
--- all keys that are members of both maps.
+-- | @O(min(n1 m1,n2 m2))@. The intersection of the two maps: the map which
+-- contains all keys that are members of both maps.
 --
 -- The worst-case performance occurs when the two maps are identical.
 --
@@ -440,7 +441,7 @@ intersection :: Map map k
              => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
 intersection = intersectionWith const
 
--- | @O(min(n1,n2))@. Like 'intersection', but the combining function is
+-- | @O(min(n1 m1,n2 m2))@. Like 'intersection', but the combining function is
 -- applied strictly.
 --
 -- > intersection' = intersectionWith' const
@@ -448,23 +449,23 @@ intersection' :: Map map k
               => TrieMap map k a -> TrieMap map k b -> TrieMap map k a
 intersection' = intersectionWith' const
 
--- | @O(min(n1,n2))@. Like 'intersection', but the given function determines
--- the new values.
+-- | @O(min(n1 m1,n2 m2))@. Like 'intersection', but the given function
+-- determines the new values.
 intersectionWith :: Map map k => (a -> b -> c)
                               -> TrieMap map k a
                               -> TrieMap map k b
                               -> TrieMap map k c
 intersectionWith = Base.intersectionWith
 
--- | @O(min(n1,n2))@. Like 'intersectionWith', but the combining function is
--- applied strictly.
+-- | @O(min(n1 m1,n2 m2))@. Like 'intersectionWith', but the combining function
+-- is applied strictly.
 intersectionWith' :: Map map k => (a -> b -> c)
                                -> TrieMap map k a
                                -> TrieMap map k b
                                -> TrieMap map k c
 intersectionWith' = Base.intersectionWith'
 
--- | @O(min(n1,n2))@. Like 'intersectionWith', but in addition to the two
+-- | @O(min(n1 m1,n2 m2))@. Like 'intersectionWith', but in addition to the two
 -- values, the key they are associated with is passed to the combining
 -- function.
 intersectionWithKey :: Map map k => ([k] -> a -> b -> c)
@@ -473,8 +474,8 @@ intersectionWithKey :: Map map k => ([k] -> a -> b -> c)
                                  -> TrieMap map k c
 intersectionWithKey = Base.intersectionWithKey
 
--- | @O(min(n1,n2))@. Like 'intersectionWithKey', but the combining function is
--- applied strictly.
+-- | @O(min(n1 m1,n2 m2))@. Like 'intersectionWithKey', but the combining
+-- function is applied strictly.
 intersectionWithKey' :: Map map k => ([k] -> a -> b -> c)
                                   -> TrieMap map k a
                                   -> TrieMap map k b

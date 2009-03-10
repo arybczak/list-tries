@@ -166,13 +166,13 @@ member = Base.member .:. unTS
 notMember :: Map map a => [a] -> TrieSet map a -> Bool
 notMember = Base.notMember .:. unTS
 
--- | @O(min(n1,n2))@. 'True' iff the first set is a subset of the second, i.e.
--- all keys that are members of the first set are also members of the second
--- set.
+-- | @O(min(n1 m1,n2 m2))@. 'True' iff the first set is a subset of the second,
+-- i.e. all keys that are members of the first set are also members of the
+-- second set.
 isSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
 isSubsetOf = Base.isSubmapOfBy (&&) `on` unTS
 
--- | @O(min(n1,n2))@. 'True' iff the first set is a proper subset of the
+-- | @O(min(n1 m1,n2 m2))@. 'True' iff the first set is a proper subset of the
 -- second, i.e. the first is a subset of the second, but the sets are not
 -- equal.
 isProperSubsetOf :: Map map a => TrieSet map a -> TrieSet map a -> Bool
@@ -183,8 +183,8 @@ isProperSubsetOf = Base.isProperSubmapOfBy (&&) `on` unTS
 defaultUnion :: Bool -> Bool -> Bool
 defaultUnion = error "TrieSet.union :: internal error"
 
--- | @O(min(n1,n2))@. The union of the two sets: the set which contains all
--- keys that are members of either set.
+-- | @O(min(n1 m1,n2 m2))@. The union of the two sets: the set which contains
+-- all keys that are members of either set.
 --
 -- The worst-case performance occurs when the two sets are identical.
 union :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
@@ -197,9 +197,9 @@ union = TS .: Base.unionWith defaultUnion `on` unTS
 unions :: Map map a => [TrieSet map a] -> TrieSet map a
 unions = TS . Base.unionsWith defaultUnion . Prelude.map unTS
 
--- | @O(min(n1,n2))@. The difference of the two sets: the set which contains
--- all keys that are members of the first set and not members of the second
--- set.
+-- | @O(min(n1 m1,n2 m2))@. The difference of the two sets: the set which
+-- contains all keys that are members of the first set and not members of the
+-- second set.
 --
 -- The worst-case performance occurs when the two sets are identical.
 difference :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a
@@ -207,8 +207,8 @@ difference = TS .: Base.differenceWith
                       (error "TrieSet.difference :: internal error")
                    `on` unTS
 
--- | @O(min(n1,n2))@. The intersection of the two sets: the set which contains
--- all keys that are members of both sets.
+-- | @O(min(n1 m1,n2 m2))@. The intersection of the two sets: the set which
+-- contains all keys that are members of both sets.
 --
 -- The worst-case performance occurs when the two sets are identical.
 intersection :: Map map a => TrieSet map a -> TrieSet map a -> TrieSet map a

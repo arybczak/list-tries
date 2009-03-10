@@ -249,7 +249,7 @@ lookupWithDefault :: (Alt st a, Trie trie st map k)
                   => a -> [k] -> trie map k a -> a
 lookupWithDefault def k tr = unwrap $ lookup k tr <|> pure def
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 isSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
              => (a -> b -> Bool)
              -> trie map k a
@@ -265,7 +265,7 @@ isSubmapOfBy f tr1 tr2 =
            , Map.isSubmapOfBy (isSubmapOfBy f) m1 m2
            ]
 
--- O(min(n1,n2))
+-- O(min(n1 m1,n2 m2))
 isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
                    => (a -> b -> Bool)
                    -> trie map k a
@@ -293,12 +293,12 @@ isProperSubmapOfBy = go False
 
 -- * Combination
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 unionWith :: (Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith f = genericUnionWith (unionVals f) (flip const)
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 unionWith' :: (Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
 unionWith' f = genericUnionWith (unionVals' f) seq
@@ -316,14 +316,14 @@ genericUnionWith valUnion seeq tr1 tr2 =
              onMaps (Map.unionWith (genericUnionWith valUnion seeq))
                     tr1 tr2)
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 unionWithKey :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                      -> trie map k a
                                                      -> trie map k a
                                                      -> trie map k a
 unionWithKey = genericUnionWithKey unionVals (flip const)
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 unionWithKey' :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                       -> trie map k a
                                                       -> trie map k a
@@ -347,23 +347,27 @@ genericUnionWithKey = go DL.empty
                            \x -> go (k `DL.snoc` x) valUnion seeq f)
                        tr1 tr2)
 
+-- O(sum(n))
 unionsWith :: (Alt st a, Unionable st a, Trie trie st map k)
            => (a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWith f = foldl' (unionWith f) empty
 
+-- O(sum(n))
 unionsWith' :: (Alt st a, Unionable st a, Trie trie st map k)
             => (a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWith' f = foldl' (unionWith' f) empty
 
+-- O(sum(n))
 unionsWithKey :: (Alt st a, Unionable st a, Trie trie st map k)
               => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWithKey j = foldl' (unionWithKey j) empty
 
+-- O(sum(n))
 unionsWithKey' :: (Alt st a, Unionable st a, Trie trie st map k)
                => ([k] -> a -> a -> a) -> [trie map k a] -> trie map k a
 unionsWithKey' j = foldl' (unionWithKey' j) empty
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                => (a -> b -> Maybe a)
                -> trie map k a
@@ -381,7 +385,7 @@ differenceWith f tr1 tr2 =
    g f' t1 t2 = let t' = differenceWith f' t1 t2
                  in if null t' then Nothing else Just t'
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
                      , Trie trie st map k
                      )
@@ -400,7 +404,7 @@ differenceWithKey = go DL.empty
    g k f x t1 t2 = let t' = go (k `DL.snoc` x) f t1 t2
                          in if null t' then Nothing else Just t'
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 intersectionWith :: ( Boolable (st c), Intersectable st a b c
                      , Trie trie st map k
                      )
@@ -410,7 +414,7 @@ intersectionWith :: ( Boolable (st c), Intersectable st a b c
                  -> trie map k c
 intersectionWith f = genericIntersectionWith (intersectionVals f) (flip const)
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 intersectionWith' :: ( Boolable (st c), Intersectable st a b c
                      , Trie trie st map k
                      )
@@ -440,7 +444,7 @@ genericIntersectionWith valIntersection seeq tr1 tr2 =
                          Just (_, child) | null child -> tMap child
                          _                            -> m)
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 intersectionWithKey :: ( Boolable (st c), Intersectable st a b c
                        , Trie trie st map k
                        )
@@ -450,7 +454,7 @@ intersectionWithKey :: ( Boolable (st c), Intersectable st a b c
                     -> trie map k c
 intersectionWithKey = genericIntersectionWithKey intersectionVals (flip const)
 
--- O(min(m1,m2))
+-- O(min(n1 m1,n2 m2))
 intersectionWithKey' :: ( Boolable (st c), Intersectable st a b c
                         , Trie trie st map k
                         )
