@@ -1,6 +1,6 @@
 -- File created: 2008-11-07 17:30:16
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
 module Data.ListTrie.Base.Map
    ( Map(..), OrdMap(..)
@@ -28,6 +28,14 @@ import Prelude hiding ( foldl,foldl1,foldr,foldr1
 import qualified Prelude
 
 import Data.ListTrie.Util (both, (.:))
+
+#ifdef MIN_VERSION_containers -- from Cabal
+# if !(MIN_VERSION_containers(0,3,0))
+# define TOO_OLD_CONTAINERS
+# endif
+#else
+#define TOO_OLD_CONTAINERS
+#endif
 
 -- | Minimal complete implementation:
 --
@@ -388,7 +396,13 @@ instance Ord k => OrdMap M.Map k where
    mapAccumAsc         = M.mapAccum
    mapAccumAscWithKey  = M.mapAccumWithKey
    mapAccumDesc        = mapAccumR
+#ifdef TOO_OLD_CONTAINERS
+   mapAccumDescWithKey f z =
+      second M.fromList . mapAccumR (\a (k,v) -> second ((,) k) $ f a k v) z
+                        . M.toAscList
+#else
    mapAccumDescWithKey = M.mapAccumRWithKey
+#endif
 
 newtype WrappedIntMap k v = IMap (IM.IntMap v) deriving (Eq,Ord)
 
@@ -402,10 +416,17 @@ instance Foldable (WrappedIntMap k) where
     foldr1  f   (IMap m) = foldr1  f   m
 
 instance Traversable (WrappedIntMap k) where
+#ifdef TOO_OLD_CONTAINERS
+   traverse  = error "Data.ListTrie.Base.Map :: too old containers, no Traversable IntMap"
+   sequenceA = error "Data.ListTrie.Base.Map :: too old containers, no Traversable IntMap"
+   mapM      = error "Data.ListTrie.Base.Map :: too old containers, no Traversable IntMap"
+   sequence  = error "Data.ListTrie.Base.Map :: too old containers, no Traversable IntMap"
+#else
    traverse f (IMap m) = pure IMap <*> traverse f m
    sequenceA (IMap m) = pure IMap <*> sequenceA m
    mapM f (IMap m) = liftM IMap (mapM f m)
    sequence (IMap m) = liftM IMap (sequence m)
+#endif
 
 instance Enum k => Map WrappedIntMap k where
    eqCmp = const ((==) `on` fromEnum)
@@ -426,14 +447,26 @@ instance Enum k => Map WrappedIntMap k where
 
    unionWith        f (IMap x) (IMap y) = IMap$ IM.unionWith        f x y
    differenceWith   f (IMap x) (IMap y) = IMap$ IM.differenceWith   f x y
+
+#ifdef TOO_OLD_CONTAINERS
+   intersectionWith =
+      error "Data.ListTrie.Base.Map :: too old containers, Data.IntMap.intersectionWith has restricted type"
+#else
    intersectionWith f (IMap x) (IMap y) = IMap$ IM.intersectionWith f x y
+#endif
 
    unionWithKey      f (IMap x) (IMap y) =
       IMap$ IM.unionWithKey (f . toEnum) x y
    differenceWithKey f (IMap x) (IMap y) =
       IMap$ IM.differenceWithKey (f . toEnum) x y
+
+#ifdef TOO_OLD_CONTAINERS
+   intersectionWithKey =
+      error "Data.ListTrie.Base.Map :: too old containers, Data.IntMap.intersectionWithKey has restricted type"
+#else
    intersectionWithKey f (IMap x) (IMap y) =
       IMap$ IM.intersectionWithKey (f . toEnum) x y
+#endif
 
    map             f   (IMap x) = IMap$ IM.map f x
    mapWithKey      f   (IMap x) = IMap$ IM.mapWithKey (f . toEnum) x
@@ -472,6 +505,18 @@ instance Enum k => OrdMap WrappedIntMap k where
    mapAccumAsc         f z (IMap m) = second IMap $ IM.mapAccum f z m
    mapAccumAscWithKey  f z (IMap m) =
       second IMap $ IM.mapAccumWithKey (\a k -> f a (toEnum k)) z m
+
+#ifdef TOO_OLD_CONTAINERS
+   mapAccumDesc        f z (IMap m) =
+      second (IMap . IM.fromList)
+         . mapAccumR (\a (k,v) -> second ((,) k) $ f a v) z
+         . IM.toAscList $ m
+   mapAccumDescWithKey f z (IMap m) =
+      second (IMap . IM.fromList)
+         . mapAccumR (\a (k,v) -> second ((,) k) $ f a (toEnum k) v) z
+         . IM.toAscList $ m
+#else
    mapAccumDesc        f z (IMap m) = second IMap $ mapAccumR f z m
    mapAccumDescWithKey f z (IMap m) =
       second IMap $ IM.mapAccumRWithKey (\a k -> f a (toEnum k)) z m
+#endif

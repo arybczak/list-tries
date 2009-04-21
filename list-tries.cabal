@@ -33,10 +33,24 @@ Extra-Source-Files: tests/README.txt
                     tests/*.hs
                     tests/Tests/*.hs
 
+Flag containers03
+   Description: Assume that containers has a version number of at least 0.3. If
+                false, some functionality cannot be implemented and is changed
+                to call 'error' instead. Defaults to False as such a version
+                hasn't yet been released.
+   Default: False
+
 Library
-   Build-Depends: base       >= 3 && < 4.1
-                , containers >= 0.3 && < 0.4
-                , dlist      == 0.4.*
+   Extensions: CPP
+
+   if flag(containers03)
+      Build-Depends: base       >= 3 && < 4.1
+                   , containers >= 0.3 && < 0.4
+                   , dlist      == 0.4.*
+   else
+      Build-Depends: base       >= 3 && < 4.1
+                   , containers >= 0.2 && < 0.3
+                   , dlist      == 0.4.*
 
    Exposed-Modules: Data.ListTrie.Base.Map
                     Data.ListTrie.Map
