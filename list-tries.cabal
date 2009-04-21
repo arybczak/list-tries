@@ -1,6 +1,6 @@
 Cabal-Version: >= 1.6
 
-Name:        Tries
+Name:        list-tries
 Version:     0.0
 Homepage:    http://iki.fi/matti.niemenmaa/tries/
 Synopsis:    Tries and Patricia tries: finite sets and maps for list keys
@@ -23,7 +23,7 @@ Description:
    Data.IntMap respectively.
 
 Author:       Matti Niemenmaa
-Maintainer:   Matti Niemenmaa <matti.niemenmaa+glob@iki.fi>
+Maintainer:   Matti Niemenmaa <matti.niemenmaa+list-tries@iki.fi>
 License:      BSD3
 License-File: LICENSE.txt
 
@@ -35,7 +35,7 @@ Extra-Source-Files: tests/README.txt
 
 Library
    Build-Depends: base       >= 3 && < 4.1
-                , containers >  0.2 && < 0.3
+                , containers >= 0.3 && < 0.4
                 , dlist      == 0.4.*
 
    Exposed-Modules: Data.ListTrie.Base.Map
