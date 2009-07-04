@@ -99,6 +99,9 @@ class Foldable (m k) => Map m k where
    fromList     ::                  [(k,a)] -> m k a
    fromListWith :: (a -> a -> a) -> [(k,a)] -> m k a
 
+   serializeToList     :: m k a -> [(k,a)]
+   deserializeFromList :: [(k,a)] -> m k a
+
    isSubmapOfBy :: (a -> b -> Bool) -> m k a -> m k b -> Bool
 
    singletonView :: m k a -> Maybe (k,a)
@@ -134,6 +137,9 @@ class Foldable (m k) => Map m k where
    -- | Should be strict in the keys
    fromList       = fromListWith const
    fromListWith f = foldr (uncurry $ insertWith f) empty
+
+   serializeToList     = toList
+   deserializeFromList = fromList
 
    singletonView m =
       case toList m of
@@ -375,6 +381,9 @@ instance Ord k => Map M.Map k where
    fromList     = M.fromList
    fromListWith = M.fromListWith
 
+   serializeToList     = M.toAscList
+   deserializeFromList = M.fromDistinctAscList
+
    isSubmapOfBy = M.isSubmapOfBy
 
    singletonView m =
@@ -479,6 +488,9 @@ instance Enum k => Map WrappedIntMap k where
    toList (IMap m) = Prelude.map (first toEnum) . IM.toList $ m
    fromList        = IMap . IM.fromList       . Prelude.map (first fromEnum)
    fromListWith f  = IMap . IM.fromListWith f . Prelude.map (first fromEnum)
+
+   serializeToList (IMap x) = Prelude.map (first toEnum) . IM.toAscList $ x
+   deserializeFromList      = IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)
 
    isSubmapOfBy f (IMap x) (IMap y) = IM.isSubmapOfBy f x y
 

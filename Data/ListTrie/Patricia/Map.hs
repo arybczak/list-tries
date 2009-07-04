@@ -38,6 +38,8 @@ module Data.ListTrie.Patricia.Map (MAP_EXPORTS) where
 
 import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
+import Control.Monad       (liftM3)
+import Data.Binary         (Binary,get,put)
 import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
 import Data.Function       (on)
@@ -136,6 +138,10 @@ instance (Map map k, Read k, Read a) => Read (TrieMap map k a) where
       (xs, rest) <- readsPrec (p+1) list
       [(fromList xs, rest)]
 #endif
+
+instance (Map map k, Binary k, Binary a) => Binary (TrieMap map k a) where
+   put (Tr v k m) = put v >> put k >> (put . Map.serializeToList $ m)
+   get = liftM3 Tr get get (get >>= return . Map.deserializeFromList)
 
 -- * Construction
 

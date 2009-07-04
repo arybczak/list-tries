@@ -5,6 +5,7 @@
 module Tests.Properties (tests) where
 
 import Control.Arrow    ((&&&), first)
+import Data.Binary      (encode,decode)
 import Data.Foldable    (foldMap)
 import Data.Function    (on)
 import Data.List        (nubBy)
@@ -468,6 +469,11 @@ $(makeFunc allTries ["toAscList"] [d|
       compare x (y :: TrieType) == compare (toAscList x) (toAscList y)
  |])
 
+-- serialization followed by deserialization should not alter the trie
+$(makeFunc allTries [] [d|
+   prop_serializeDeserialize x = (decode.encode) (x :: TrieType) == x
+ |])
+
 tests = testGroup "QuickCheck properties"
    [ $(makeProps allTries "prop_size1")
    , $(makeProps allTries "prop_size2")
@@ -533,4 +539,5 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps mapsOnly "prop_traversableLaw2")
    , $(makeProps allTries "prop_showRead1")
    , $(makeProps allTries "prop_ord1")
+   , $(makeProps allTries "prop_serializeDeserialize")
    ]

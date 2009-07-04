@@ -24,6 +24,8 @@
 module Data.ListTrie.Patricia.Set (SET_EXPORTS) where
 
 import Control.Arrow  ((***), second)
+import Control.Monad  (liftM3)
+import Data.Binary    (Binary,get,put)
 import Data.Function  (on)
 import Data.Monoid    (Monoid(..))
 import Prelude hiding (filter, foldl, foldr, map, null)
@@ -119,6 +121,14 @@ instance (Map map a, Read a) => Read (TrieSet map a) where
       (xs, rest) <- readsPrec (p+1) list
       [(fromList xs, rest)]
 #endif
+
+instance (Map map k, Binary k, Binary a) => Binary (TrieSetBase map k a) where
+   put (Tr v k m) = put v >> put k >> (put . Map.serializeToList $ m)
+   get = liftM3 Tr get get (get >>= return . Map.deserializeFromList)
+
+instance (Map map a, Binary a) => Binary (TrieSet map a) where
+   put = put . unTS
+   get = get >>= return . TS
 
 -- * Construction
 
