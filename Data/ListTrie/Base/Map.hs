@@ -490,7 +490,8 @@ instance Enum k => Map WrappedIntMap k where
    fromListWith f  = IMap . IM.fromListWith f . Prelude.map (first fromEnum)
 
    serializeToList (IMap x) = Prelude.map (first toEnum) . IM.toAscList $ x
-   deserializeFromList      = IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)
+   deserializeFromList      =
+      IMap . IM.fromDistinctAscList . Prelude.map (first fromEnum)
 
    isSubmapOfBy f (IMap x) (IMap y) = IM.isSubmapOfBy f x y
 
