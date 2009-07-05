@@ -29,7 +29,8 @@ import qualified Prelude
 
 import Data.ListTrie.Util (both, (.:))
 
-#ifdef MIN_VERSION_containers -- from Cabal
+-- MIN_VERSION_containers is defined by Cabal
+#ifdef MIN_VERSION_containers
 # if !(MIN_VERSION_containers(0,3,0))
 # define TOO_OLD_CONTAINERS
 # endif
