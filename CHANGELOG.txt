@@ -1,0 +1,10 @@
+2009-07-05, 0.1:
+	All tries are now instances of Binary, thanks to Gregory Crosswhite. Adds a
+	dependency on the 'binary' library as well as the following two methods to
+	the Map class in Base.Map:
+
+		serializeToList     :: m k a -> [(k,a)]
+		deserializeFromList :: [(k,a)] -> m k a
+
+2009-04-21, 0.0:
+	Initial release.
