@@ -1,7 +1,7 @@
 Cabal-Version: >= 1.6
 
 Name:        list-tries
-Version:     0.1
+Version:     0.2
 Homepage:    http://iki.fi/matti.niemenmaa/list-tries/
 Synopsis:    Tries and Patricia tries: finite sets and maps for list keys
 Category:    Data, Data Structures
@@ -39,22 +39,22 @@ Extra-Source-Files: CHANGELOG.txt
 Flag containers03
    Description: Assume that containers has a version number of at least 0.3. If
                 false, some functionality cannot be implemented and is changed
-                to call 'error' instead. Defaults to False as such a version
-                hasn't yet been released.
-   Default: False
+                to call 'error' instead. Defaults to True, as >= 0.3 is shipped
+                with GHC 6.12.
+   Default: True
 
 Library
    Extensions: CPP
 
    if flag(containers03)
-      Build-Depends: base       >= 3 && < 4.1
+      Build-Depends: base       >= 3   && < 4.3
                    , containers >= 0.3 && < 0.4
-                   , dlist      == 0.4.*
+                   , dlist      >= 0.4 && < 0.6
                    , binary     >= 0.5 && < 0.6
    else
-      Build-Depends: base       >= 3 && < 4.1
+      Build-Depends: base       >= 3   && < 4.3
                    , containers >= 0.2 && < 0.3
-                   , dlist      == 0.4.*
+                   , dlist      >= 0.4 && < 0.6
                    , binary     >= 0.5 && < 0.6
 
    Exposed-Modules: Data.ListTrie.Base.Map
