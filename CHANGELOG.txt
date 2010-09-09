@@ -1,3 +1,9 @@
+2010-09-09, 0.3:
+   Fixed strictness of the strict versions of the following non-Patricia
+   functions: insert, adjust, alter, union, difference, intersection,
+   mapInKeys; as well as the Patricia versions of insert and adjust. Thanks to
+   Brian Bloniarz for the bug report.
+
 2010-04-06, 0.2:
 	Dependency update, nothing more.
 

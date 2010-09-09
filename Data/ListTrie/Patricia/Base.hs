@@ -1,7 +1,7 @@
 -- File created: 2008-12-28 17:20:14
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
-           , FlexibleContexts, ScopedTypeVariables #-}
+           , FlexibleContexts, ScopedTypeVariables, Rank2Types #-}
 
 module Data.ListTrie.Patricia.Base
    ( Trie(..)
@@ -95,23 +95,25 @@ insert' = insertWith' const
 -- O(min(m,s))
 insertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith = genericInsertWith (<$>)
+insertWith = genericInsertWith ($) (<$>)
 
 -- O(min(m,s))
 insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
             => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith' = (seq <*>) .: genericInsertWith (<$!>)
+insertWith' = (seq <*>) .: genericInsertWith ($!) (<$!>)
 
 genericInsertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
-                  => ((a -> a) -> st a -> st a)
+                  => (forall x y. (x -> y) -> x -> y)
+                  -> ((a -> a) -> st a -> st a)
                   -> (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-genericInsertWith (<$$>) f k new tr =
+genericInsertWith ($$) (<$$>) f k new tr =
    let (old,prefix,m) = tParts tr
+       mkTrie' = ($$) mkTrie
     in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same -> mkTrie ((f new <$$> old) <|> pure new) prefix m
+            Same -> mkTrie' ((f new <$$> old) <|> pure new) prefix m
 
-            PostFix (Left (p:pr)) -> mkTrie (pure new) k
-                                            (Map.singleton p (mkTrie old pr m))
+            PostFix (Left (p:pr)) -> mkTrie' (pure new) k
+                                             (Map.singleton p (mkTrie old pr m))
             PostFix (Right (x:xs)) ->
                -- Minor optimization: instead of tryCompress we just check for
                -- the case of an empty trie
@@ -120,7 +122,7 @@ genericInsertWith (<$$>) f k new tr =
                   else mkTrie old prefix $
                           Map.insertWith
                              (\_ oldt ->
-                                genericInsertWith (<$$>) f xs new oldt)
+                                genericInsertWith ($$) (<$$>) f xs new oldt)
                              x (singleton xs new) m
 
             DifferedAt pr' (p:pr) (x:xs) ->
@@ -138,22 +140,24 @@ delete = alter (const altEmpty)
 -- O(min(m,s))
 adjust :: Trie trie st map k
        => (a -> a) -> [k] -> trie map k a -> trie map k a
-adjust = genericAdjust fmap
+adjust = genericAdjust ($) fmap
 
 -- O(min(m,s))
 adjust' :: (Alt st a, Boolable (st a), Trie trie st map k)
         => (a -> a) -> [k] -> trie map k a -> trie map k a
-adjust' = genericAdjust fmap'
+adjust' = genericAdjust ($!) fmap'
 
 genericAdjust :: Trie trie st map k
-              => ((a -> a) -> st a -> st a)
+              => (forall x y. (x -> y) -> x -> y)
+              -> ((a -> a) -> st a -> st a)
               -> (a -> a) -> [k] -> trie map k a -> trie map k a
-genericAdjust myFmap f k tr =
+genericAdjust ($$) myFmap f k tr =
    let (v,prefix,m) = tParts tr
     in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   -> mkTrie (myFmap f v) prefix m
+            Same                   -> (mkTrie $$ myFmap f v) prefix m
             PostFix (Right (x:xs)) ->
-               mkTrie v prefix $ Map.adjust (genericAdjust myFmap f xs) x m
+               mkTrie v prefix $
+                  Map.adjust (genericAdjust ($$) myFmap f xs) x m
             _                      -> tr
 
 -- O(min(m,s))

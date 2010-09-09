@@ -1,7 +1,7 @@
 -- File created: 2008-11-13 21:13:55
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
-           , FlexibleContexts #-}
+           , FlexibleContexts, Rank2Types #-}
 
 module Data.ListTrie.Base
    ( Trie(..)
@@ -68,31 +68,35 @@ tVal = fst . tParts
 tMap :: Trie trie st map k => trie map k a -> CMap trie map k a
 tMap = snd . tParts
 
-mapVal :: Trie trie st map k => trie map k a
+mapVal :: Trie trie st map k => (forall x y. (x -> y) -> x -> y)
+                             -> trie map k a
                              -> (st a -> st a)
                              -> trie map k a
-mapVal tr f = mkTrie (f . tVal $ tr) (tMap tr)
+mapVal ($$) tr f = (mkTrie $$ (f . tVal $ tr)) (tMap tr)
 
 mapMap :: (Trie trie st map k1, Trie trie st map k2)
-       => trie map k1 a
+       => (forall x y. (x -> y) -> x -> y)
+       -> trie map k1 a
        -> (CMap trie map k1 a -> CMap trie map k2 a)
        -> trie map k2 a
-mapMap tr f = mkTrie (tVal tr) (f . tMap $ tr)
+mapMap ($$) tr f = (mkTrie $$ tVal tr) (f . tMap $ tr)
 
-onVals :: Trie trie st map k => (st a -> st b -> st c)
+onVals :: Trie trie st map k => (forall x y. (x -> y) -> x -> y)
+                             -> (st a -> st b -> st c)
                              -> trie map k a
                              -> trie map k b
                              -> st c
-onVals f a b = f (tVal a) (tVal b)
+onVals ($$) f a b = f $$ tVal a $$ tVal b
 
-onMaps :: Trie trie st map k => (  CMap trie map k a
+onMaps :: Trie trie st map k => (forall x y. (x -> y) -> x -> y)
+                             -> (  CMap trie map k a
                                 -> CMap trie map k b
                                 -> CMap trie map k c
                                 )
                              -> trie map k a
                              -> trie map k b
                              -> CMap trie map k c
-onMaps f a b = f (tMap a) (tMap b)
+onMaps ($$) f a b = f $$ tMap a $$ tMap b
 
 -----------------------
 
@@ -119,21 +123,22 @@ insert' = insertWith' const
 -- O(min(m,s))
 insertWith :: (Alt st a, Trie trie st map k)
            => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith = genericInsertWith (<$>)
+insertWith = genericInsertWith ($) (<$>)
 
 -- O(min(m,s))
 insertWith' :: (Alt st a, Boolable (st a), Trie trie st map k)
             => (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-insertWith' = (seq <*>) .: genericInsertWith (<$!>)
+insertWith' = (seq <*>) .: genericInsertWith ($!) (<$!>)
 
 genericInsertWith :: (Alt st a, Trie trie st map k)
-                  => ((a -> a) -> st a -> st a)
+                  => (forall x y. (x -> y) -> x -> y)
+                  -> ((a -> a) -> st a -> st a)
                   -> (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-genericInsertWith (<$$>) f []     new tr =
-   mapVal tr $ \old -> (f new <$$> old) <|> pure new
+genericInsertWith ($$) (<$$>) f []     new tr =
+   mapVal ($$) tr $ \old -> (f new <$$> old) <|> pure new
 
-genericInsertWith (<$$>) f (x:xs) val tr = mapMap tr $ \m ->
-   Map.insertWith (\_ old -> genericInsertWith (<$$>) f xs val old)
+genericInsertWith ($$) (<$$>) f (x:xs) val tr = mapMap ($$) tr $ \m ->
+   Map.insertWith (\_ old -> genericInsertWith ($$) (<$$>) f xs val old)
                   x (singleton xs val) m
 
 -- O(min(m,s))
@@ -144,19 +149,20 @@ delete = alter (const altEmpty)
 -- O(min(m,s))
 adjust :: Trie trie st map k
        => (a -> a) -> [k] -> trie map k a -> trie map k a
-adjust = genericAdjust fmap
+adjust = genericAdjust ($) fmap
 
 -- O(min(m,s))
 adjust' :: (Alt st a, Boolable (st a), Trie trie st map k)
         => (a -> a) -> [k] -> trie map k a -> trie map k a
-adjust' = genericAdjust fmap'
+adjust' = genericAdjust ($!) fmap'
 
 genericAdjust :: Trie trie st map k
-              => ((a -> a) -> st a -> st a)
+              => (forall x y. (x -> y) -> x -> y)
+              -> ((a -> a) -> st a -> st a)
               -> (a -> a) -> [k] -> trie map k a -> trie map k a
-genericAdjust myFmap f []     tr = mapVal tr (myFmap f)
-genericAdjust myFmap f (x:xs) tr =
-   mapMap tr $ \m -> Map.adjust (genericAdjust myFmap f xs) x m
+genericAdjust ($$) (<$$>) f []     tr = mapVal ($$) tr (f <$$>)
+genericAdjust ($$) (<$$>) f (x:xs) tr =
+   mapMap ($$) tr $ \m -> Map.adjust (genericAdjust ($$) (<$$>) f xs) x m
 
 -- O(min(m,s))
 updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -185,22 +191,23 @@ updateLookup f (x:xs) orig =
 -- the trie fall into an invalid state.
 alter :: (Alt st a, Boolable (st a), Trie trie st map k)
       => (st a -> st a) -> [k] -> trie map k a -> trie map k a
-alter = genericAlter (flip const)
+alter = genericAlter ($) (flip const)
 
 -- O(min(m,s))
 alter' :: (Alt st a, Boolable (st a), Trie trie st map k)
        => (st a -> st a) -> [k] -> trie map k a -> trie map k a
-alter' = genericAlter seq
+alter' = genericAlter ($!) seq
 
 genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
-             => (st a -> trie map k a -> trie map k a)
+             => (forall x y. (x -> y) -> x -> y)
+             -> (st a -> trie map k a -> trie map k a)
              -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
-genericAlter seeq f []     tr =
+genericAlter _    seeq f []     tr =
    let (v,m) = tParts tr
        v'    = f v
     in v' `seeq` mkTrie v' m
 
-genericAlter seeq f (x:xs) tr = mapMap tr $ \m ->
+genericAlter ($$) seeq f (x:xs) tr = mapMap ($$) tr $ \m ->
    Map.alter (\mold -> case mold of
                             Nothing ->
                                let v = f altEmpty
@@ -208,7 +215,7 @@ genericAlter seeq f (x:xs) tr = mapMap tr $ \m ->
                                       then Just (singleton xs (unwrap v))
                                       else Nothing
                             Just old ->
-                               let new = genericAlter seeq f xs old
+                               let new = genericAlter ($$) seeq f xs old
                                 in if null new then Nothing else Just new)
               x m
 
@@ -297,24 +304,25 @@ isProperSubmapOfBy = go False
 -- O(min(n1 m1,n2 m2))
 unionWith :: (Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
-unionWith f = genericUnionWith (unionVals f) (flip const)
+unionWith f = genericUnionWith ($) (unionVals f) (flip const)
 
 -- O(min(n1 m1,n2 m2))
 unionWith' :: (Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
-unionWith' f = genericUnionWith (unionVals' f) seq
+unionWith' f = genericUnionWith ($!) (unionVals' f) seq
 
 genericUnionWith :: Trie trie st map k
-                 => (st a -> st a -> st a)
+                 => (forall x y. (x -> y) -> x -> y)
+                 -> (st a -> st a -> st a)
                  -> (st a -> trie map k a -> trie map k a)
                  -> trie map k a
                  -> trie map k a
                  -> trie map k a
-genericUnionWith valUnion seeq tr1 tr2 =
-   let v = onVals valUnion tr1 tr2
+genericUnionWith ($$) valUnion seeq tr1 tr2 =
+   let v = onVals ($$) valUnion tr1 tr2
     in v `seeq` (
           mkTrie v $
-             onMaps (Map.unionWith (genericUnionWith valUnion seeq))
+             onMaps ($$) (Map.unionWith (genericUnionWith ($$) valUnion seeq))
                     tr1 tr2)
 
 -- O(min(n1 m1,n2 m2))
@@ -322,29 +330,31 @@ unionWithKey :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                      -> trie map k a
                                                      -> trie map k a
                                                      -> trie map k a
-unionWithKey = genericUnionWithKey unionVals (flip const)
+unionWithKey = genericUnionWithKey ($) unionVals (flip const)
 
 -- O(min(n1 m1,n2 m2))
 unionWithKey' :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
                                                       -> trie map k a
                                                       -> trie map k a
                                                       -> trie map k a
-unionWithKey' = genericUnionWithKey unionVals' seq
+unionWithKey' = genericUnionWithKey ($!) unionVals' seq
 
 genericUnionWithKey :: Trie trie st map k
-                    => ((a -> a -> a) -> st a -> st a -> st a)
+                    => (forall x y. (x -> y) -> x -> y)
+                    -> ((a -> a -> a) -> st a -> st a -> st a)
                     -> (st a -> trie map k a -> trie map k a)
                     -> ([k] -> a -> a -> a)
                     -> trie map k a
                     -> trie map k a
                     -> trie map k a
-genericUnionWithKey = go DL.empty
+genericUnionWithKey ($$) = go DL.empty
  where
    go k valUnion seeq f tr1 tr2 =
-      let v = onVals (valUnion (f $ DL.toList k)) tr1 tr2
+      let v = onVals ($$) (valUnion (f $ DL.toList k)) tr1 tr2
        in v `seeq` (
              mkTrie v $
-                onMaps (Map.unionWithKey $
+                onMaps ($$)
+                       (Map.unionWithKey $
                            \x -> go (k `DL.snoc` x) valUnion seeq f)
                        tr1 tr2)
 
@@ -375,13 +385,13 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k b
                -> trie map k a
 differenceWith f tr1 tr2 =
-   let v = onVals (differenceVals f) tr1 tr2
+   let v = onVals ($!) (differenceVals f) tr1 tr2
 
        -- This would be lazy only in the case where the differing keys were at
        -- []. (And even then most operations on the trie would force the
        -- value.) For consistency with other keys and Patricia, just seq it for
        -- that case as well.
-    in v `seq` mkTrie v $ onMaps (Map.differenceWith (g f)) tr1 tr2
+    in v `seq` mkTrie v $ onMaps ($!) (Map.differenceWith (g f)) tr1 tr2
  where
    g f' t1 t2 = let t' = differenceWith f' t1 t2
                  in if null t' then Nothing else Just t'
@@ -397,10 +407,11 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
 differenceWithKey = go DL.empty
  where
    go k f tr1 tr2 =
-      let v = onVals (differenceVals (f $ DL.toList k)) tr1 tr2
+      let v = onVals ($!) (differenceVals (f $ DL.toList k)) tr1 tr2
 
           -- see comment in differenceWith for seq explanation
-       in v `seq` mkTrie v $ onMaps (Map.differenceWithKey (g k f)) tr1 tr2
+       in v `seq` mkTrie v $
+                     onMaps ($!) (Map.differenceWithKey (g k f)) tr1 tr2
 
    g k f x t1 t2 = let t' = go (k `DL.snoc` x) f t1 t2
                          in if null t' then Nothing else Just t'
@@ -413,7 +424,7 @@ intersectionWith :: ( Boolable (st c), Intersectable st a b c
                  -> trie map k a
                  -> trie map k b
                  -> trie map k c
-intersectionWith f = genericIntersectionWith (intersectionVals f) (flip const)
+intersectionWith f = genericIntersectionWith ($) (intersectionVals f) (flip const)
 
 -- O(min(n1 m1,n2 m2))
 intersectionWith' :: ( Boolable (st c), Intersectable st a b c
@@ -423,20 +434,21 @@ intersectionWith' :: ( Boolable (st c), Intersectable st a b c
                   -> trie map k a
                   -> trie map k b
                   -> trie map k c
-intersectionWith' f = genericIntersectionWith (intersectionVals' f) seq
+intersectionWith' f = genericIntersectionWith ($!) (intersectionVals' f) seq
 
 genericIntersectionWith :: (Boolable (st c), Trie trie st map k)
-                        => (st a -> st b -> st c)
+                        => (forall x y. (x -> y) -> x -> y)
+                        -> (st a -> st b -> st c)
                         -> (st c -> trie map k c -> trie map k c)
                         -> trie map k a
                         -> trie map k b
                         -> trie map k c
-genericIntersectionWith valIntersection seeq tr1 tr2 =
+genericIntersectionWith ($$) valIntersection seeq tr1 tr2 =
    tr seeq
-      (onVals valIntersection tr1 tr2)
-      (onMaps (Map.filter (not.null) .:
-                  Map.intersectionWith
-                     (genericIntersectionWith valIntersection seeq))
+      (onVals ($$) valIntersection tr1 tr2)
+      (onMaps ($$) (Map.filter (not.null) .:
+                       Map.intersectionWith
+                          (genericIntersectionWith ($$) valIntersection seeq))
               tr1 tr2)
  where
    tr seeq' v m =
@@ -453,7 +465,8 @@ intersectionWithKey :: ( Boolable (st c), Intersectable st a b c
                     -> trie map k a
                     -> trie map k b
                     -> trie map k c
-intersectionWithKey = genericIntersectionWithKey intersectionVals (flip const)
+intersectionWithKey =
+   genericIntersectionWithKey ($) intersectionVals (flip const)
 
 -- O(min(n1 m1,n2 m2))
 intersectionWithKey' :: ( Boolable (st c), Intersectable st a b c
@@ -463,23 +476,24 @@ intersectionWithKey' :: ( Boolable (st c), Intersectable st a b c
                      -> trie map k a
                      -> trie map k b
                      -> trie map k c
-intersectionWithKey' = genericIntersectionWithKey intersectionVals' seq
+intersectionWithKey' = genericIntersectionWithKey ($!) intersectionVals' seq
 
 genericIntersectionWithKey :: (Boolable (st c), Trie trie st map k)
-                           => ((a -> b -> c) -> st a -> st b -> st c)
+                           => (forall x y. (x -> y) -> x -> y)
+                           -> ((a -> b -> c) -> st a -> st b -> st c)
                            -> (st c -> trie map k c -> trie map k c)
                            -> ([k] -> a -> b -> c)
                            -> trie map k a
                            -> trie map k b
                            -> trie map k c
-genericIntersectionWithKey = go DL.empty
+genericIntersectionWithKey ($$) = go DL.empty
  where
    go k valIntersection seeq f tr1 tr2 =
       tr seeq
-         (onVals (valIntersection (f $ DL.toList k)) tr1 tr2)
-         (onMaps (Map.filter (not.null) .:
-                     Map.intersectionWithKey
-                        (\x -> go (k `DL.snoc` x) valIntersection seeq f))
+         (onVals ($$) (valIntersection (f $ DL.toList k)) tr1 tr2)
+         (onMaps ($$) (Map.filter (not.null) .:
+                          Map.intersectionWithKey
+                             (\x -> go (k `DL.snoc` x) valIntersection seeq f))
                  tr1 tr2)
 
    tr seeq v m =
@@ -518,7 +532,7 @@ mapInKeysWith :: (Unionable st a, Trie trie st map k1, Trie trie st map k2)
               -> (k1 -> k2)
               -> trie map k1 a
               -> trie map k2 a
-mapInKeysWith = genericMapInKeysWith unionWith
+mapInKeysWith = genericMapInKeysWith ($) unionWith
 
 -- O(n m)
 mapInKeysWith' :: (Unionable st a, Trie trie st map k1, Trie trie st map k2)
@@ -526,18 +540,19 @@ mapInKeysWith' :: (Unionable st a, Trie trie st map k1, Trie trie st map k2)
                -> (k1 -> k2)
                -> trie map k1 a
                -> trie map k2 a
-mapInKeysWith' = genericMapInKeysWith unionWith'
+mapInKeysWith' = genericMapInKeysWith ($!) unionWith'
 
 genericMapInKeysWith :: ( Unionable st a
                         , Trie trie st map k1, Trie trie st map k2
                         )
-                     => (f -> trie map k2 a -> trie map k2 a -> trie map k2 a)
+                     => (forall x y. (x -> y) -> x -> y)
+                     -> (f -> trie map k2 a -> trie map k2 a -> trie map k2 a)
                      -> f
                      -> (k1 -> k2)
                      -> trie map k1 a
                      -> trie map k2 a
-genericMapInKeysWith unionW j f tr =
-   mapMap tr $
+genericMapInKeysWith ($$) unionW j f = go
+   mapMap ($$) tr $
       Map.fromListWith (unionW j) .
          map (f *** genericMapInKeysWith unionW j f) .
       Map.toList
@@ -765,7 +780,7 @@ findPredecessor xs_ tr_          = go xs_ tr_
 findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
               => [k] -> trie map k a -> Maybe ([k], a)
 findSuccessor _   tr | null tr = Nothing
-findSuccessor xs_ tr_          = go xs_ tr_ 
+findSuccessor xs_ tr_          = go xs_ tr_
  where
    go [] tr = do (k,t) <- fst . Map.minViewWithKey . tMap $ tr
                  fmap (first (k:)) (findMin t)
