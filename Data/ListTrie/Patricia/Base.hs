@@ -131,8 +131,8 @@ genericInsertWith ($$) (<$$>) f = go
                   mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
                                                       p (mkTrie old pr m)
 
-               _ -> error "Data.ListTrie.Patricia.Base.insertWith :: \
-                          \internal error"
+               _ -> error
+                  "Data.ListTrie.Patricia.Base.insertWith :: internal error"
 
 -- O(min(m,s))
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -253,8 +253,8 @@ genericAlter seeq f = go
                                                x (mkTrie v' xs Map.empty)
                          else tr
 
-               _ -> error "Data.ListTrie.Patricia.Base.genericAlter :: \
-                          \internal error"
+               _ -> error
+                  "Data.ListTrie.Patricia.Base.genericAlter :: internal error"
 
 -- * Querying
 
@@ -1373,9 +1373,8 @@ ordComparePrefixes ord xs ys =
         Same                     -> EQ
         PostFix r                -> either (const GT) (const LT) r
         DifferedAt _ (x:_) (y:_) -> ord x y
-        _                        ->
-           error "Data.ListTrie.Patricia.Base.ordComparePrefixes :: \
-                 \internal error"
+        _                        -> error
+           "Data.ListTrie.Patricia.Base.ordComparePrefixes :: internal error"
 
 -- After modifying the trie, compress a trie node into the prefix if possible.
 --
