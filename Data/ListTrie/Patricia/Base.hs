@@ -1,7 +1,8 @@
 -- File created: 2008-12-28 17:20:14
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
-           , FlexibleContexts, ScopedTypeVariables, Rank2Types #-}
+           , FlexibleContexts, ScopedTypeVariables, Rank2Types
+           , NoMonomorphismRestriction #-}
 
 module Data.ListTrie.Patricia.Base
    ( Trie(..)
@@ -106,31 +107,32 @@ genericInsertWith :: (Alt st a, Boolable (st a), Trie trie st map k)
                   => (forall x y. (x -> y) -> x -> y)
                   -> ((a -> a) -> st a -> st a)
                   -> (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-genericInsertWith ($$) (<$$>) f k new tr =
-   let (old,prefix,m) = tParts tr
-       mkTrie' = ($$) mkTrie
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same -> mkTrie' ((f new <$$> old) <|> pure new) prefix m
+genericInsertWith ($$) (<$$>) f = go
+ where
+   mkTrie' = ($$) mkTrie
+   go k new tr =
+      let (old,prefix,m) = tParts tr
+       in case comparePrefixes (Map.eqCmp m) prefix k of
+               Same -> mkTrie' ((f new <$$> old) <|> pure new) prefix m
 
-            PostFix (Left (p:pr)) -> mkTrie' (pure new) k
-                                             (Map.singleton p (mkTrie old pr m))
-            PostFix (Right (x:xs)) ->
-               -- Minor optimization: instead of tryCompress we just check for
-               -- the case of an empty trie
-               if null tr
-                  then singleton k new
-                  else mkTrie old prefix $
-                          Map.insertWith
-                             (\_ oldt ->
-                                genericInsertWith ($$) (<$$>) f xs new oldt)
-                             x (singleton xs new) m
+               PostFix (Left (p:pr)) ->
+                  mkTrie' (pure new) k
+                          (Map.singleton p (mkTrie old pr m))
+               PostFix (Right (x:xs)) ->
+                  -- Minor optimization: instead of tryCompress we just check
+                  -- for the case of an empty trie
+                  if null tr
+                     then singleton k new
+                     else mkTrie old prefix $
+                             Map.insertWith (\_ oldt -> go xs new oldt)
+                                            x (singleton xs new) m
 
-            DifferedAt pr' (p:pr) (x:xs) ->
-               mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
-                                                   p (mkTrie old pr m)
+               DifferedAt pr' (p:pr) (x:xs) ->
+                  mkTrie altEmpty pr' $ Map.doubleton x (singleton xs new)
+                                                      p (mkTrie old pr m)
 
-            _ -> error
-                    "Data.ListTrie.Patricia.Base.insertWith :: internal error"
+               _ -> error "Data.ListTrie.Patricia.Base.insertWith :: \
+                          \internal error"
 
 -- O(min(m,s))
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -151,37 +153,40 @@ genericAdjust :: Trie trie st map k
               => (forall x y. (x -> y) -> x -> y)
               -> ((a -> a) -> st a -> st a)
               -> (a -> a) -> [k] -> trie map k a -> trie map k a
-genericAdjust ($$) myFmap f k tr =
-   let (v,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   -> (mkTrie $$ myFmap f v) prefix m
-            PostFix (Right (x:xs)) ->
-               mkTrie v prefix $
-                  Map.adjust (genericAdjust ($$) myFmap f xs) x m
-            _                      -> tr
+genericAdjust ($$) myFmap f = go
+ where
+   go k tr =
+      let (v,prefix,m) = tParts tr
+       in case comparePrefixes (Map.eqCmp m) prefix k of
+               Same                   -> (mkTrie $$ myFmap f v) prefix m
+               PostFix (Right (x:xs)) ->
+                  mkTrie v prefix $ Map.adjust (go xs) x m
+               _                      -> tr
 
 -- O(min(m,s))
 updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (a -> st a) -> [k] -> trie map k a -> (st a, trie map k a)
-updateLookup f k tr =
-   let (v,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   -> let v' = if hasValue v
-                                                  then f (unwrap v)
-                                                  else v
-                                       in (v, safeMkTrie v' prefix m)
-            PostFix (Right (x:xs)) ->
-               case Map.lookup x m of
-                    Nothing  -> (altEmpty, tr)
-                    Just tr' ->
-                       let (ret, upd) = updateLookup f xs tr'
-                        in ( ret
-                           , safeMkTrie v prefix $
-                                if null upd
-                                   then Map.delete x m
-                                   else Map.adjust (const upd) x m
-                           )
-            _ -> (altEmpty, tr)
+updateLookup f = go
+ where
+   go k tr =
+      let (v,prefix,m) = tParts tr
+       in case comparePrefixes (Map.eqCmp m) prefix k of
+               Same                   -> let v' = if hasValue v
+                                                     then f (unwrap v)
+                                                     else v
+                                          in (v, safeMkTrie v' prefix m)
+               PostFix (Right (x:xs)) ->
+                  case Map.lookup x m of
+                       Nothing  -> (altEmpty, tr)
+                       Just tr' ->
+                          let (ret, upd) = go xs tr'
+                           in ( ret
+                              , safeMkTrie v prefix $
+                                   if null upd
+                                      then Map.delete x m
+                                      else Map.adjust (const upd) x m
+                              )
+               _ -> (altEmpty, tr)
 
 -- O(min(m,s))
 --
@@ -205,49 +210,51 @@ alter' = genericAlter seq
 genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (st a -> trie map k a -> trie map k a)
              -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
-genericAlter seeq f k tr =
-   let (v,prefix,m) = tParts tr
-    in case comparePrefixes (Map.eqCmp m) prefix k of
-            Same                   ->
-               let v' = f v
-                in -- We need to compress if the map was empty or a singleton
-                   -- and the value was removed
-                   if    (Map.null m || isJust (Map.singletonView m))
-                      && not (hasValue v')
-                      then tryCompress (mkTrie v' prefix m)
-                      else v' `seeq` mkTrie v' prefix m
+genericAlter seeq f = go
+ where
+   go k tr =
+      let (v,prefix,m) = tParts tr
+       in case comparePrefixes (Map.eqCmp m) prefix k of
+               Same                   ->
+                  let v' = f v
+                   in -- We need to compress if the map was empty or a
+                      -- singleton and the value was removed
+                      if    (Map.null m || isJust (Map.singletonView m))
+                         && not (hasValue v')
+                         then tryCompress (mkTrie v' prefix m)
+                         else v' `seeq` mkTrie v' prefix m
 
-            PostFix (Right (x:xs)) ->
-               mkTrie v prefix $
-                  Map.alter
-                     (\mt -> case mt of
-                                 Nothing ->
-                                    let v' = f altEmpty
-                                     in if hasValue v'
-                                           then Just (singleton xs (unwrap v'))
-                                           else Nothing
-                                 Just t ->
-                                    let new = genericAlter seeq f xs t
-                                     in if null new then Nothing else Just new)
-                     x m
+               PostFix (Right (x:xs)) ->
+                  mkTrie v prefix $
+                     Map.alter
+                        (\mt ->
+                           case mt of
+                                Nothing ->
+                                   let v' = f altEmpty
+                                    in if hasValue v'
+                                          then Just (singleton xs (unwrap v'))
+                                          else Nothing
+                                Just t ->
+                                   let new = go xs t
+                                    in if null new then Nothing else Just new)
+                        x m
 
-            PostFix (Left (p:ps)) ->
-               let v' = f altEmpty
-                in if hasValue v'
-                      then mkTrie v' k $ Map.singleton p (mkTrie v ps m)
-                      else tr
+               PostFix (Left (p:ps)) ->
+                  let v' = f altEmpty
+                   in if hasValue v'
+                         then mkTrie v' k $ Map.singleton p (mkTrie v ps m)
+                         else tr
 
-            DifferedAt pr (p:ps) (x:xs) ->
-               let v' = f altEmpty
-                in if hasValue v'
-                      then mkTrie altEmpty pr $
-                              Map.doubleton p (mkTrie v  ps m)
-                                            x (mkTrie v' xs Map.empty)
-                      else tr
+               DifferedAt pr (p:ps) (x:xs) ->
+                  let v' = f altEmpty
+                   in if hasValue v'
+                         then mkTrie altEmpty pr $
+                                 Map.doubleton p (mkTrie v  ps m)
+                                               x (mkTrie v' xs Map.empty)
+                         else tr
 
-            _ ->
-               error
-                  "Data.ListTrie.Patricia.Base.genericAlter :: internal error"
+               _ -> error "Data.ListTrie.Patricia.Base.genericAlter :: \
+                          \internal error"
 
 -- * Querying
 
@@ -299,18 +306,20 @@ isSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
              -> trie map k a
              -> trie map k b
              -> Bool
-isSubmapOfBy f_ trl trr =
-   let (vl,prel,ml) = tParts trl
-       (vr,prer,mr) = tParts trr
-    in case comparePrefixes (Map.eqCmp ml) prel prer of
-            DifferedAt _ _ _  -> False
-
-            -- Special case here: if the left trie is empty we return True.
-            PostFix (Right _) -> null trl
-            PostFix (Left xs) -> go f_ mr vl ml xs
-            Same              -> same f_ vl vr ml mr
+isSubmapOfBy f = go0
  where
-   go f mr vl ml (x:xs) =
+   go0 trl trr =
+      let (vl,prel,ml) = tParts trl
+          (vr,prer,mr) = tParts trr
+       in case comparePrefixes (Map.eqCmp ml) prel prer of
+               DifferedAt _ _ _  -> False
+
+               -- Special case here: if the left trie is empty we return True.
+               PostFix (Right _) -> null trl
+               PostFix (Left xs) -> go mr vl ml xs
+               Same              -> same vl vr ml mr
+
+   go mr vl ml (x:xs) =
       case Map.lookup x mr of
            Nothing -> False
            Just tr ->
@@ -318,18 +327,18 @@ isSubmapOfBy f_ trl trr =
                in case comparePrefixes (Map.eqCmp mr) xs pre of
                      DifferedAt _ _ _  -> False
                      PostFix (Right _) -> False
-                     PostFix (Left ys) -> go f mr' vl ml ys
-                     Same              -> same f vl vr ml mr'
+                     PostFix (Left ys) -> go mr' vl ml ys
+                     Same              -> same vl vr ml mr'
 
-   go _ _ _ _ [] =
+   go _ _ _ [] =
       error "Data.ListTrie.Patricia.Base.isSubmapOfBy :: internal error"
 
-   same f vl vr ml mr =
+   same vl vr ml mr =
       let hvl = hasValue vl
           hvr = hasValue vr
        in and [ not (hvl && not hvr)
-              , (not hvl && not hvr) || f_ (unwrap vl) (unwrap vr)
-              , Map.isSubmapOfBy (isSubmapOfBy f) ml mr
+              , (not hvl && not hvr) || f (unwrap vl) (unwrap vr)
+              , Map.isSubmapOfBy go0 ml mr
               ]
 
 -- O(min(n1 m1,n2 m2))
@@ -338,9 +347,9 @@ isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
                    -> trie map k a
                    -> trie map k b
                    -> Bool
-isProperSubmapOfBy = f False
+isProperSubmapOfBy g = f False
  where
-   f proper g trl trr =
+   f proper trl trr =
       let (vl,prel,ml) = tParts trl
           (vr,prer,mr) = tParts trr
        in case comparePrefixes (Map.eqCmp ml) prel prer of
@@ -351,10 +360,10 @@ isProperSubmapOfBy = f False
               -- Note that properness does not affect this: if we hit this
               -- case, we already know that the right trie is nonempty.
                PostFix (Right _) -> null trl
-               PostFix (Left xs) -> go proper g mr vl ml xs
-               Same              -> same proper g vl vr ml mr
+               PostFix (Left xs) -> go proper mr vl ml xs
+               Same              -> same proper vl vr ml mr
 
-   go proper g mr vl ml (x:xs) =
+   go proper mr vl ml (x:xs) =
       case Map.lookup x mr of
            Nothing -> False
            Just tr ->
@@ -362,13 +371,13 @@ isProperSubmapOfBy = f False
                in case comparePrefixes (Map.eqCmp mr) xs pre of
                        DifferedAt _ _ _  -> False
                        PostFix (Right _) -> False
-                       PostFix (Left ys) -> go proper g mr' vl ml ys
-                       Same              -> same proper g vl vr ml mr'
+                       PostFix (Left ys) -> go proper mr' vl ml ys
+                       Same              -> same proper vl vr ml mr'
 
-   go _ _ _ _ _ [] =
+   go _ _ _ _ [] =
       error "Data.ListTrie.Patricia.Base.isProperSubmapOfBy :: internal error"
 
-   same proper g vl vr ml mr =
+   same proper vl vr ml mr =
       let hvl = hasValue vl
           hvr = hasValue vr
 
@@ -382,7 +391,7 @@ isProperSubmapOfBy = f False
               , (not hvl && not hvr) || g (unwrap vl) (unwrap vr)
               , if Map.null ml
                    then proper'
-                   else Map.isSubmapOfBy (f proper' g) ml mr
+                   else Map.isSubmapOfBy (f proper') ml mr
               ]
 
 -- * Combination
@@ -394,51 +403,53 @@ isProperSubmapOfBy = f False
 -- O(min(n1 m1,n2 m2))
 unionWith :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
-unionWith f = genericUnionWith (unionVals f) (flip const)
+unionWith f = genericUnionWith (flip const) (unionVals f)
 
 -- O(min(n1 m1,n2 m2))
 unionWith' :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
           => (a -> a -> a) -> trie map k a -> trie map k a -> trie map k a
-unionWith' f = genericUnionWith (unionVals' f) seq
+unionWith' f = genericUnionWith seq (unionVals' f)
 
 genericUnionWith :: (Alt st a, Boolable (st a), Trie trie st map k)
-                 => (st a -> st a -> st a)
-                 -> (st a -> trie map k a -> trie map k a)
+                 => (st a -> trie map k a -> trie map k a)
+                 -> (st a -> st a -> st a)
                  -> trie map k a
                  -> trie map k a
                  -> trie map k a
-genericUnionWith valUnion seeq tr1 tr2 =
-   let (v1,pre1,m1) = tParts tr1
-       (v2,pre2,m2) = tParts tr2
-    in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
-            Same ->
-               let v = valUnion v1 v2
-
-                   -- safeMkTrie not needed: if pre1 is not null then m1 or v
-                   -- won't be and hence the union won't be.
-                in v `seeq` (tryCompress.mkTrie v pre1 $
-                                            mapUnion valUnion seeq m1 m2)
-
-            PostFix remainder ->
-               -- As above, mkTrie is fine
-               --
-               -- The flip is important to retain left-biasedness
-               tryCompress $
-                  either
-                     (mkTrie v2 pre2 . mapUnion (flip valUnion) seeq m2 .
-                        decompress m1 v1)
-                     (mkTrie v1 pre1 . mapUnion       valUnion  seeq m1 .
-                        decompress m2 v2)
-                     remainder
-
-            DifferedAt pr (x:xs) (y:ys) ->
-               -- As above, mkTrie is fine
-               mkTrie altEmpty pr $ Map.doubleton x (mkTrie v1 xs m1)
-                                                  y (mkTrie v2 ys m2)
-
-            _ -> can'tHappen
+genericUnionWith seeq = go
  where
-   mapUnion = Map.unionWith .: genericUnionWith
+   go valUnion tr1 tr2 =
+      let (v1,pre1,m1) = tParts tr1
+          (v2,pre2,m2) = tParts tr2
+       in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
+               Same ->
+                  let v = valUnion v1 v2
+
+                      -- safeMkTrie not needed: if pre1 is not null then m1 or
+                      -- v won't be and hence the union won't be.
+                   in v `seeq` (tryCompress.mkTrie v pre1 $
+                                               mapUnion valUnion m1 m2)
+
+               PostFix remainder ->
+                  -- As above, mkTrie is fine
+                  --
+                  -- The flip is important to retain left-biasedness
+                  tryCompress $
+                     either
+                        (mkTrie v2 pre2 . mapUnion (flip valUnion) m2 .
+                           decompress m1 v1)
+                        (mkTrie v1 pre1 . mapUnion       valUnion  m1 .
+                           decompress m2 v2)
+                        remainder
+
+               DifferedAt pr (x:xs) (y:ys) ->
+                  -- As above, mkTrie is fine
+                  mkTrie altEmpty pr $ Map.doubleton x (mkTrie v1 xs m1)
+                                                     y (mkTrie v2 ys m2)
+
+               _ -> can'tHappen
+
+   mapUnion = Map.unionWith . go
 
    decompress m v (x:xs) = Map.singleton x (mkTrie v xs m)
    decompress _ _ []     = can'tHappen
@@ -452,7 +463,7 @@ unionWithKey :: (Alt st a, Boolable (st a), Unionable st a, Trie trie st map k)
              -> trie map k a
              -> trie map k a
              -> trie map k a
-unionWithKey = genericUnionWithKey unionVals (flip const)
+unionWithKey = genericUnionWithKey (flip const) unionVals
 
 -- O(min(n1 m1,n2 m2))
 unionWithKey' :: ( Alt st a, Boolable (st a), Unionable st a
@@ -462,18 +473,18 @@ unionWithKey' :: ( Alt st a, Boolable (st a), Unionable st a
               -> trie map k a
               -> trie map k a
               -> trie map k a
-unionWithKey' = genericUnionWithKey unionVals' seq
+unionWithKey' = genericUnionWithKey seq unionVals'
 
 genericUnionWithKey :: (Alt st a, Boolable (st a), Trie trie st map k)
-                    => ((a -> a -> a) -> st a -> st a -> st a)
-                    -> (st a -> trie map k a -> trie map k a)
+                    => (st a -> trie map k a -> trie map k a)
+                    -> ((a -> a -> a) -> st a -> st a -> st a)
                     -> ([k] -> a -> a -> a)
                     -> trie map k a
                     -> trie map k a
                     -> trie map k a
-genericUnionWithKey = go DL.empty
+genericUnionWithKey seeq = go DL.empty
  where
-   go k valUnion seeq j tr1 tr2 =
+   go k valUnion j tr1 tr2 =
       let (v1,pre1,m1) = tParts tr1
           (v2,pre2,m2) = tParts tr2
        in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
@@ -482,14 +493,14 @@ genericUnionWithKey = go DL.empty
                       v  = valUnion (j k') v1 v2
                    in v `seeq`
                          (tryCompress.mkTrie v pre1 $
-                            mapUnion valUnion seeq j k pre1 m1 m2)
+                            mapUnion valUnion j k pre1 m1 m2)
 
                PostFix remainder ->
                   tryCompress $
                      either
-                        (mk v2 pre2 . mapUnion (flip.valUnion) seeq j k pre2 m2
+                        (mk v2 pre2 . mapUnion (flip.valUnion) j k pre2 m2
                            . decompress m1 v1)
-                        (mk v1 pre1 . mapUnion       valUnion  seeq j k pre1 m1
+                        (mk v1 pre1 . mapUnion       valUnion  j k pre1 m1
                            . decompress m2 v2)
                         remainder
 
@@ -501,9 +512,9 @@ genericUnionWithKey = go DL.empty
 
    mk = mkTrie
 
-   mapUnion v s j k p =
+   mapUnion v j k p =
       Map.unionWithKey $
-         \x -> go (k `DL.append` DL.fromList p `DL.snoc` x) v s j
+         \x -> go (k `DL.append` DL.fromList p `DL.snoc` x) v j
 
    decompress m v (x:xs) = Map.singleton x (mkTrie v xs m)
    decompress _ _ []     = can'tHappen
@@ -541,23 +552,24 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k a
                -> trie map k b
                -> trie map k a
-differenceWith j_ tr1 tr2 =
-   let (v1,pre1,m1) = tParts tr1
-       (v2,pre2,m2) = tParts tr2
-    in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
-            DifferedAt _ _ _   -> tr1
-            Same               -> mk j_ v1 v2 pre1 m1 m2
-            PostFix (Left  xs) -> goRight j_ tr1 m2  xs
-            PostFix (Right xs) -> goLeft  j_ tr1 tr2 xs
+differenceWith j = go
  where
-   mapDifference = Map.differenceWith . dw
-   dw j a b =
+   go tr1 tr2 =
+      let (v1,pre1,m1) = tParts tr1
+          (v2,pre2,m2) = tParts tr2
+       in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
+               DifferedAt _ _ _   -> tr1
+               Same               -> mk v1 v2 pre1 m1 m2
+               PostFix (Left  xs) -> goRight tr1 m2  xs
+               PostFix (Right xs) -> goLeft  tr1 tr2 xs
+
+   dw a b =
       let c = differenceWith j a b
        in if null c then Nothing else Just c
 
-   mk j v v' p m m' =
+   mk v v' p m m' =
       let vd = differenceVals j v v'
-       in tryCompress.mkTrie vd p $ mapDifference j m m'
+       in tryCompress.mkTrie vd p $ Map.differenceWith dw m m'
 
    -- See the comment in 'intersection' for a longish example of the idea
    -- behind this, which is basically that if we see two prefixes like "foo"
@@ -567,7 +579,7 @@ differenceWith j_ tr1 tr2 =
    --
    -- We have two functions for the two tries because set difference is a
    -- noncommutative operation.
-   goRight j left rightMap (x:xs) =
+   goRight left rightMap (x:xs) =
       let (v,pre,m) = tParts left
        in case Map.lookup x rightMap of
                Nothing     -> left
@@ -575,13 +587,13 @@ differenceWith j_ tr1 tr2 =
                   let (v',pre',m') = tParts right'
                    in case comparePrefixes (Map.eqCmp m) xs pre' of
                            DifferedAt _ _ _   -> left
-                           Same               -> mk j v v' pre m m'
-                           PostFix (Left  ys) -> goRight j left m'     ys
-                           PostFix (Right ys) -> goLeft  j left right' ys
+                           Same               -> mk v v' pre m m'
+                           PostFix (Left  ys) -> goRight left m'     ys
+                           PostFix (Right ys) -> goLeft  left right' ys
 
-   goRight _ _ _ [] = can'tHappen
+   goRight _ _ [] = can'tHappen
 
-   goLeft j left right (x:xs) =
+   goLeft left right (x:xs) =
       tryCompress . mkTrie vl prel $ Map.update f x ml
     where
       (vl,prel,ml) = tParts left
@@ -591,13 +603,13 @@ differenceWith j_ tr1 tr2 =
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
                   DifferedAt _ _ _   -> Just left'
-                  Same               -> tryNull $ mk j v vr pre m mr
-                  PostFix (Left  ys) -> tryNull $ goRight j left' mr    ys
-                  PostFix (Right ys) -> tryNull $ goLeft  j left' right ys
+                  Same               -> tryNull $ mk v vr pre m mr
+                  PostFix (Left  ys) -> tryNull $ goRight left' mr    ys
+                  PostFix (Right ys) -> tryNull $ goLeft  left' right ys
 
       tryNull t = if null t then Nothing else Just t
 
-   goLeft _ _ _ [] = can'tHappen
+   goLeft _ _ [] = can'tHappen
 
    can'tHappen =
       error "Data.ListTrie.Patricia.Base.differenceWith :: internal error"
@@ -610,32 +622,30 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
                   -> trie map k a
                   -> trie map k b
                   -> trie map k a
-differenceWithKey = go DL.empty
+differenceWithKey j = go DL.empty
  where
-   go k j_ tr1 tr2 =
+   go k tr1 tr2 =
       let (v1,pre1,m1) = tParts tr1
           (v2,pre2,m2) = tParts tr2
        in case comparePrefixes (Map.eqCmp m1) pre1 pre2 of
                DifferedAt _ _ _   -> tr1
-               Same               -> mk j_ k v1 v2 pre1 m1 m2
-               PostFix (Left  xs) -> goRight (key k pre2) j_ tr1 m2  xs
-               PostFix (Right xs) -> goLeft  (key k pre1) j_ tr1 tr2 xs
-
-   mapDifference k j =
-      Map.differenceWithKey (\x -> dw (k `DL.snoc` x) j)
+               Same               -> mk k v1 v2 pre1 m1 m2
+               PostFix (Left  xs) -> goRight (key k pre2) tr1 m2  xs
+               PostFix (Right xs) -> goLeft  (key k pre1) tr1 tr2 xs
 
    key k p = k `DL.append` DL.fromList p
 
-   dw k j a b =
-      let c = go k j a b
+   dw k a b =
+      let c = go k a b
        in if null c then Nothing else Just c
 
-   mk j k v v' p m m' =
+   mk k v v' p m m' =
       let k' = k `DL.append` DL.fromList p
           vd = differenceVals (j $ DL.toList k') v v'
-       in tryCompress.mkTrie vd p $ mapDifference k' j m m'
+       in tryCompress.mkTrie vd p $
+             Map.differenceWithKey (dw . (k' `DL.snoc`)) m m'
 
-   goRight k j left rightMap (x:xs) =
+   goRight k left rightMap (x:xs) =
       let (vl,_,ml) = tParts left
        in case Map.lookup x rightMap of
                Nothing    -> left
@@ -644,15 +654,15 @@ differenceWithKey = go DL.empty
                       k'          = k `DL.snoc` x
                    in case comparePrefixes (Map.eqCmp ml) xs pre of
                            DifferedAt _ _ _   -> left
-                           Same               -> mk j k' vl vr pre ml mr
+                           Same               -> mk k' vl vr pre ml mr
                            PostFix (Left  ys) -> goRight (key k' pre)
-                                                         j left mr    ys
+                                                         left mr    ys
                            PostFix (Right ys) -> goLeft  (key k' xs)
-                                                         j left right ys
+                                                         left right ys
 
-   goRight _ _ _ _ [] = can'tHappen
+   goRight _ _ _ [] = can'tHappen
 
-   goLeft k j left right (x:xs) =
+   goLeft k left right (x:xs) =
       tryCompress . mkTrie vl prel $ Map.update f x ml
     where
       (vl,prel,ml) = tParts left
@@ -664,15 +674,15 @@ differenceWithKey = go DL.empty
          let (v,pre,m) = tParts left'
           in case comparePrefixes (Map.eqCmp m) pre xs of
                   DifferedAt _ _ _   -> Just left'
-                  Same               -> tryNull $ mk j k' v vr pre m mr
+                  Same               -> tryNull $ mk k' v vr pre m mr
                   PostFix (Left  ys) -> tryNull $ goRight (key k' xs)
-                                                          j left' mr    ys
+                                                          left' mr    ys
                   PostFix (Right ys) -> tryNull $ goLeft  (key k' pre)
-                                                          j left' right ys
+                                                          left' right ys
 
       tryNull t = if null t then Nothing else Just t
 
-   goLeft _ _ _ _ [] = can'tHappen
+   goLeft _ _ _ [] = can'tHappen
 
    can'tHappen =
       error "Data.ListTrie.Patricia.Base.differenceWithKey :: internal error"
@@ -686,7 +696,7 @@ intersectionWith :: ( Alt st c, Boolable (st c)
                  -> trie map k a
                  -> trie map k b
                  -> trie map k c
-intersectionWith f = genericIntersectionWith (intersectionVals f) (flip const)
+intersectionWith f = genericIntersectionWith (flip const) (intersectionVals f)
 
 -- O(min(n1 m1,n2 m2))
 intersectionWith' :: ( Alt st c, Boolable (st c)
@@ -697,38 +707,40 @@ intersectionWith' :: ( Alt st c, Boolable (st c)
                   -> trie map k a
                   -> trie map k b
                   -> trie map k c
-intersectionWith' f = genericIntersectionWith (intersectionVals' f) seq
+intersectionWith' f = genericIntersectionWith seq (intersectionVals' f)
 
 genericIntersectionWith :: forall a b c k map st trie.
                            ( Alt st c, Boolable (st c)
                            , Trie trie st map k
                            )
-                        => (st a -> st b -> st c)
-                        -> (st c -> trie map k c -> trie map k c)
+                        => (forall x. st x -> trie map k x -> trie map k x)
+                        -> (st a -> st b -> st c)
                         -> trie map k a
                         -> trie map k b
                         -> trie map k c
-genericIntersectionWith valIsect_ seeq_ trl trr =
-   let (vl,prel,ml) = tParts trl
-       (vr,prer,mr) = tParts trr
-    in case comparePrefixes (Map.eqCmp ml) prel prer of
-            DifferedAt _ _ _  -> empty
-            Same              -> mk valIsect_ seeq_ vl vr prel ml mr
-            PostFix remainder ->
-               -- use the one with a longer prefix as the base for the
-               -- intersection, and descend into the map of the one with a
-               -- shorter prefix
-               either (go       valIsect_  seeq_ mr vl ml (DL.fromList prel))
-                      (go (flip valIsect_) seeq_ ml vr mr (DL.fromList prer))
-                      remainder
+genericIntersectionWith seeq = go0
  where
-   mapIntersect valIsect seeq =
-      Map.filter (not.null) .:
-         Map.intersectionWith (genericIntersectionWith valIsect seeq)
+   go0 valIsect trl trr =
+      let (vl,prel,ml) = tParts trl
+          (vr,prer,mr) = tParts trr
+       in case comparePrefixes (Map.eqCmp ml) prel prer of
+               DifferedAt _ _ _  -> empty
+               Same              -> mk valIsect vl vr prel ml mr
+               PostFix remainder ->
+                  -- use the one with a longer prefix as the base for the
+                  -- intersection, and descend into the map of the one with a
+                  -- shorter prefix
+                  either (go       valIsect  mr vl ml (DL.fromList prel))
+                         (go (flip valIsect) ml vr mr (DL.fromList prer))
+                         remainder
 
-   mk valIsect seeq v v' p m m' =
+   mapIntersect valIsect =
+      Map.filter (not.null) .:
+         Map.intersectionWith (go0 valIsect)
+
+   mk valIsect v v' p m m' =
       let vi = valIsect v v'
-       in vi `seeq` (tryCompress.mkTrie vi p $ mapIntersect valIsect seeq m m')
+       in vi `seeq` (tryCompress.mkTrie vi p $ mapIntersect valIsect m m')
 
    -- Polymorphic recursion in 'go' (valIsect :: st a -> st b -> st c ---> st b
    -- -> st a -> st c) means that it has to be explicitly typed in order to
@@ -784,14 +796,13 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
    -- and we'd still like "cat" so we keep the True from there.
    go :: (Alt st z, Boolable (st z), Trie trie st map k)
       => (st x -> st y -> st z)
-      -> (st z -> trie map k z -> trie map k z)
       -> CMap trie map k y
       -> st x
       -> CMap trie map k x
       -> DList k
       -> [k]
       -> trie map k z
-   go valIsect seeq ma v mb pre (x:xs) =
+   go valIsect ma v mb pre (x:xs) =
       case Map.lookup x ma of
            Nothing -> empty
            Just tr ->
@@ -799,14 +810,14 @@ genericIntersectionWith valIsect_ seeq_ trl trr =
                in case comparePrefixes (Map.eqCmp ma) xs pre' of
                        DifferedAt _ _ _   -> empty
                        Same               ->
-                          mk valIsect seeq v v' (DL.toList pre) mb m'
+                          mk valIsect v v' (DL.toList pre) mb m'
                        PostFix (Right ys) ->
                           let nextPre = pre `DL.append` DL.fromList ys
-                           in go (flip valIsect) seeq mb v' m' nextPre ys
+                           in go (flip valIsect) mb v' m' nextPre ys
                        PostFix (Left  ys) ->
-                              go       valIsect  seeq m' v  mb pre     ys
+                              go       valIsect  m' v  mb pre     ys
 
-   go _ _ _ _ _ _ [] =
+   go _ _ _ _ _ [] =
       error "Data.ListTrie.Patricia.Map.intersectionWith :: internal error"
 
 -- O(min(n1 m1,n2 m2))
@@ -818,7 +829,7 @@ intersectionWithKey :: ( Alt st c, Boolable (st c)
                     -> trie map k a
                     -> trie map k b
                     -> trie map k c
-intersectionWithKey = genericIntersectionWithKey intersectionVals (flip const)
+intersectionWithKey = genericIntersectionWithKey (flip const) intersectionVals
 
 -- O(min(n1 m1,n2 m2))
 intersectionWithKey' :: ( Alt st c, Boolable (st c)
@@ -829,51 +840,50 @@ intersectionWithKey' :: ( Alt st c, Boolable (st c)
                      -> trie map k a
                      -> trie map k b
                      -> trie map k c
-intersectionWithKey' = genericIntersectionWithKey intersectionVals' seq
+intersectionWithKey' = genericIntersectionWithKey seq intersectionVals'
 
 genericIntersectionWithKey :: forall a b c k map st trie.
                               (Alt st c, Boolable (st c), Trie trie st map k)
-                           => ((a -> b -> c) -> st a -> st b -> st c)
-                           -> (st c -> trie map k c -> trie map k c)
+                           => (forall x. st x -> trie map k x -> trie map k x)
+                           -> ((a -> b -> c) -> st a -> st b -> st c)
                            -> ([k] -> a -> b -> c)
                            -> trie map k a
                            -> trie map k b
                            -> trie map k c
-genericIntersectionWithKey = main DL.empty
+genericIntersectionWithKey seeq = main DL.empty
  where
-   main k valIsect seeq j trl trr =
+   main k valIsect j trl trr =
       let (vl,prel,ml) = tParts trl
           (vr,prer,mr) = tParts trr
        in case comparePrefixes (Map.eqCmp ml) prel prer of
                DifferedAt _ _ _ -> empty
-               Same             -> mk k valIsect seeq j vl vr prel ml mr
+               Same             -> mk k valIsect j vl vr prel ml mr
                PostFix remainder ->
                   let prel' = DL.fromList prel
                       prer' = DL.fromList prer
                    in either
-                         (go k        valIsect  seeq       j  mr vl ml prel')
-                         (go k (flipp valIsect) seeq (flip.j) ml vr mr prer')
+                         (go k       valIsect        j  mr vl ml prel')
+                         (go k (flop valIsect) (flip.j) ml vr mr prer')
                          remainder
 
-   mk k valIsect seeq j v v' p m m' =
+   mk k valIsect j v v' p m m' =
       let k' = k `DL.append` DL.fromList p
           vi = valIsect (j $ DL.toList k') v v'
        in vi `seeq` (tryCompress.mkTrie vi p $
-                                    mapIntersect k' valIsect seeq j m m')
+                                    mapIntersect k' valIsect j m m')
 
-   mapIntersect k valIsect seeq j =
+   mapIntersect k valIsect j =
       Map.filter (not.null) .:
-         Map.intersectionWithKey (\x -> main (k `DL.snoc` x) valIsect seeq j)
+         Map.intersectionWithKey (\x -> main (k `DL.snoc` x) valIsect j)
 
-   flipp :: ((x -> y -> z) -> st x -> st y -> st z)
+   flop :: ((x -> y -> z) -> st x -> st y -> st z)
          -> ((y -> x -> z) -> st y -> st x -> st z)
-   flipp f = flip . f . flip
+   flop f = flip . f . flip
 
    -- See intersectionWith: this explicit type is necessary
    go :: (Alt st z, Boolable (st z), Trie trie st map k)
       => DList k
       -> ((x -> y -> z) -> st x -> st y -> st z)
-      -> (st z -> trie map k z -> trie map k z)
       -> ([k] -> x -> y -> z)
       -> CMap trie map k y
       -> st x
@@ -881,7 +891,7 @@ genericIntersectionWithKey = main DL.empty
       -> DList k
       -> [k]
       -> trie map k z
-   go k valIsect seeq j ma v mb pre (x:xs) =
+   go k valIsect j ma v mb pre (x:xs) =
       case Map.lookup x ma of
            Nothing -> empty
            Just tr ->
@@ -889,16 +899,14 @@ genericIntersectionWithKey = main DL.empty
                in case comparePrefixes (Map.eqCmp ma) xs pre' of
                        DifferedAt _ _ _   -> empty
                        Same               ->
-                          mk k valIsect seeq j v v' (DL.toList pre) mb m'
+                          mk k valIsect j v v' (DL.toList pre) mb m'
                        PostFix (Right ys) ->
                           let nextPre = pre `DL.append` DL.fromList ys
-                           in go k (flipp valIsect) seeq (flip.j)
-                                 mb v' m' nextPre ys
+                           in go k (flop valIsect) (flip.j) mb v' m' nextPre ys
                        PostFix (Left  ys) ->
-                              go k        valIsect  seeq       j
-                                 m' v  mb pre     ys
+                              go k        valIsect       j  m' v  mb pre     ys
 
-   go _ _ _ _ _ _ _ _ [] =
+   go _ _ _ _ _ _ _ [] =
       error "Data.ListTrie.Patricia.Map.intersectionWithKey :: internal error"
 
 -- * Filtering
@@ -959,14 +967,14 @@ genericMapInKeysWith :: ( Alt st a, Boolable (st a), Unionable st a
                      -> (k1 -> k2)
                      -> trie map k1 a
                      -> trie map k2 a
-genericMapInKeysWith seeq listSeq unionW j f tr =
-   let (v,p,m) = tParts tr
-       p'      = map f p
-    in listSeq p' `seeq`
-          (mkTrie v p' $
-              Map.fromListWith (unionW j) .
-                 map (f *** genericMapInKeysWith seeq listSeq unionW j f) .
-              Map.toList $ m)
+genericMapInKeysWith seeq listSeq unionW j f = go
+ where
+   go tr =
+      let (v,p,m) = tParts tr
+          p'      = map f p
+       in listSeq p' `seeq`
+             (mkTrie v p' $
+                 Map.fromListWith (unionW j) . map (f *** go) . Map.toList $ m)
 
 -- * Folding
 
@@ -1036,14 +1044,14 @@ genericToList :: (Boolable (st a), Trie trie st map k)
               -> (([k],a) -> DList ([k],a) -> DList ([k],a))
               -> trie map k a
               -> [([k],a)]
-genericToList f_ g_ = DL.toList . go DL.empty f_ g_
+genericToList tolist add = DL.toList . go DL.empty
  where
-   go l tolist add tr =
+   go l tr =
       let (v,p,m) = tParts tr
           l'      = l `DL.append` DL.fromList p
           xs      =
              DL.concat .
-             map (\(x,t) -> go (l' `DL.snoc` x) tolist add t) .
+             map (\(x,t) -> go (l' `DL.snoc` x) t) .
              tolist $ m
        in if hasValue v
              then add (DL.toList l', unwrap v) xs
@@ -1091,16 +1099,16 @@ minMaxView :: (Alt st a, Boolable (st a), Trie trie st map k)
            -> (CMap trie map k a -> Maybe (k, trie map k a))
            -> trie map k a
            -> (Maybe ([k], a), trie map k a)
-minMaxView _ _ tr_ | null tr_ = (Nothing, tr_)
-minMaxView f g tr_ = first Just (go f g tr_)
+minMaxView _        _       tr_ | null tr_ = (Nothing, tr_)
+minMaxView isWanted mapView tr_ = first Just (go tr_)
  where
-   go isWanted mapView tr =
+   go tr =
       let (v,pre,m) = tParts tr
        in if isWanted tr
              then ((pre, unwrap v), safeMkTrie altEmpty pre m)
 
              else let (k,      tr')  = fromJust (mapView m)
-                      (minMax, tr'') = go isWanted mapView tr'
+                      (minMax, tr'') = go tr'
                    in ( first (prepend pre k) minMax
                       , mkTrie v pre $ if null tr''
                                           then Map.delete              k m
@@ -1122,16 +1130,16 @@ findMinMax :: (Boolable (st a), Trie trie st map k)
            -> (CMap trie map k a -> Maybe (k, trie map k a))
            -> trie map k a
            -> Maybe ([k], a)
-findMinMax _ _ tr_ | null tr_ = Nothing
-findMinMax f g tr_ = Just (go f g DL.empty tr_)
+findMinMax _        _       tr_ | null tr_ = Nothing
+findMinMax isWanted mapView tr_ = Just (go DL.empty tr_)
  where
-   go isWanted mapView xs tr =
+   go xs tr =
       let (v,pre,m) = tParts tr
           xs'       = xs `DL.append` DL.fromList pre
        in if isWanted tr
              then (DL.toList xs', unwrap v)
              else let (k, tr') = fromJust . mapView $ m
-                   in go isWanted mapView (xs' `DL.snoc` k) tr'
+                   in go (xs' `DL.snoc` k) tr'
 
 -- O(m)
 deleteMin :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)
@@ -1366,8 +1374,8 @@ ordComparePrefixes ord xs ys =
         PostFix r                -> either (const GT) (const LT) r
         DifferedAt _ (x:_) (y:_) -> ord x y
         _                        ->
-           error$ "Data.ListTrie.Patricia.Base.ordComparePrefixes :: " ++
-                  "internal error"
+           error "Data.ListTrie.Patricia.Base.ordComparePrefixes :: \
+                 \internal error"
 
 -- After modifying the trie, compress a trie node into the prefix if possible.
 --

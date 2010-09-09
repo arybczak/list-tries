@@ -134,12 +134,13 @@ genericInsertWith :: (Alt st a, Trie trie st map k)
                   => (forall x y. (x -> y) -> x -> y)
                   -> ((a -> a) -> st a -> st a)
                   -> (a -> a -> a) -> [k] -> a -> trie map k a -> trie map k a
-genericInsertWith ($$) (<$$>) f []     new tr =
-   mapVal ($$) tr $ \old -> (f new <$$> old) <|> pure new
+genericInsertWith ($$) (<$$>) f = go
+ where
+   go []     new tr =
+      mapVal ($$) tr $ \old -> (f new <$$> old) <|> pure new
 
-genericInsertWith ($$) (<$$>) f (x:xs) val tr = mapMap ($$) tr $ \m ->
-   Map.insertWith (\_ old -> genericInsertWith ($$) (<$$>) f xs val old)
-                  x (singleton xs val) m
+   go (x:xs) val tr = mapMap ($$) tr $ \m ->
+      Map.insertWith (\_ old -> go xs val old) x (singleton xs val) m
 
 -- O(min(m,s))
 delete :: (Alt st a, Boolable (st a), Trie trie st map k)
@@ -160,29 +161,32 @@ genericAdjust :: Trie trie st map k
               => (forall x y. (x -> y) -> x -> y)
               -> ((a -> a) -> st a -> st a)
               -> (a -> a) -> [k] -> trie map k a -> trie map k a
-genericAdjust ($$) (<$$>) f []     tr = mapVal ($$) tr (f <$$>)
-genericAdjust ($$) (<$$>) f (x:xs) tr =
-   mapMap ($$) tr $ \m -> Map.adjust (genericAdjust ($$) (<$$>) f xs) x m
+genericAdjust ($$) (<$$>) f = go
+ where
+   go []     tr = mapVal ($$) tr (f <$$>)
+   go (x:xs) tr = mapMap ($$) tr (Map.adjust (go xs) x)
 
 -- O(min(m,s))
 updateLookup :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (a -> st a) -> [k] -> trie map k a -> (st a, trie map k a)
-updateLookup f [] tr =
-   let (v,m) = tParts tr
-       v'    = if hasValue v then f (unwrap v) else v
-    in (v, mkTrie v' m)
+updateLookup f = go
+ where
+   go [] tr =
+      let (v,m) = tParts tr
+          v'    = if hasValue v then f (unwrap v) else v
+       in (v, mkTrie v' m)
 
-updateLookup f (x:xs) orig =
-   let m   = tMap orig
-    in case Map.lookup x m of
-            Nothing -> (altEmpty, orig)
-            Just tr ->
-               let (ret, upd) = updateLookup f xs tr
-                in ( ret
-                   , mkTrie (tVal orig) $ if null upd
-                                             then Map.delete             x m
-                                             else Map.adjust (const upd) x m
-                   )
+   go (x:xs) orig =
+      let m   = tMap orig
+       in case Map.lookup x m of
+               Nothing -> (altEmpty, orig)
+               Just tr ->
+                  let (ret, upd) = go xs tr
+                   in ( ret
+                      , mkTrie (tVal orig) $ if null upd
+                                                then Map.delete             x m
+                                                else Map.adjust (const upd) x m
+                      )
 
 -- O(min(m,s))
 --
@@ -202,22 +206,24 @@ genericAlter :: (Alt st a, Boolable (st a), Trie trie st map k)
              => (forall x y. (x -> y) -> x -> y)
              -> (st a -> trie map k a -> trie map k a)
              -> (st a -> st a) -> [k] -> trie map k a -> trie map k a
-genericAlter _    seeq f []     tr =
-   let (v,m) = tParts tr
-       v'    = f v
-    in v' `seeq` mkTrie v' m
+genericAlter ($$) seeq f = go
+ where
+   go []     tr =
+      let (v,m) = tParts tr
+          v'    = f v
+       in v' `seeq` mkTrie v' m
 
-genericAlter ($$) seeq f (x:xs) tr = mapMap ($$) tr $ \m ->
-   Map.alter (\mold -> case mold of
-                            Nothing ->
-                               let v = f altEmpty
-                                in if hasValue v
-                                      then Just (singleton xs (unwrap v))
-                                      else Nothing
-                            Just old ->
-                               let new = genericAlter ($$) seeq f xs old
-                                in if null new then Nothing else Just new)
-              x m
+   go (x:xs) tr = mapMap ($$) tr $ \m ->
+      Map.alter (\mold -> case mold of
+                               Nothing ->
+                                  let v = f altEmpty
+                                   in if hasValue v
+                                         then Just (singleton xs (unwrap v))
+                                         else Nothing
+                               Just old ->
+                                  let new = go xs old
+                                   in if null new then Nothing else Just new)
+                 x m
 
 -- * Querying
 
@@ -263,15 +269,17 @@ isSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
              -> trie map k a
              -> trie map k b
              -> Bool
-isSubmapOfBy f tr1 tr2 =
-   let (v1,m1) = tParts tr1
-       (v2,m2) = tParts tr2
-       hv1     = hasValue v1
-       hv2     = hasValue v2
-    in and [ not (hv1 && not hv2)
-           , (not hv1 && not hv2) || f (unwrap v1) (unwrap v2)
-           , Map.isSubmapOfBy (isSubmapOfBy f) m1 m2
-           ]
+isSubmapOfBy f = go
+ where
+   go tr1 tr2 =
+      let (v1,m1) = tParts tr1
+          (v2,m2) = tParts tr2
+          hv1     = hasValue v1
+          hv2     = hasValue v2
+       in and [ not (hv1 && not hv2)
+              , (not hv1 && not hv2) || f (unwrap v1) (unwrap v2)
+              , Map.isSubmapOfBy go m1 m2
+              ]
 
 -- O(min(n1 m1,n2 m2))
 isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
@@ -279,9 +287,9 @@ isProperSubmapOfBy :: (Boolable (st a), Boolable (st b), Trie trie st map k)
                    -> trie map k a
                    -> trie map k b
                    -> Bool
-isProperSubmapOfBy = go False
+isProperSubmapOfBy f = go False
  where
-   go proper f tr1 tr2 =
+   go proper tr1 tr2 =
       let (v1,m1) = tParts tr1
           (v2,m2) = tParts tr2
           hv1     = hasValue v1
@@ -295,7 +303,7 @@ isProperSubmapOfBy = go False
               , (not hv1 && not hv2) || f (unwrap v1) (unwrap v2)
               , if Map.null m1
                    then proper'
-                   else Map.isSubmapOfBy (go proper' f) m1 m2
+                   else Map.isSubmapOfBy (go proper') m1 m2
               ]
 
 
@@ -318,12 +326,11 @@ genericUnionWith :: Trie trie st map k
                  -> trie map k a
                  -> trie map k a
                  -> trie map k a
-genericUnionWith ($$) valUnion seeq tr1 tr2 =
-   let v = onVals ($$) valUnion tr1 tr2
-    in v `seeq` (
-          mkTrie v $
-             onMaps ($$) (Map.unionWith (genericUnionWith ($$) valUnion seeq))
-                    tr1 tr2)
+genericUnionWith ($$) valUnion seeq = go
+ where
+   go tr1 tr2 =
+      let v = onVals ($$) valUnion tr1 tr2
+       in v `seeq` (mkTrie v $ onMaps ($$) (Map.unionWith go) tr1 tr2)
 
 -- O(min(n1 m1,n2 m2))
 unionWithKey :: (Unionable st a, Trie trie st map k) => ([k] -> a -> a -> a)
@@ -347,16 +354,13 @@ genericUnionWithKey :: Trie trie st map k
                     -> trie map k a
                     -> trie map k a
                     -> trie map k a
-genericUnionWithKey ($$) = go DL.empty
+genericUnionWithKey ($$) valUnion seeq f = go DL.empty
  where
-   go k valUnion seeq f tr1 tr2 =
+   go k tr1 tr2 =
       let v = onVals ($$) (valUnion (f $ DL.toList k)) tr1 tr2
-       in v `seeq` (
-             mkTrie v $
-                onMaps ($$)
-                       (Map.unionWithKey $
-                           \x -> go (k `DL.snoc` x) valUnion seeq f)
-                       tr1 tr2)
+       in v `seeq` (mkTrie v $
+                       onMaps ($$) (Map.unionWithKey $ go . (k `DL.snoc`))
+                              tr1 tr2)
 
 -- O(sum(n))
 unionsWith :: (Alt st a, Unionable st a, Trie trie st map k)
@@ -384,17 +388,19 @@ differenceWith :: (Boolable (st a), Differentiable st a b, Trie trie st map k)
                -> trie map k a
                -> trie map k b
                -> trie map k a
-differenceWith f tr1 tr2 =
-   let v = onVals ($!) (differenceVals f) tr1 tr2
-
-       -- This would be lazy only in the case where the differing keys were at
-       -- []. (And even then most operations on the trie would force the
-       -- value.) For consistency with other keys and Patricia, just seq it for
-       -- that case as well.
-    in v `seq` mkTrie v $ onMaps ($!) (Map.differenceWith (g f)) tr1 tr2
+differenceWith f = go
  where
-   g f' t1 t2 = let t' = differenceWith f' t1 t2
-                 in if null t' then Nothing else Just t'
+   go tr1 tr2 =
+      let v = onVals ($!) (differenceVals f) tr1 tr2
+
+          -- This would be lazy only in the case where the differing keys were at
+          -- []. (And even then most operations on the trie would force the
+          -- value.) For consistency with other keys and Patricia, just seq it for
+          -- that case as well.
+       in v `seq` mkTrie v $ onMaps ($!) (Map.differenceWith g) tr1 tr2
+
+   g t1 t2 = let t' = go t1 t2
+              in if null t' then Nothing else Just t'
 
 -- O(min(n1 m1,n2 m2))
 differenceWithKey :: ( Boolable (st a), Differentiable st a b
@@ -404,22 +410,22 @@ differenceWithKey :: ( Boolable (st a), Differentiable st a b
                   -> trie map k a
                   -> trie map k b
                   -> trie map k a
-differenceWithKey = go DL.empty
+differenceWithKey f = go DL.empty
  where
-   go k f tr1 tr2 =
+   go k tr1 tr2 =
       let v = onVals ($!) (differenceVals (f $ DL.toList k)) tr1 tr2
 
           -- see comment in differenceWith for seq explanation
        in v `seq` mkTrie v $
-                     onMaps ($!) (Map.differenceWithKey (g k f)) tr1 tr2
+                     onMaps ($!) (Map.differenceWithKey (g k)) tr1 tr2
 
-   g k f x t1 t2 = let t' = go (k `DL.snoc` x) f t1 t2
-                         in if null t' then Nothing else Just t'
+   g k x t1 t2 = let t' = go (k `DL.snoc` x) t1 t2
+                  in if null t' then Nothing else Just t'
 
 -- O(min(n1 m1,n2 m2))
 intersectionWith :: ( Boolable (st c), Intersectable st a b c
-                     , Trie trie st map k
-                     )
+                    , Trie trie st map k
+                    )
                  => (a -> b -> c)
                  -> trie map k a
                  -> trie map k b
@@ -443,14 +449,14 @@ genericIntersectionWith :: (Boolable (st c), Trie trie st map k)
                         -> trie map k a
                         -> trie map k b
                         -> trie map k c
-genericIntersectionWith ($$) valIntersection seeq tr1 tr2 =
-   tr seeq
-      (onVals ($$) valIntersection tr1 tr2)
-      (onMaps ($$) (Map.filter (not.null) .:
-                       Map.intersectionWith
-                          (genericIntersectionWith ($$) valIntersection seeq))
-              tr1 tr2)
+genericIntersectionWith ($$) valIntersection seeq = go
  where
+   go tr1 tr2 =
+      tr seeq
+         (onVals ($$) valIntersection tr1 tr2)
+         (onMaps ($$) (Map.filter (not.null) .: Map.intersectionWith go)
+                 tr1 tr2)
+
    tr seeq' v m =
       v `seeq'` (mkTrie v $
                     case Map.singletonView m of
@@ -486,17 +492,16 @@ genericIntersectionWithKey :: (Boolable (st c), Trie trie st map k)
                            -> trie map k a
                            -> trie map k b
                            -> trie map k c
-genericIntersectionWithKey ($$) = go DL.empty
+genericIntersectionWithKey ($$) valIntersection seeq f = go DL.empty
  where
-   go k valIntersection seeq f tr1 tr2 =
-      tr seeq
+   go k tr1 tr2 =
+      tr
          (onVals ($$) (valIntersection (f $ DL.toList k)) tr1 tr2)
          (onMaps ($$) (Map.filter (not.null) .:
-                          Map.intersectionWithKey
-                             (\x -> go (k `DL.snoc` x) valIntersection seeq f))
+                          Map.intersectionWithKey (go . (k `DL.snoc`)))
                  tr1 tr2)
 
-   tr seeq v m =
+   tr v m =
       v `seeq` (mkTrie v $
                    case Map.singletonView m of
                         Just (_, child) | null child -> tMap child
@@ -552,10 +557,9 @@ genericMapInKeysWith :: ( Unionable st a
                      -> trie map k1 a
                      -> trie map k2 a
 genericMapInKeysWith ($$) unionW j f = go
-   mapMap ($$) tr $
-      Map.fromListWith (unionW j) .
-         map (f *** genericMapInKeysWith unionW j f) .
-      Map.toList
+ where
+   go tr = mapMap ($$) tr $
+              Map.fromListWith (unionW j) . map (f *** go) . Map.toList
 
 -- * Folding
 
@@ -625,13 +629,13 @@ genericToList :: (Boolable (st a), Trie trie st map k)
               -> (([k],a) -> DList ([k],a) -> DList ([k],a))
               -> trie map k a
               -> [([k],a)]
-genericToList f_ g_ = DL.toList . go DL.empty f_ g_
+genericToList tolist add = DL.toList . go DL.empty
  where
-   go xs tolist add tr =
+   go xs tr =
       let (v,m) = tParts tr
           xs'   =
              DL.concat .
-             map (\(x,t) -> go (xs `DL.snoc` x) tolist add t) .
+             map (\(x,t) -> go (xs `DL.snoc` x) t) .
              tolist $ m
        in if hasValue v
              then add (DL.toList xs, unwrap v) xs'
@@ -678,15 +682,15 @@ minMaxView :: (Alt st a, Boolable (st a), Trie trie st map k)
            -> (CMap trie map k a -> Maybe (k, trie map k a))
            -> trie map k a
            -> (Maybe ([k], a), trie map k a)
-minMaxView _ _ tr_ | null tr_ = (Nothing, tr_)
-minMaxView f g tr_ = first Just (go f g tr_)
+minMaxView _        _       tr_ | null tr_ = (Nothing, tr_)
+minMaxView isWanted mapView tr_ = first Just (go tr_)
  where
-   go isWanted mapView tr =
+   go tr =
       let (v,m) = tParts tr
        in if isWanted tr
              then (([], unwrap v), mkTrie altEmpty m)
              else let (k,      tr')  = fromJust (mapView m)
-                      (minMax, tr'') = go isWanted mapView tr'
+                      (minMax, tr'') = go tr'
                    in ( first (k:) minMax
                       , mkTrie v $ if null tr''
                                       then Map.delete              k m
@@ -708,14 +712,14 @@ findMinMax :: (Boolable (st a), Trie trie st map k)
            -> (CMap trie map k a -> Maybe (k, trie map k a))
            -> trie map k a
            -> Maybe ([k], a)
-findMinMax _ _ tr_ | null tr_ = Nothing
-findMinMax f g tr_ = Just (go f g DL.empty tr_)
+findMinMax _        _       tr_ | null tr_ = Nothing
+findMinMax isWanted mapView tr_ = Just (go DL.empty tr_)
  where
-   go isWanted mapView xs tr =
+   go xs tr =
       if isWanted tr
          then (DL.toList xs, unwrap (tVal tr))
          else let (k, tr') = fromJust . mapView . tMap $ tr
-               in go isWanted mapView (xs `DL.snoc` k) tr'
+               in go (xs `DL.snoc` k) tr'
 
 -- O(m)
 deleteMin :: (Alt st a, Boolable (st a), Trie trie st map k, OrdMap map k)

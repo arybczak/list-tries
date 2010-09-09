@@ -4,6 +4,9 @@
    mapInKeys; as well as the Patricia versions of insert and adjust. Thanks to
    Brian Bloniarz for the bug report.
 
+   Applied the static argument transformation throughout, improving
+   performance.
+
 2010-04-06, 0.2:
 	Dependency update, nothing more.
 
