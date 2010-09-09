@@ -7,6 +7,9 @@
    Applied the static argument transformation throughout, improving
    performance.
 
+   Dropped support for containers < 0.3; GHC 6.12 has been out long enough, and
+   support for older versions is too crippled to make it worthwhile.
+
 2010-04-06, 0.2:
 	Dependency update, nothing more.
 
