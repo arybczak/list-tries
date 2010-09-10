@@ -425,6 +425,14 @@ $(makeFunc mapsOnly ["addPrefix","splitPrefix","children","unions","insert"]
                                 (children t))
  |])
 
+-- Deleting an added prefix should change nothing
+$(makeFunc allTries ["addPrefix","deletePrefix"] [d|
+   prop_prefixOps5 addPrefix deletePrefix t k_ =
+      let k = unArb k_
+       in deletePrefix k (addPrefix k t) == (t :: TrieType)
+ |])
+
+
 -- The monoid laws: associativity, left identity, right identity
 $(makeFunc allTries [] [d|
    prop_monoidLaw1 x y z =
@@ -530,6 +538,7 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_prefixOps3")
    , $(makeProps setsOnly "prop_prefixOps4_s")
    , $(makeProps mapsOnly "prop_prefixOps4_m")
+   , $(makeProps allTries "prop_prefixOps5")
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")
