@@ -1,4 +1,4 @@
-2010-09-10, 0.4:
+2010-09-11, 0.4:
 	Fixed documentation of the 'deletePrefix' function: if the given key is not
 	a prefix of any key, an empty, not unchanged, map/set is returned. Thanks to
 	Brian Bloniarz for the bug report.
