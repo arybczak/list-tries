@@ -370,7 +370,7 @@ addPrefix = TS .: Base.addPrefix .:. unTS
 
 -- | @O(m)@. The set which contains all keys of which the given key is a
 -- prefix, with the prefix removed from each key. If the given key is not a
--- prefix of any key in the set, the set is returned unchanged. For example:
+-- prefix of any key in the set, an empty set is returned. For example:
 --
 -- > deletePrefix "a" (fromList ["a","ab","ac"]) == fromList ["","b","c"]
 --

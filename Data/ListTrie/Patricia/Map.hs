@@ -1005,7 +1005,7 @@ addPrefix = Base.addPrefix
 
 -- | @O(m)@. The map which contains all keys of which the given key is a
 -- prefix, with the prefix removed from each key. If the given key is not a
--- prefix of any key in the map, the map is returned unchanged. For example:
+-- prefix of any key in the map, an empty map is returned. For example:
 --
 -- > deletePrefix "a" (fromList [("a",1),("ab",2),("ac",3)])
 -- >    == fromList [("",1),("b",2),("c",3)]
