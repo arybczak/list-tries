@@ -7,6 +7,11 @@
 	anything if the prefix to be deleted was a proper prefix of the common
 	prefix.
 
+	Changed 'children' to return the map as-is instead of converting it into a
+	list first:
+
+		children :: Trie trie st map k => trie map k a -> CMap trie map k a
+
 2010-09-09, 0.3:
    Fixed strictness of the strict versions of the following non-Patricia
    functions: insert, adjust, alter, union, difference, intersection,

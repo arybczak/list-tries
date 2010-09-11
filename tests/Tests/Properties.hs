@@ -17,6 +17,7 @@ import Test.Framework                       (testGroup)
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck                      ((==>))
 
+import qualified Data.ListTrie.Base.Map as Map
 import qualified Data.ListTrie.Set.Eq
 import qualified Data.ListTrie.Set.Ord
 import qualified Data.ListTrie.Set.Enum
@@ -414,7 +415,7 @@ $(makeFunc setsOnly ["addPrefix","splitPrefix","children","unions","insert"]
       let (k,b,_) = splitPrefix (t :: TrieType)
        in t == ((if b then insert k else id) . addPrefix k .
                    unions $ map (uncurry $ addPrefix . return)
-                                (children t))
+                                (Map.toList $ children t))
  |])
 $(makeFunc mapsOnly ["addPrefix","splitPrefix","children","unions","insert"]
  [d|
@@ -422,7 +423,7 @@ $(makeFunc mapsOnly ["addPrefix","splitPrefix","children","unions","insert"]
       let (k,mv,_) = splitPrefix (t :: TrieType)
        in t == ((case mv of Just v -> insert k v; _ -> id) . addPrefix k .
                    unions $ map (uncurry $ addPrefix . return)
-                                (children t))
+                                (Map.toList $ children t))
  |])
 
 -- Deleting an added prefix should change nothing

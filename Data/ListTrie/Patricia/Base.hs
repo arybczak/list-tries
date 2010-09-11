@@ -1291,8 +1291,8 @@ splitPrefix tr =
     in (pre, v, tryCompress $ mkTrie altEmpty [] m)
 
 -- O(1)
-children :: Trie trie st map k => trie map k a -> [(k, trie map k a)]
-children = Map.toList . tMap
+children :: Trie trie st map k => trie map k a -> CMap trie map k a
+children = tMap
 
 -- * Visualization
 

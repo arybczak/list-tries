@@ -826,13 +826,13 @@ splitPrefix = go DL.empty
 
 -- O(m)
 children :: (Boolable (st a), Trie trie st map k)
-         => trie map k a -> [(k, trie map k a)]
+         => trie map k a -> CMap trie map k a
 children tr = let (v,m) = tParts tr
                in if hasValue v
-                     then Map.toList m
+                     then m
                      else case Map.singletonView m of
                                Just (_, tr') -> children tr'
-                               Nothing       -> Map.toList m
+                               Nothing       -> m
 
 -- * Visualization
 

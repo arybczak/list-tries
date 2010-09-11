@@ -1032,13 +1032,13 @@ splitPrefix = Base.splitPrefix
 
 -- | @O(1)@. The children of the longest common prefix in the trie as maps,
 -- associated with their distinguishing key value. If the map contains less
--- than two keys, this function will return the empty list. Examples;
+-- than two keys, this function will return an empty map. Examples;
 --
 -- > children (fromList [("a",1),("abc",2),("abcd",3)])
--- >    == [('b',fromList [("c",2),("cd",3)])]
+-- >    == Map.fromList [('b',fromList [("c",2),("cd",3)])]
 -- > children (fromList [("b",1),("c",2)])
--- >    == [('b',fromList [("",1)]),('c',fromList [("",2)])]
-children :: Map map k => TrieMap map k a -> [(k, TrieMap map k a)]
+-- >    == Map.fromList [('b',fromList [("",1)]),('c',fromList [("",2)])]
+children :: Map map k => TrieMap map k a -> map k (TrieMap map k a)
 children = Base.children
 
 -- * Visualization

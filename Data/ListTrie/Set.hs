@@ -23,7 +23,7 @@
 -- Disclaimer: the complexities have not been proven.
 module Data.ListTrie.Set (SET_EXPORTS) where
 
-import Control.Arrow  ((***), second)
+import Control.Arrow  ((***))
 import Control.Monad  (liftM2)
 import Data.Binary    (Binary,get,put)
 import Data.Function  (on)
@@ -394,12 +394,14 @@ splitPrefix = (\(k,b,t) -> (k,unwrap b,TS t)) . Base.splitPrefix . unTS
 
 -- | @O(m)@. The children of the longest common prefix in the trie as sets,
 -- associated with their distinguishing key value. If the set contains less
--- than two keys, this function will return the empty list. Examples;
+-- than two keys, this function will return an empty map. Examples;
 --
--- > children (fromList ["a","abc","abcd"]) == [('b',fromList ["c","cd"])]
--- > children (fromList ["b","c"]) == [('b',fromList [""]),('c',fromList [""])]
-children :: Map map a => TrieSet map a -> [(a, TrieSet map a)]
-children = Prelude.map (second TS) . Base.children . unTS
+-- > children (fromList ["a","abc","abcd"])
+-- >    == Map.fromList [('b',fromList ["c","cd"])]
+-- > children (fromList ["b","c"])
+-- >    == Map.fromList [('b',fromList [""]),('c',fromList [""])]
+children :: Map map a => TrieSet map a -> map a (TrieSet map a)
+children = Map.map TS . Base.children . unTS
 
 -- * Visualization
 

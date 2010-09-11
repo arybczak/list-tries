@@ -9,6 +9,7 @@ import Test.Framework                 (testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.HUnit                     (assert)
 
+import qualified Data.ListTrie.Base.Map as Map
 import qualified Data.ListTrie.Set.Eq
 import qualified Data.ListTrie.Set.Ord
 import qualified Data.ListTrie.Set.Enum
@@ -159,12 +160,12 @@ $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
 $(makeFunc setsOnly ["fromList","children"] [d|
    children1_s fromList children =
       children (fromList ["foo","foobar"] :: TrieType) ==
-         [('b',fromList ["ar"])]
+         Map.singleton 'b' (fromList ["ar"])
  |])
 $(makeFunc mapsOnly ["fromList","children"] [d|
    children1_m fromList children =
       children (fromList [("foo",1),("foobar",2)] :: TrieType) ==
-         [('b',fromList [("ar",2)])]
+         Map.singleton 'b' (fromList [("ar",2)])
  |])
 
 tests = testGroup "Individual cases"
