@@ -3,6 +3,10 @@
 	a prefix of any key, an empty, not unchanged, map/set is returned. Thanks to
 	Brian Bloniarz for the bug report.
 
+	Fixed bug in the Patricia version of 'deletePrefix' causing it to not delete
+	anything if the prefix to be deleted was a proper prefix of the common
+	prefix.
+
 2010-09-09, 0.3:
    Fixed strictness of the strict versions of the following non-Patricia
    functions: insert, adjust, alter, union, difference, intersection,

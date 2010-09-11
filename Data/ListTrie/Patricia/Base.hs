@@ -1272,7 +1272,7 @@ deletePrefix xs tr =
    let (v,pre,m) = tParts tr
     in case comparePrefixes (Map.eqCmp m) pre xs of
             Same                   -> tryCompress (mkTrie v [] m)
-            PostFix (Left _)       -> tr
+            PostFix (Left ys)      -> mkTrie v ys m
             DifferedAt _ _ _       -> empty
             PostFix (Right (y:ys)) ->
                case Map.lookup y m of
