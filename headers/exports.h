@@ -42,7 +42,7 @@
 	\
 	{- * Trie-specific operations -} \
 	{- $trie-only-ops -} \
-	addPrefix, deletePrefix, splitPrefix, children, \
+	addPrefix, deletePrefix, splitPrefix, children, children1, \
 	\
 	{- * Visualization -} \
 	showTrie
@@ -128,7 +128,7 @@
 	\
 	{- * Trie-specific operations -} \
 	{- $trie-only-ops -} \
-	addPrefix, deletePrefix, splitPrefix, children, \
+	addPrefix, deletePrefix, splitPrefix, children, children1, \
 	\
 	{- * Visualization -} \
 	showTrie, showTrieWith

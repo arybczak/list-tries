@@ -26,7 +26,7 @@ module Data.ListTrie.Patricia.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, deletePrefix, children
+   , addPrefix, splitPrefix, deletePrefix, children, children1
    , showTrieWith
    , eqComparePrefixes, ordComparePrefixes
    ) where
@@ -1293,6 +1293,14 @@ splitPrefix tr =
 -- O(1)
 children :: Trie trie st map k => trie map k a -> CMap trie map k a
 children = tMap
+
+-- O(1)
+children1 :: Trie trie st map k => trie map k a -> CMap trie map k a
+children1 tr =
+   let (v,pre,m) = tParts tr
+    in case pre of
+            []   -> m
+            p:ps -> Map.singleton p (mkTrie v ps m)
 
 -- * Visualization
 

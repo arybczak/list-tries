@@ -25,7 +25,7 @@ module Data.ListTrie.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, deletePrefix, children
+   , addPrefix, splitPrefix, deletePrefix, children, children1
    , showTrieWith
    ) where
 
@@ -833,6 +833,11 @@ children tr = let (v,m) = tParts tr
                      else case Map.singletonView m of
                                Just (_, tr') -> children tr'
                                Nothing       -> m
+
+-- O(1)
+children1 :: (Alt st a, Trie trie st map k)
+          => trie map k a -> CMap trie map k a
+children1 = tMap
 
 -- * Visualization
 

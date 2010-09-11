@@ -408,6 +408,23 @@ splitPrefix = (\(k,b,t) -> (k,unwrap b,TS t)) . Base.splitPrefix . unTS
 children :: Map map a => TrieSet map a -> map a (TrieSet map a)
 children = Map.map TS . Base.children . unTS
 
+-- | @O(1)@. The children of the first element of the longest common prefix in
+-- the trie as sets, associated with their distinguishing key value. If the set
+-- contains less than two keys, this function will return an empty map.
+--
+-- If the longest common prefix of all keys in the trie is the empty list, this
+-- function is equivalent to 'children'. Otherwise, the result will always be a
+-- single-element map.
+--
+-- Examples:
+--
+-- > children1 (fromList ["abc","abcd"])
+-- >    == Map.fromList [('a',fromList ["bc","bcd"])]
+-- > children1 (fromList ["b","c"])
+-- >    == Map.fromList [('b',fromList [""]),('c',fromList [""])]
+children1 :: Map map a => TrieSet map a -> map a (TrieSet map a)
+children1 = Map.map TS . Base.children1 . unTS
+
 -- * Visualization
 
 -- | @O(n m)@. Displays the set's internal structure in an undefined way. That

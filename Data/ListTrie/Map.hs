@@ -1023,6 +1023,23 @@ splitPrefix = Base.splitPrefix
 children :: Map map k => TrieMap map k a -> map k (TrieMap map k a)
 children = Base.children
 
+-- | @O(1)@. The children of the first element of the longest common prefix in
+-- the trie as maps, associated with their distinguishing key value. If the map
+-- contains less than two keys, this function will return an empty map.
+--
+-- If the longest common prefix of all keys in the trie is the empty list, this
+-- function is equivalent to 'children'. Otherwise, the result will always be a
+-- single-element map.
+--
+-- Examples:
+--
+-- > children1 (fromList [("abc",1),("abcd",2)])
+-- >    == Map.fromList [('a',fromList [("bc",1),("bcd",2)])]
+-- > children1 (fromList [("b",1),("c",2)])
+-- >    == Map.fromList [('b',fromList [("",1)]),('c',fromList [("",2)])]
+children1 :: Map map k => TrieMap map k a -> map k (TrieMap map k a)
+children1 = Base.children1
+
 -- * Visualization
 
 -- | @O(n m)@. Displays the map's internal structure in an undefined way. That

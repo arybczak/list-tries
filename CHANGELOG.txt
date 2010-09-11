@@ -12,6 +12,12 @@
 
 		children :: Trie trie st map k => trie map k a -> CMap trie map k a
 
+	Added the 'children1' function as a single-level equivalent of 'children',
+	more directly reflecting the structure of the non-Patricia tries. Requested
+	by Brian Bloniarz.
+
+		children1 :: Trie trie st map k => trie map k a -> CMap trie map k a
+
 2010-09-09, 0.3:
    Fixed strictness of the strict versions of the following non-Patricia
    functions: insert, adjust, alter, union, difference, intersection,
