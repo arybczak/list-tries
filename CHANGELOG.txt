@@ -1,3 +1,7 @@
+2011-03-17, 0.4.1:
+	Dependency update and Cabalization of the test executable, thanks to JP
+	Moresmau.
+
 2010-09-11, 0.4:
 	Fixed documentation of the 'deletePrefix' function: if the given key is not
 	a prefix of any key, an empty, not unchanged, map/set is returned. Thanks to
