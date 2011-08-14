@@ -199,7 +199,7 @@ adjust' = Base.adjust'
 
 -- | @O(min(m,s))@. Updates the value at the given key: if the given
 -- function returns 'Nothing', the value and its associated key are removed; if
--- 'Just'@ a@is returned, the old value is replaced with @a@. If the key is
+-- 'Just'@ a@ is returned, the old value is replaced with @a@. If the key is
 -- not a member of the map, the map is unchanged.
 update :: Map map k
        => (a -> Maybe a) -> [k] -> TrieMap map k a -> TrieMap map k a
