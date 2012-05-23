@@ -1,3 +1,6 @@
+2012-05-23, 0.4.2:
+	Dependency updates for GHC 7.4, thanks to Anders Kaseorg.
+
 2011-03-17, 0.4.1:
 	Dependency update and Cabalization of the test executable, thanks to JP
 	Moresmau.
