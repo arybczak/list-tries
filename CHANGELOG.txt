@@ -1,3 +1,6 @@
+2012-10-18, 0.4.3:
+	Dependency updates for GHC 7.6 and otherwise.
+
 2012-05-23, 0.4.2:
 	Dependency updates for GHC 7.4, thanks to Anders Kaseorg.
 
