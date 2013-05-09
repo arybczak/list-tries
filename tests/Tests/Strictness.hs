@@ -9,20 +9,13 @@ import Test.Framework                 (testGroup)
 import Test.Framework.Providers.HUnit (testCase)
 import Test.HUnit                     (assert)
 
-import qualified Data.ListTrie.Set.Eq
-import qualified Data.ListTrie.Set.Ord
-import qualified Data.ListTrie.Set.Enum
 import qualified Data.ListTrie.Map.Eq
 import qualified Data.ListTrie.Map.Ord
 import qualified Data.ListTrie.Map.Enum
-import qualified Data.ListTrie.Patricia.Set.Eq
-import qualified Data.ListTrie.Patricia.Set.Ord
-import qualified Data.ListTrie.Patricia.Set.Enum
 import qualified Data.ListTrie.Patricia.Map.Eq
 import qualified Data.ListTrie.Patricia.Map.Ord
 import qualified Data.ListTrie.Patricia.Map.Enum
 
-import Tests.Base
 import Tests.TH
 
 -- size doesn't evaluate the values but it does traverse the whole trie
