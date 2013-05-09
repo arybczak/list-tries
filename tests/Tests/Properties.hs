@@ -433,6 +433,24 @@ $(makeFunc allTries ["addPrefix","deletePrefix"] [d|
        in deletePrefix k (addPrefix k t) == (t :: TrieType)
  |])
 
+-- lookupPrefix k == addPrefix k . deletePrefix k if the result is nonempty
+$(makeFunc allTries ["lookupPrefix","addPrefix","deletePrefix","null"] [d|
+   prop_prefixOps6 lookupPrefix addPrefix deletePrefix null t k_ =
+      let k = unArb k_
+          t' = lookupPrefix k (t :: TrieType)
+       in null t' || t' == addPrefix k (deletePrefix k t)
+ |])
+
+-- The result of lookupPrefix should always be a subset of the original.
+$(makeFunc setsOnly ["lookupPrefix","isSubsetOf"] [d|
+   prop_prefixOps7_s lookupPrefix isSubsetOf t k =
+      lookupPrefix (unArb k) (t :: TrieType) `isSubsetOf` t
+ |])
+$(makeFunc mapsOnly ["lookupPrefix","isSubmapOf"] [d|
+   prop_prefixOps7_m lookupPrefix isSubmapOf t k =
+      lookupPrefix (unArb k) (t :: TrieType) `isSubmapOf` t
+ |])
+
 
 -- The monoid laws: associativity, left identity, right identity
 $(makeFunc allTries [] [d|
@@ -540,6 +558,9 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps setsOnly "prop_prefixOps4_s")
    , $(makeProps mapsOnly "prop_prefixOps4_m")
    , $(makeProps allTries "prop_prefixOps5")
+   , $(makeProps allTries "prop_prefixOps6")
+   , $(makeProps setsOnly "prop_prefixOps7_s")
+   , $(makeProps mapsOnly "prop_prefixOps7_m")
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")
