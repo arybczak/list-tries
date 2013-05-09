@@ -1,3 +1,17 @@
+2013-05-09, 0.5:
+	Added the 'lookupPrefix' and 'deleteSuffixes' functions, of which especially
+	the former was an embarrassing omission:
+
+		lookupPrefix   :: [k] -> trie map k a -> trie map k a
+		deleteSuffixes :: [k] -> trie map k a -> trie map k a
+
+	Fixed the documentation headers to refer to 's' instead of 'k' as what we
+	use for the length of the given key.
+
+	Fixed documentation of 'deletePrefix': its complexity is O(s), not O(m).
+
+	Some dependency updates.
+
 2012-10-18, 0.4.3:
 	Dependency updates for GHC 7.6 and otherwise.
 
