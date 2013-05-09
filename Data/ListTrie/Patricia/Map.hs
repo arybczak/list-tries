@@ -8,8 +8,8 @@
 -- | The base implementation of a Patricia trie representing a map with list
 -- keys, generalized over any type of map from element values to tries.
 --
--- Worst-case complexities are given in terms of @n@, @m@, and @k@. @n@ refers
--- to the number of keys in the map and @m@ to their maximum length. @k@ refers
+-- Worst-case complexities are given in terms of @n@, @m@, and @s@. @n@ refers
+-- to the number of keys in the map and @m@ to their maximum length. @s@ refers
 -- to the length of a key given to the function, not any property of the map.
 --
 -- In addition, the trie's branching factor plays a part in almost every
