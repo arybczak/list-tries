@@ -451,6 +451,13 @@ $(makeFunc mapsOnly ["lookupPrefix","isSubmapOf"] [d|
       lookupPrefix (unArb k) (t :: TrieType) `isSubmapOf` t
  |])
 
+-- deleteSuffixes k t == difference t (lookupPrefix k t)
+$(makeFunc allTries ["deleteSuffixes","difference","lookupPrefix"] [d|
+   prop_prefixOps8 deleteSuffixes lookupPrefix difference t k_ =
+      let k = unArb k_
+       in deleteSuffixes k (t :: TrieType) == difference t (lookupPrefix k t)
+ |])
+
 
 -- The monoid laws: associativity, left identity, right identity
 $(makeFunc allTries [] [d|
@@ -561,6 +568,7 @@ tests = testGroup "QuickCheck properties"
    , $(makeProps allTries "prop_prefixOps6")
    , $(makeProps setsOnly "prop_prefixOps7_s")
    , $(makeProps mapsOnly "prop_prefixOps7_m")
+   , $(makeProps allTries "prop_prefixOps8")
    , $(makeProps allTries "prop_monoidLaw1")
    , $(makeProps allTries "prop_monoidLaw2")
    , $(makeProps allTries "prop_monoidLaw3")
