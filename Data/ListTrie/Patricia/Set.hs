@@ -396,6 +396,13 @@ addPrefix = TS .: Base.addPrefix .:. unTS
 deletePrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 deletePrefix = TS .: Base.deletePrefix .:. unTS
 
+-- | @O(s)@. Deletes all keys which are suffixes of the given key. For example:
+--
+-- > deleteSuffixes "ab" (fromList $ zip ["a","ab","ac","b","abc"] [1..])
+-- >    == fromList [("a",1),("ac",3),("b",4)]
+deleteSuffixes :: Map map a => [a] -> TrieSet map a -> TrieSet map a
+deleteSuffixes = TS .: Base.deleteSuffixes .:. unTS
+
 -- | @O(1)@. A triple containing the longest common prefix of all keys in the
 -- set, whether that prefix was a member of the set, and the set with that
 -- prefix removed from all the keys as well as the set itself. Examples:

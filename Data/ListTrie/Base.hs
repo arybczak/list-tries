@@ -25,7 +25,8 @@ module Data.ListTrie.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , lookupPrefix, addPrefix, splitPrefix, deletePrefix, children, children1
+   , lookupPrefix, addPrefix, deletePrefix, deleteSuffixes
+   , splitPrefix, children, children1
    , showTrieWith
    ) where
 
@@ -824,6 +825,19 @@ deletePrefix (x:xs) tr =
    case Map.lookup x (tMap tr) of
         Nothing  -> empty
         Just tr' -> deletePrefix xs tr'
+
+-- O(s)
+deleteSuffixes :: (Alt st a, Boolable (st a), Trie trie st map k)
+               => [k] -> trie map k a -> trie map k a
+deleteSuffixes []     _  = empty
+deleteSuffixes (x:xs) tr =
+   let (v,m) = tParts tr
+    in case Map.lookup x m of
+            Nothing  -> tr
+            Just tr' -> let tr'' = deleteSuffixes xs tr'
+                         in if null tr''
+                               then mkTrie v (Map.delete x      m)
+                               else mkTrie v (Map.insert x tr'' m)
 
 -- O(m)
 splitPrefix :: (Alt st a, Trie trie st map k)

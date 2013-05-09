@@ -26,7 +26,8 @@ module Data.ListTrie.Patricia.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , lookupPrefix, addPrefix, splitPrefix, deletePrefix, children, children1
+   , lookupPrefix, addPrefix, deletePrefix, deleteSuffixes
+   , splitPrefix, children, children1
    , showTrieWith
    , eqComparePrefixes, ordComparePrefixes
    ) where
@@ -1303,6 +1304,27 @@ deletePrefix xs tr =
             _ ->
                error
                   "Data.ListTrie.Patricia.Base.deletePrefix :: internal error"
+
+-- O(s)
+deleteSuffixes :: (Alt st a, Boolable (st a), Trie trie st map k)
+               => [k] -> trie map k a -> trie map k a
+deleteSuffixes xs tr =
+   let (v,pre,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) pre xs of
+            DifferedAt _ _ _       -> tr
+            Same                   -> empty
+            PostFix (Left _)       -> empty
+            PostFix (Right (y:ys)) ->
+               case Map.lookup y m of
+                    Nothing  -> tr
+                    Just tr' ->
+                       let tr'' = deleteSuffixes ys tr'
+                        in if null tr''
+                              then tryCompress$ mkTrie v pre (Map.delete y m)
+                              else mkTrie v pre (Map.insert y tr'' m)
+
+            _ -> error "Data.ListTrie.Patricia.Base.deleteSuffixes \
+                       \:: internal error"
 
 -- O(1)
 splitPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
