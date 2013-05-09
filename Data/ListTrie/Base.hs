@@ -25,7 +25,7 @@ module Data.ListTrie.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, deletePrefix, children, children1
+   , lookupPrefix, addPrefix, splitPrefix, deletePrefix, children, children1
    , showTrieWith
    ) where
 
@@ -797,6 +797,18 @@ findSuccessor xs_ tr_          = go xs_ tr_
           (successor >>= \(best,btr) -> fmap (first (best:)) (findMin btr))
 
 -- * Trie-only operations
+
+-- O(s)
+lookupPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
+             => [k] -> trie map k a -> trie map k a
+lookupPrefix []     tr = tr
+lookupPrefix (x:xs) tr =
+   case Map.lookup x (tMap tr) of
+        Nothing  -> empty
+        Just tr' -> let tr'' = lookupPrefix xs tr'
+                     in if null tr''
+                           then tr''
+                           else mkTrie altEmpty (Map.singleton x tr'')
 
 -- O(s)
 addPrefix :: (Alt st a, Trie trie st map k)

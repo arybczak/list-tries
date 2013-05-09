@@ -362,6 +362,14 @@ findSuccessor = fmap fst .: Base.findSuccessor .:. unTS
 
 -- * Trie-only operations
 
+-- | @O(s)@. The set which contains all keys of which the given key is a
+-- prefix. For example:
+--
+-- > lookupPrefix "ab" (fromList ["a","ab","ac","abc"])
+-- >    == fromList ["ab","abc"]
+lookupPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
+lookupPrefix = TS .: Base.lookupPrefix .:. unTS
+
 -- | @O(s)@. Prepends the given key to all the keys of the set. For example:
 --
 -- > addPrefix "pre" (fromList ["a","b"]) == fromList ["prea","preb"]

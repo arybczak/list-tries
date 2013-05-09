@@ -996,6 +996,14 @@ findSuccessor = Base.findSuccessor
 
 -- * Trie-only operations
 
+-- | @O(s)@. The map which contains all keys of which the given key is a
+-- prefix. For example:
+--
+-- > lookupPrefix "ab" (fromList [("a",1),("ab",2),("ac",3),("abc",4)])
+-- >    == fromList [("ab",2),("abc",4)]
+lookupPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
+lookupPrefix = Base.lookupPrefix
+
 -- | @O(s)@. Prepends the given key to all the keys of the map. For example:
 --
 -- > addPrefix "xa" (fromList [("a",1),("b",2)])

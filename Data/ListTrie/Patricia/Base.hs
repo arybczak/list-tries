@@ -26,7 +26,7 @@ module Data.ListTrie.Patricia.Base
    , fromList, fromListWith, fromListWith', fromListWithKey, fromListWithKey'
    , findMin, findMax, deleteMin, deleteMax, minView, maxView
    , findPredecessor, findSuccessor
-   , addPrefix, splitPrefix, deletePrefix, children, children1
+   , lookupPrefix, addPrefix, splitPrefix, deletePrefix, children, children1
    , showTrieWith
    , eqComparePrefixes, ordComparePrefixes
    ) where
@@ -1257,6 +1257,27 @@ findSuccessor xs_ tr_          = go xs_ tr_
       error "Data.ListTrie.Patricia.Base.findSuccessor :: internal error"
 
 -- * Trie-only operations
+
+-- O(s)
+lookupPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
+             => [k] -> trie map k a -> trie map k a
+lookupPrefix xs tr =
+   let (_,pre,m) = tParts tr
+    in case comparePrefixes (Map.eqCmp m) pre xs of
+            DifferedAt _ _ _       -> empty
+            Same                   -> tr
+            PostFix (Left _)       -> tr
+            PostFix (Right (y:ys)) ->
+               case Map.lookup y m of
+                    Nothing  -> empty
+                    Just tr' -> let tr''         = lookupPrefix ys tr'
+                                    (v',pre',m') = tParts tr''
+                                 in if null tr''
+                                       then tr''
+                                       else mkTrie v' (pre ++ y : pre') m'
+            _ ->
+               error
+                  "Data.ListTrie.Patricia.Base.lookupPrefix :: internal error"
 
 -- O(s)
 addPrefix :: (Alt st a, Trie trie st map k)
