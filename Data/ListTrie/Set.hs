@@ -368,7 +368,7 @@ findSuccessor = fmap fst .: Base.findSuccessor .:. unTS
 addPrefix :: Map map a => [a] -> TrieSet map a -> TrieSet map a
 addPrefix = TS .: Base.addPrefix .:. unTS
 
--- | @O(m)@. The set which contains all keys of which the given key is a
+-- | @O(s)@. The set which contains all keys of which the given key is a
 -- prefix, with the prefix removed from each key. If the given key is not a
 -- prefix of any key in the set, an empty set is returned. For example:
 --

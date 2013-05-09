@@ -1265,7 +1265,7 @@ addPrefix xs tr =
    let (v,pre,m) = tParts tr
     in mkTrie v (xs ++ pre) m
 
--- O(m)
+-- O(s)
 deletePrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
 deletePrefix xs tr =

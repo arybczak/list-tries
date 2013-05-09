@@ -985,7 +985,7 @@ findSuccessor = Base.findSuccessor
 addPrefix :: Map map k => [k] -> TrieMap map k a -> TrieMap map k a
 addPrefix = Base.addPrefix
 
--- | @O(m)@. The map which contains all keys of which the given key is a
+-- | @O(s)@. The map which contains all keys of which the given key is a
 -- prefix, with the prefix removed from each key. If the given key is not a
 -- prefix of any key in the map, an empty map is returned. For example:
 --

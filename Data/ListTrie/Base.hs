@@ -804,7 +804,7 @@ addPrefix :: (Alt st a, Trie trie st map k)
 addPrefix []     = id
 addPrefix (x:xs) = mkTrie altEmpty . Map.singleton x . addPrefix xs
 
--- O(m)
+-- O(s)
 deletePrefix :: (Alt st a, Trie trie st map k)
              => [k] -> trie map k a -> trie map k a
 deletePrefix []     tr = tr
