@@ -1,3 +1,10 @@
+2013-05-10, 0.5.1:
+	Fix cabal build.
+
+	Minor documentation clarification.
+
+	Update binary dependency.
+
 2013-05-09, 0.5:
 	Added the 'lookupPrefix' and 'deleteSuffixes' functions, of which especially
 	the former was an embarrassing omission:
