@@ -423,8 +423,7 @@ children = Map.map TS . Base.children . unTS
 -- contains less than two keys, this function will return an empty map.
 --
 -- If the longest common prefix of all keys in the trie is the empty list, this
--- function is equivalent to 'children'. Otherwise, the result will always be a
--- single-element map.
+-- function is equivalent to 'children'.
 --
 -- Examples:
 --
