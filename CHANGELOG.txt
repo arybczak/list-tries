@@ -1,3 +1,6 @@
+2014-03-20, 0.5.2:
+	Updated dependencies, for GHC 7.8 and other new packages.
+
 2013-05-10, 0.5.1:
 	Fix cabal build.
 
