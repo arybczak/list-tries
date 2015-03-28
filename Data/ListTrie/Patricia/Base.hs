@@ -1,8 +1,7 @@
 -- File created: 2008-12-28 17:20:14
 
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies
-           , FlexibleContexts, ScopedTypeVariables, Rank2Types
-           , NoMonomorphismRestriction #-}
+           , FlexibleContexts, ScopedTypeVariables, Rank2Types #-}
 
 module Data.ListTrie.Patricia.Base
    ( Trie(..)
