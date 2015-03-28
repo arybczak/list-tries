@@ -36,6 +36,10 @@ Extra-Source-Files: CHANGELOG.txt
                     tests/*.hs
                     tests/Tests/*.hs
 
+source-repository head
+  type: git
+  location: https://github.com/Deewiant/list-tries
+
 flag testing
   description: Enable building a test executable
   default: False

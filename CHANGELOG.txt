@@ -7,6 +7,8 @@
 	class. Also renamed Map.fromList and Map.fromListWith to fromListKV and
 	fromListKVWith to match. Thanks to davean for the patch.
 
+	Added Cabal source-repository metadata, pointing to GitHub.
+
 2014-03-20, 0.5.2:
 	Updated dependencies, for GHC 7.8 and other new packages.
 
