@@ -560,7 +560,7 @@ genericMapInKeysWith :: ( Unionable st a
 genericMapInKeysWith ($$) unionW j f = go
  where
    go tr = mapMap ($$) tr $
-              Map.fromListWith (unionW j) . map (f *** go) . Map.toList
+              Map.fromListKVWith (unionW j) . map (f *** go) . Map.toListKV
 
 -- * Folding
 
@@ -613,7 +613,7 @@ foldlDescWithKey' f x = foldl' (flip $ uncurry f) x . toDescList
 
 -- O(n m)
 toList :: (Boolable (st a), Trie trie st map k) => trie map k a -> [([k],a)]
-toList = genericToList Map.toList DL.cons
+toList = genericToList Map.toListKV DL.cons
 
 -- O(n m)
 toAscList :: (Boolable (st a), Trie trie st map k, OrdMap map k)
@@ -888,4 +888,4 @@ showTrieWith = go 0
                                      . showString "-> "
                                      . sk . showChar ' '
                                      . go (i + lk + 4) f t)
-                  (Map.toList m))
+                  (Map.toListKV m))

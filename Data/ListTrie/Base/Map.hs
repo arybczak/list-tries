@@ -21,9 +21,9 @@ import Data.Traversable    (Traversable(..), mapAccumR)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
-import Prelude hiding ( foldl,foldl1,foldr,foldr1
-                      , mapM,sequence
+import Prelude hiding ( mapM,sequence
                       , null,lookup,filter -- for Haddock
+                      , toList
                       )
 import qualified Prelude
 
@@ -41,7 +41,7 @@ import Data.ListTrie.Util (both, (.:))
 --
 -- * 'unionWithKey', 'differenceWithKey', 'intersectionWithKey'
 --
--- * 'toList'
+-- * 'toListKV'
 --
 -- * 'empty' or 'fromList' or 'fromListWith'
 --
@@ -87,9 +87,9 @@ class Foldable (m k) => Map m k where
 
    filter :: (a -> Bool) -> m k a -> m k a
 
-   toList       :: m k a -> [(k,a)]
-   fromList     ::                  [(k,a)] -> m k a
-   fromListWith :: (a -> a -> a) -> [(k,a)] -> m k a
+   toListKV       :: m k a -> [(k,a)]
+   fromListKV     ::                  [(k,a)] -> m k a
+   fromListKVWith :: (a -> a -> a) -> [(k,a)] -> m k a
 
    serializeToList     :: m k a -> [(k,a)]
    deserializeFromList :: [(k,a)] -> m k a
@@ -98,7 +98,7 @@ class Foldable (m k) => Map m k where
 
    singletonView :: m k a -> Maybe (k,a)
 
-   empty         = fromList []
+   empty         = fromListKV []
    singleton k v = insert k v empty
    doubleton k v = insert k v .: singleton
 
@@ -120,21 +120,21 @@ class Foldable (m k) => Map m k where
    mapWithKey      f   = snd . mapAccumWithKey (\_ k v -> ((), f k v)) ()
    mapAccum        f   = mapAccumWithKey (const . f)
    mapAccumWithKey f z =
-      second fromList .
+      second fromListKV .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
-      toList
+      toListKV
 
-   filter p = fromList . Prelude.filter (p . snd) . toList
+   filter p = fromListKV . Prelude.filter (p . snd) . toListKV
 
    -- | Should be strict in the keys
-   fromList       = fromListWith const
-   fromListWith f = foldr (uncurry $ insertWith f) empty
+   fromListKV       = fromListKVWith const
+   fromListKVWith f = foldr (uncurry $ insertWith f) empty
 
-   serializeToList     = toList
-   deserializeFromList = fromList
+   serializeToList     = toListKV
+   deserializeFromList = fromListKV
 
    singletonView m =
-      case toList m of
+      case toListKV m of
            [x] -> Just x
            _   -> Nothing
 
@@ -182,12 +182,12 @@ class Map m k => OrdMap m k where
    minViewWithKey m =
       case toAscList m of
            []     -> (Nothing, m)
-           (x:xs) -> (Just x, fromList xs)
+           (x:xs) -> (Just x, fromListKV xs)
 
    maxViewWithKey m =
       case toDescList m of
            []     -> (Nothing, m)
-           (x:xs) -> (Just x, fromList xs)
+           (x:xs) -> (Just x, fromListKV xs)
 
    findPredecessor m = fst . maxViewWithKey . fst . split m
    findSuccessor   m = fst . minViewWithKey . snd . split m
@@ -195,11 +195,11 @@ class Map m k => OrdMap m k where
    mapAccumAsc  f = mapAccumAscWithKey  (const . f)
    mapAccumDesc f = mapAccumDescWithKey (const . f)
    mapAccumAscWithKey f z =
-      second fromList .
+      second fromListKV .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
       toAscList
    mapAccumDescWithKey f z =
-      second fromList .
+      second fromListKV .
          mapAccumL (\a (k,v) -> fmap ((,) k) (f a k v)) z .
       toDescList
 
@@ -276,9 +276,9 @@ instance Eq k => Map AList k where
                                           in (a', (k, v')))
                             z xs
 
-   toList (AL xs) = xs
-   fromList       = AL . nubBy ((==) `on` fst)
-   fromListWith   = AL .: go
+   toListKV (AL xs) = xs
+   fromListKV       = AL . nubBy ((==) `on` fst)
+   fromListKVWith   = AL .: go
     where
       go _ []     = []
       go f (x:xs) =
@@ -301,8 +301,8 @@ instance Eq k => Map AList k where
 instance Ord k => OrdMap AList k where
    ordCmp = const compare
 
-   toAscList  = sortBy (       comparing fst) . toList
-   toDescList = sortBy (flip $ comparing fst) . toList
+   toAscList  = sortBy (       comparing fst) . toListKV
+   toDescList = sortBy (flip $ comparing fst) . toListKV
 
    splitLookup k (AL xs) =
       let (ls,gs)  = partition ((< k).fst) xs
@@ -369,9 +369,9 @@ instance Ord k => Map M.Map k where
 
    filter = M.filter
 
-   toList       = M.toList
-   fromList     = M.fromList
-   fromListWith = M.fromListWith
+   toListKV       = M.toList
+   fromListKV     = M.fromList
+   fromListKVWith = M.fromListWith
 
    serializeToList     = M.toAscList
    deserializeFromList = M.fromDistinctAscList
@@ -452,9 +452,9 @@ instance Enum k => Map WrappedIntMap k where
 
    filter p (IMap x) = IMap $ IM.filter p x
 
-   toList (IMap m) = Prelude.map (first toEnum) . IM.toList $ m
-   fromList        = IMap . IM.fromList       . Prelude.map (first fromEnum)
-   fromListWith f  = IMap . IM.fromListWith f . Prelude.map (first fromEnum)
+   toListKV (IMap m) = Prelude.map (first toEnum) . IM.toList $ m
+   fromListKV        = IMap . IM.fromList       . Prelude.map (first fromEnum)
+   fromListKVWith f  = IMap . IM.fromListWith f . Prelude.map (first fromEnum)
 
    serializeToList (IMap x) = Prelude.map (first toEnum) . IM.toAscList $ x
    deserializeFromList      =

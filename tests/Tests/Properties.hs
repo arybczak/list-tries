@@ -415,7 +415,7 @@ $(makeFunc setsOnly ["addPrefix","splitPrefix","children","unions","insert"]
       let (k,b,_) = splitPrefix (t :: TrieType)
        in t == ((if b then insert k else id) . addPrefix k .
                    unions $ map (uncurry $ addPrefix . return)
-                                (Map.toList $ children t))
+                                (Map.toListKV $ children t))
  |])
 $(makeFunc mapsOnly ["addPrefix","splitPrefix","children","unions","insert"]
  [d|
@@ -423,7 +423,7 @@ $(makeFunc mapsOnly ["addPrefix","splitPrefix","children","unions","insert"]
       let (k,mv,_) = splitPrefix (t :: TrieType)
        in t == ((case mv of Just v -> insert k v; _ -> id) . addPrefix k .
                    unions $ map (uncurry $ addPrefix . return)
-                                (Map.toList $ children t))
+                                (Map.toListKV $ children t))
  |])
 
 -- Deleting an added prefix should change nothing
