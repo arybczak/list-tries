@@ -19,7 +19,7 @@ import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
 import Prelude hiding ( filter, foldl, foldl1, foldr, foldr1, lookup, null
-                      , mapM, sequence, toList
+                      , mapM, sequence
                       )
 import qualified Prelude
 
