@@ -1,5 +1,3 @@
-language: haskell
-
 env:
    - CABALVER=1.18 GHCVER=6.12.3
    - CABALVER=1.18 GHCVER=7.4.1 # Debian 7
@@ -13,13 +11,10 @@ matrix:
       - env: GHCVER=head CABALVER=head
 
 before_install:
-   - |
-      if [[ "$GHCVER" != "$(ghc --numeric-version)" ]]; then
-         travis_retry sudo add-apt-repository -y ppa:hvr/ghc
-         travis_retry sudo apt-get update
-         travis_retry sudo apt-get install "cabal-install-$CABALVER" "ghc-$GHCVER"
-         PATH="/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH"
-      fi
+   - travis_retry sudo add-apt-repository -y ppa:hvr/ghc
+   - travis_retry sudo apt-get update
+   - travis_retry sudo apt-get install "cabal-install-$CABALVER" "ghc-$GHCVER"
+   - PATH="/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH"
 
 install:
    - cabal --version
