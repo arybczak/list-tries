@@ -23,8 +23,6 @@ import qualified Data.ListTrie.Patricia.Map.Eq
 import qualified Data.ListTrie.Patricia.Map.Ord
 import qualified Data.ListTrie.Patricia.Map.Enum
 
-import Data.ListTrie.Util
-
 import Tests.TH
 
 $(makeFunc allTries ["null","empty"] [d|
@@ -143,7 +141,7 @@ $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
           b = fromList $ zip bl [length al..]
        in intersectionWithKey (\k vl vr -> length k - vl + vr) a b
           == fromList (zip ["cat","caterers"] $
-                zipWith3 (join (.:) (+) . negate)
+                zipWith3 (\a b c -> b + c - a)
                          [1..] [length al..] (map length al))
  |])
 $(makeFunc mapsOnly ["fromList","intersectionWithKey"] [d|
