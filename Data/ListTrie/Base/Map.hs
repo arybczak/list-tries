@@ -12,18 +12,14 @@ import Control.Arrow       ((***), first, second)
 import Control.Monad       (liftM, liftM2)
 import Data.Foldable       (Foldable(..))
 import Data.Function       (on)
-import Data.List           ( foldl1'
-                           , mapAccumL, nubBy, partition
-                           , sort, sortBy
-                           )
+import Data.List           (foldl1', mapAccumL, nubBy, partition, sort, sortBy)
 import Data.Ord            (comparing)
 import Data.Traversable    (Traversable(..), mapAccumR)
 import qualified Data.IntMap as IM
 import qualified Data.Map    as M
 
-import Prelude hiding ( mapM,sequence
-                      , null,lookup,filter -- for Haddock
-                      , toList
+import Prelude hiding ( filter, foldl, foldl1, foldr, foldr1, lookup, null
+                      , mapM, sequence, toList
                       )
 import qualified Prelude
 
