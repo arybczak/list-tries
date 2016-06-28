@@ -1,6 +1,9 @@
 2016-06-28, 0.6.2:
 	Updated dependencies for GHC 8.0.1.
 
+	Added Semigroup instances, bringing in a new dependency on semigroups
+	on pre-8.0 GHC versions.
+
 2015-04-03, 0.6.1:
 	Fixed build on base < 4.8.
 

@@ -41,10 +41,13 @@ source-repository head
   location: https://github.com/Deewiant/list-tries
 
 Library
-   Build-Depends: base       >= 3   && < 4.10
-                , containers >= 0.3 && < 0.6
-                , dlist      >= 0.4 && < 0.8
-                , binary     >= 0.5 && < 0.9
+   Build-Depends: base       >= 3    && < 4.10
+                , containers >= 0.3  && < 0.6
+                , dlist      >= 0.4  && < 0.8
+                , binary     >= 0.5  && < 0.9
+
+   if impl(ghc < 8.0)
+      Build-Depends: semigroups >= 0.18 && < 0.19
 
    Exposed-Modules: Data.ListTrie.Base.Map
                     Data.ListTrie.Map

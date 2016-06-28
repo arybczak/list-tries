@@ -44,8 +44,10 @@ import qualified Data.DList as DL
 import Data.Either         (partitionEithers)
 import Data.Function       (on)
 import qualified Data.Foldable as F
+import qualified Data.List.NonEmpty as NE
 import qualified Data.Maybe as Maybe
 import Data.Monoid         (Monoid(..))
+import Data.Semigroup      (Semigroup(..), stimesIdempotent)
 import Data.Traversable    (Traversable(traverse))
 import Prelude hiding      (filter, foldl, foldr, lookup, map, null)
 import qualified Prelude
@@ -96,9 +98,14 @@ instance (Eq (map k (TrieMap map k a)), OrdMap map k, Ord k, Ord a)
  where
    compare = compare `on` toAscList
 
+instance Map map k => Semigroup (TrieMap map k a) where
+   (<>) = union
+   sconcat = unions . NE.toList
+   stimes = stimesIdempotent
+
 instance Map map k => Monoid (TrieMap map k a) where
    mempty  = empty
-   mappend = union
+   mappend = (<>)
    mconcat = unions
 
 instance Map map k => Functor (TrieMap map k) where

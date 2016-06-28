@@ -27,7 +27,9 @@ import Control.Arrow  ((***))
 import Control.Monad  (liftM2)
 import Data.Binary    (Binary,get,put)
 import Data.Function  (on)
+import qualified Data.List.NonEmpty as NE
 import Data.Monoid    (Monoid(..))
+import Data.Semigroup (Semigroup(..), stimesIdempotent)
 import Prelude hiding (filter, foldl, foldr, map, null)
 import qualified Prelude
 
@@ -96,9 +98,14 @@ instance (Eq (CMap map a Bool), OrdMap map a, Ord a) => Ord (TrieSet map a)
  where
    compare = compare `on` unTS
 
+instance Map map a => Semigroup (TrieSet map a) where
+   (<>) = union
+   sconcat = unions . NE.toList
+   stimes = stimesIdempotent
+
 instance Map map a => Monoid (TrieSet map a) where
    mempty  = empty
-   mappend = union
+   mappend = (<>)
    mconcat = unions
 
 instance (Map map a, Show a) => Show (TrieSet map a) where
