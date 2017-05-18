@@ -74,6 +74,16 @@ Library
 
    Include-Dirs: headers
 
+   Other-Extensions: AllowAmbiguousTypes,
+                     CPP,
+                     FlexibleContexts,
+                     FlexibleInstances,
+                     FunctionalDependencies,
+                     MultiParamTypeClasses,
+                     Rank2Types
+                     ScopedTypeVariables,
+                     UndecidableInstances
+
 Test-Suite list-tries-tests
    type: exitcode-stdio-1.0
 
@@ -96,3 +106,13 @@ Test-Suite list-tries-tests
                   Tests.Properties
                   Tests.Strictness
                   Tests.TH
+
+   Other-Extensions: CPP,
+                     EmptyDataDecls,
+                     FlexibleContexts,
+                     FlexibleInstances,
+                     FunctionalDependencies,
+                     MultiParamTypeClasses,
+                     NoMonomorphismRestriction
+                     PatternGuards,
+                     TemplateHaskell
