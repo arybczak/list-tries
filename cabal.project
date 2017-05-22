@@ -1,0 +1,3 @@
+packages: .
+-- Temporary, until a new version of ChasingBottoms is released.
+allow-newer: ChasingBottoms:QuickCheck,ChasingBottoms:base,ChasingBottoms:syb

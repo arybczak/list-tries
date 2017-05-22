@@ -1,8 +1,8 @@
 env:
-   - CABALVER=1.18 GHCVER=7.4.1 # Debian 7
-   - CABALVER=1.20 GHCVER=7.6.3 # Debian 8
-   - CABALVER=1.18 GHCVER=7.8.4
-   - CABALVER=1.22 GHCVER=7.10.1
+   - CABALVER=1.24 GHCVER=7.4.1 # Debian 7
+   - CABALVER=1.24 GHCVER=7.6.3 # Debian 8
+   - CABALVER=1.24 GHCVER=7.8.4
+   - CABALVER=1.24 GHCVER=7.10.1
    - CABALVER=1.24 GHCVER=8.0.1
    - CABALVER=head GHCVER=head
 
@@ -21,7 +21,7 @@ install:
    - ghc --version
    - ghc --print-project-git-commit-id 2> /dev/null || true
    - travis_retry cabal update
-   - cabal install --only-dependencies --enable-tests --enable-benchmarks
+   - cabal install --only-dependencies --enable-tests --enable-benchmarks --allow-newer=ChasingBottoms:QuickCheck,ChasingBottoms:base,ChasingBottoms:syb
 
 script:
    - cabal configure --enable-tests --enable-benchmarks -v2
