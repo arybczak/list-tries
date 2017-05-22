@@ -21,7 +21,7 @@ install:
    - ghc --version
    - ghc --print-project-git-commit-id 2> /dev/null || true
    - travis_retry cabal update
-   - cabal install --only-dependencies --enable-tests --enable-benchmarks
+   - cabal install --only-dependencies --enable-tests --enable-benchmarks --allow-newer=ChasingBottoms:QuickCheck,ChasingBottoms:base,ChasingBottoms:syb
 
 script:
    - cabal configure --enable-tests --enable-benchmarks -v2
