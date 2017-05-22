@@ -1,7 +1,10 @@
--- File created: 2008-12-28 17:20:14
-
-{-# LANGUAGE AllowAmbiguousTypes, MultiParamTypeClasses, FunctionalDependencies
+{-# LANGUAGE CPP, MultiParamTypeClasses, FunctionalDependencies
            , FlexibleContexts, ScopedTypeVariables, Rank2Types #-}
+
+#if __GLASGOW_HASKELL__ >= 710
+{-# LANGUAGE AllowAmbiguousTypes #-}
+#endif
+
 
 module Data.ListTrie.Patricia.Base
    ( Trie(..)
@@ -1322,8 +1325,8 @@ deleteSuffixes xs tr =
                               then tryCompress$ mkTrie v pre (Map.delete y m)
                               else mkTrie v pre (Map.insert y tr'' m)
 
-            _ -> error "Data.ListTrie.Patricia.Base.deleteSuffixes \
-                       \:: internal error"
+            _ -> error $ "Data.ListTrie.Patricia.Base.deleteSuffixes"
+                 ++ ":: internal error"
 
 -- O(1)
 splitPrefix :: (Alt st a, Boolable (st a), Trie trie st map k)
