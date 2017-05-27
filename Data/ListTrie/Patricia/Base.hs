@@ -564,7 +564,7 @@ differenceWith j = go
                PostFix (Right xs) -> goLeft  tr1 tr2 xs
 
    dw a b =
-      let c = differenceWith j a b
+      let c = go a b
        in if null c then Nothing else Just c
 
    mk v v' p m m' =
