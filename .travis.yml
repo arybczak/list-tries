@@ -25,7 +25,7 @@ install:
    - |
       if [[ "$GHCVER" = 8.2* || "$GHCVER" = head ]]; then
          # While ChasingBottoms is out of date
-         cabal install --only-dependencies --enable-tests --enable-benchmarks --allow-newer=ChasingBottoms:QuickCheck,ChasingBottoms:base,ChasingBottoms:syb
+         cabal install --only-dependencies --enable-tests --enable-benchmarks --allow-newer=ChasingBottoms:base,ChasingBottoms:syb
       else
          cabal install --only-dependencies --enable-tests --enable-benchmarks
       fi
