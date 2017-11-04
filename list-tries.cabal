@@ -41,7 +41,7 @@ source-repository head
   location: https://github.com/Deewiant/list-tries
 
 Library
-   Build-Depends: base       >= 3    && < 4.11
+   Build-Depends: base       >= 3    && < 4.12
                 , containers >= 0.3  && < 0.6
                 , dlist      >= 0.4  && < 0.9
                 , binary     >= 0.5  && < 0.10
@@ -90,11 +90,11 @@ Test-Suite list-tries-tests
    main-is: Main.hs
 
    Build-Depends: list-tries
-                , base                       >= 3   && < 4.11
+                , base                       >= 3   && < 4.12
                 , binary                     >= 0.5 && < 0.10
                 , template-haskell           >= 2.3 && < 2.13
                 , HUnit                      >= 1.2 && < 1.7
-                , QuickCheck                 >= 2.1 && < 2.10
+                , QuickCheck                 >= 2.1 && < 2.11
                 , test-framework             >= 0.2 && < 0.9
                 , test-framework-hunit       >= 0.2 && < 0.4
                 , test-framework-quickcheck2 >= 0.2 && < 0.4
