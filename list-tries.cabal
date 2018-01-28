@@ -92,7 +92,7 @@ Test-Suite list-tries-tests
    Build-Depends: list-tries
                 , base                       >= 3   && < 4.12
                 , binary                     >= 0.5 && < 0.10
-                , template-haskell           >= 2.3 && < 2.13
+                , template-haskell           >= 2.3 && < 2.14
                 , HUnit                      >= 1.2 && < 1.7
                 , QuickCheck                 >= 2.1 && < 2.11
                 , test-framework             >= 0.2 && < 0.9
