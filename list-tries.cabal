@@ -26,7 +26,8 @@ Author:       Matti Niemenmaa
 Maintainer:   Matti Niemenmaa <matti.niemenmaa+list-tries@iki.fi>
 License:      BSD3
 License-File: LICENSE.txt
-Tested-With:  GHC == 7.4.2, GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
+Tested-With:  GHC == 7.0.4, GHC == 7.2.2, GHC == 7.4.2,
+              GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.3,
               GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.1
 
 Build-Type: Simple
@@ -43,8 +44,8 @@ source-repository head
   location: https://github.com/Deewiant/list-tries
 
 Library
-   Build-Depends: base       >= 3    && < 4.12
-                , containers >= 0.3  && < 0.6
+   Build-Depends: base       >= 4.3  && < 4.12
+                , containers >= 0.4  && < 0.6
                 , dlist      >= 0.4  && < 0.9
                 , binary     >= 0.5  && < 0.10
 
