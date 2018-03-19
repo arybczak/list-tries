@@ -782,11 +782,14 @@ findPredecessor xs_ tr_          = go xs_ tr_
                Just (best,btr) -> fmap (first (best:)) (findMax btr)
 
 -- O(m)
-findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+findSuccessor :: forall trie map st k a .
+                 (Boolable (st a), Trie trie st map k, OrdMap map k)
               => [k] -> trie map k a -> Maybe ([k], a)
 findSuccessor _   tr | null tr = Nothing
 findSuccessor xs_ tr_          = go xs_ tr_
  where
+   go :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+      => [k] -> trie map k a -> Maybe ([k], a)
    go [] tr = do (k,t) <- fst . Map.minViewWithKey . tMap $ tr
                  fmap (first (k:)) (findMin t)
 
@@ -840,10 +843,13 @@ deleteSuffixes (x:xs) tr =
                                else mkTrie v (Map.insert x tr'' m)
 
 -- O(m)
-splitPrefix :: (Alt st a, Trie trie st map k)
+splitPrefix :: forall trie map st k a .
+               (Alt st a, Trie trie st map k)
             => trie map k a -> ([k], st a, trie map k a)
 splitPrefix = go DL.empty
  where
+   go :: (Alt st a, Trie trie st map k)
+      => DL.DList k -> trie map k a -> ([k], st a, trie map k a)
    go xs tr =
       case Map.singletonView (tMap tr) of
            Just (x,tr') -> go (xs `DL.snoc` x) tr'

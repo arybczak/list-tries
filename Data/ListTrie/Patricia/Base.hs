@@ -1226,11 +1226,14 @@ findPredecessor xs_ tr_          = go xs_ tr_
       error "Data.ListTrie.Patricia.Base.findPredecessor :: internal error"
 
 -- O(m)
-findSuccessor :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+findSuccessor :: forall trie map st k a .
+                 (Boolable (st a), Trie trie st map k, OrdMap map k)
               => [k] -> trie map k a -> Maybe ([k], a)
 findSuccessor _   tr | null tr = Nothing
 findSuccessor xs_ tr_          = go xs_ tr_
  where
+   go :: (Boolable (st a), Trie trie st map k, OrdMap map k)
+      => [k] -> trie map k a -> Maybe ([k], a)
    go xs tr =
       let (_,pre,m) = tParts tr
        in case comparePrefixes (Map.eqCmp m) pre xs of
