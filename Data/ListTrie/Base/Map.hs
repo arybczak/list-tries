@@ -1,6 +1,6 @@
 -- File created: 2008-11-07 17:30:16
 
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-}
+{-# LANGUAGE CPP, MultiParamTypeClasses, FlexibleInstances #-}
 
 module Data.ListTrie.Base.Map
    ( Map(..), OrdMap(..)
@@ -15,9 +15,11 @@ import Data.Function       (on)
 import Data.List           (foldl1', mapAccumL, nubBy, partition, sort, sortBy)
 import Data.Ord            (comparing)
 import Data.Traversable    (Traversable(..), mapAccumR)
-import qualified Data.IntMap as IM
-import qualified Data.Map    as M
-
+import qualified Data.IntMap     as IM
+import qualified Data.Map        as M
+#if MIN_VERSION_containers(0,5,0)
+import qualified Data.Map.Strict as M.Strict
+#endif
 import Prelude hiding ( filter, foldl, foldl1, foldr, foldr1, lookup, null
                       , mapM, sequence
                       )
@@ -343,7 +345,11 @@ instance Ord k => Map M.Map k where
    null   = M.null
    lookup = M.lookup
 
+#if MIN_VERSION_containers(0,5,0)
+   insertWith = M.Strict.insertWith
+#else
    insertWith = M.insertWith'
+#endif
 
    update = M.update
    adjust = M.adjust
