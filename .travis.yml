@@ -47,6 +47,8 @@ matrix:
       compiler: ": #GHC HEAD"
       addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
 
+  allow_failures:
+    - compiler: ": #GHC HEAD"
 
 before_install:
  - unset CC
