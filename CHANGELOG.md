@@ -1,3 +1,7 @@
+# list-tries-0.6.6 (2018-11-20)
+* Updated dependencies and code for GHC 8.6.1, thanks as usual to Mikhail
+  Glushenkov.
+
 # list-tries-0.6.5 (2018-03-20)
 * Updated dependencies and code for GHC 8.4.1 and QuickCheck-2.11,
   thanks again to Mikhail Glushenkov.
