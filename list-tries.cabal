@@ -32,7 +32,8 @@ Tested-With:  GHC == 7.0.4, GHC == 7.2.2, GHC == 7.4.2,
 
 Build-Type: Simple
 
-Extra-Source-Files: CHANGELOG.txt
+Extra-Source-Files: README.md
+                    CHANGELOG.md
                     CREDITS.txt
                     headers/*.h
                     tests/README.txt
