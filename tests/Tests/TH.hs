@@ -1,6 +1,6 @@
 -- File created: 2009-01-09 13:57:13
 
-{-# LANGUAGE EmptyDataDecls, PatternGuards, TemplateHaskell #-}
+{-# LANGUAGE CPP, EmptyDataDecls, PatternGuards, TemplateHaskell #-}
 
 module Tests.TH
    ( Module(..)
@@ -115,7 +115,11 @@ makeFunc modules expands =
                                            (expandE m e)
                                            (fmap (expandE m) me2)
    expandE m (LamE pats e)        = LamE pats (expandE m e)
+#if MIN_VERSION_template_haskell(2,16,0)
+   expandE m (TupE es)            = TupE (map (fmap $ expandE m) es)
+#else
    expandE m (TupE es)            = TupE (map (expandE m) es)
+#endif
    expandE m (CondE e1 e2 e3)     = CondE (expandE m e1)
                                           (expandE m e2)
                                           (expandE m e3)
