@@ -1,4 +1,4 @@
-Cabal-Version: >= 1.9.2
+Cabal-Version: >= 1.10
 
 Name:        list-tries
 Version:     0.6.7
@@ -79,6 +79,8 @@ Library
 
    Include-Dirs: headers
 
+   Default-language: Haskell2010
+
    Other-Extensions: CPP
                      FlexibleContexts
                      FlexibleInstances
@@ -110,6 +112,8 @@ Test-Suite list-tries-tests
                   Tests.Properties
                   Tests.Strictness
                   Tests.TH
+
+   Default-language: Haskell2010
 
    Other-Extensions: CPP
                      EmptyDataDecls
