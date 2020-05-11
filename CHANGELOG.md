@@ -1,4 +1,4 @@
-# list-tries-0.6.7 (????-??-??)
+# list-tries-0.6.7 (2020-05-12)
 * Updated dependencies and code for GHC 8.8 and 8.10.
 
 # list-tries-0.6.6 (2018-11-20)
