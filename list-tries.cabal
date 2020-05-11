@@ -23,7 +23,7 @@ Description:
    Data.IntMap respectively.
 
 Author:       Matti Niemenmaa
-Maintainer:   Matti Niemenmaa <matti.niemenmaa+list-tries@iki.fi>
+Maintainer:   Andrzej Rybczak <andrzej@rybczak.net>
 License:      BSD3
 License-File: LICENSE.txt
 Tested-With:  GHC == 7.0.4, GHC == 7.2.2, GHC == 7.4.2,
@@ -43,7 +43,7 @@ Extra-Source-Files: README.md
 
 source-repository head
   type: git
-  location: https://github.com/Deewiant/list-tries
+  location: https://github.com/arybczak/list-tries
 
 Library
    Build-Depends: base       >= 4.3  && < 5
