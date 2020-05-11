@@ -1,3 +1,6 @@
+# list-tries-0.6.7 (????-??-??)
+* Updated dependencies and code for GHC 8.8 and 8.10.
+
 # list-tries-0.6.6 (2018-11-20)
 * Updated dependencies and code for GHC 8.6.1, thanks as usual to Mikhail
   Glushenkov.
