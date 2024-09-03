@@ -7,7 +7,6 @@ module Data.ListTrie.Base.Map
    , AList, WrappedIntMap
    ) where
 
-import Control.Applicative (pure, (<*>))
 import Control.Arrow       ((***), first, second)
 import Control.Monad       (liftM, liftM2)
 import Data.Foldable       (Foldable(..))

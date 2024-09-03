@@ -9,7 +9,6 @@
 module Data.ListTrie.Base.Classes where
 
 import qualified Control.Applicative as A
-import Control.Applicative (Applicative(..))
 import Control.Monad       (liftM2)
 import Data.Maybe          (fromJust, isJust)
 

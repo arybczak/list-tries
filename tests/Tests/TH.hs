@@ -126,7 +126,11 @@ makeFunc modules expands =
    expandE m (LetE decs e)        = LetE (map (expandDec m) decs) (expandE m e)
    expandE m (CaseE e matches)    = CaseE (expandE m e)
                                           (map (expandMatch m) matches)
+#if MIN_VERSION_template_haskell(2,17,0)
+   expandE m (DoE mmn stmts)      = DoE mmn (map (expandStmt m) stmts)
+#else
    expandE m (DoE stmts)          = DoE (map (expandStmt m) stmts)
+#endif
    expandE m (CompE stmts)        = CompE (map (expandStmt m) stmts)
    expandE m (SigE e t)           = SigE (expandE m e) (replaceTypes m t)
    expandE m (RecConE name fexps) = RecConE name (map (expandFieldExp m) fexps)
