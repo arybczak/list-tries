@@ -1,4 +1,4 @@
-# list-tries-0.6.7.1 (????-??-??)
+# list-tries-0.6.7.1 (2024-09-04)
 * Make tests compile with GHC >= 9.0.
 * Drop support for GHC < 8.10.
 
