@@ -36,7 +36,6 @@
 -- key: don't use the latter form of the function unless you need it.
 module Data.ListTrie.Map (MAP_EXPORTS) where
 
-import Control.Applicative ((<*>),(<$>))
 import Control.Arrow       ((***), second)
 import Control.Monad       (liftM2)
 import Data.Binary         (Binary,get,put)
@@ -46,10 +45,8 @@ import Data.Function       (on)
 import qualified Data.Foldable as F
 import qualified Data.List.NonEmpty as NE
 import qualified Data.Maybe as Maybe
-import Data.Monoid         (Monoid(..))
 import Data.Semigroup      (Semigroup(..), stimesIdempotent)
-import Data.Traversable    (Traversable(traverse))
-import Prelude hiding      (filter, foldl, foldr, lookup, map, null)
+import Prelude hiding      (filter, foldl, foldl', foldr, lookup, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__

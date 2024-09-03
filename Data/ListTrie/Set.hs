@@ -28,9 +28,8 @@ import Control.Monad  (liftM2)
 import Data.Binary    (Binary,get,put)
 import Data.Function  (on)
 import qualified Data.List.NonEmpty as NE
-import Data.Monoid    (Monoid(..))
 import Data.Semigroup (Semigroup(..), stimesIdempotent)
-import Prelude hiding (filter, foldl, foldr, map, null)
+import Prelude hiding (filter, foldl, foldl', foldr, map, null)
 import qualified Prelude
 
 #if __GLASGOW_HASKELL__

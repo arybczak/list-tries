@@ -30,7 +30,6 @@ module Data.ListTrie.Base
    , showTrieWith
    ) where
 
-import Control.Applicative (Applicative(..), (<$>))
 import Control.Arrow       ((***), first)
 import qualified Data.DList as DL
 import Data.DList          (DList)

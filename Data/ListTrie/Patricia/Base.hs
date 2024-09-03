@@ -31,7 +31,6 @@ module Data.ListTrie.Patricia.Base
    , eqComparePrefixes, ordComparePrefixes
    ) where
 
-import Control.Applicative (Applicative(..), (<$>))
 import Control.Arrow       ((***), first)
 import Control.Exception   (assert)
 import qualified Data.DList as DL
